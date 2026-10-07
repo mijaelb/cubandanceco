@@ -7,15 +7,15 @@
     "url": "trainings"
   },
   "hero": {
-    "eyebrow": "Cuban folklore & popular dances",
-    "title": "Dance the roots of Cuba",
-    "text": "Taught by former dancers of the Conjunto Folklórico Nacional de Cuba. One weekend a month, each time in a different European city, with live drums and singing.",
+    "eyebrow": "International Company of Cuban Dances",
+    "title": "Cuban maestros. European dancers. One company.",
+    "text": "Afro-Cuban folklore and Cuban popular dances, taught by former dancers of the Conjunto Folklórico Nacional de Cuba. One training weekend a month, each time in a different European city.",
     "images": [
       "/images/photos/stage-timba.webp",
       "/images/photos/stage-africa.webp",
       "/images/photos/havana-red-men.webp",
-      "/images/photos/stage-yemaya.webp",
-      "/images/photos/stage-finale.webp"
+      "/images/photos/stage-chango.webp",
+      "/images/photos/stage-masks.webp"
     ]
   },
   "intro": {

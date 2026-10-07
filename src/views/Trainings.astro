@@ -17,7 +17,7 @@ const season = (d: string) => { const y = +d.slice(0, 4), m = +d.slice(5, 7); co
 const seasons = Object.entries(Object.groupBy(past, (e) => season(e.start)));
 const cities = [...new Set([...events, ...past].map((e) => e.city))];
 ---
-<Layout lang={lang} page="trainings" title="Trainings" description={trainings.intro}>
+<Layout lang={lang} page="trainings" title="Trainings" description={trainings.intro} events={events}>
   <PageHero image="/images/photos/training-hall.webp" eyebrow={`${t('Season')} ${trainings.season}`} title={t('Monthly trainings across Europe')} text={t(trainings.intro)}>
     <div class="actions"><a class="btn btn-gold" href={site.links.tickets} target="_blank" rel="noopener">{t('Get your ticket')}</a></div>
   </PageHero>

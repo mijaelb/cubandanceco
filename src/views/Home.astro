@@ -19,14 +19,14 @@ const next = upcoming(trainings.events);
 const first = next[0];
 const marquee = [...site.styles, ...site.styles];
 ---
-<Layout lang={lang} page="">
+<Layout lang={lang} page="" events={next}>
   <section class="hero dark">
     <div class="hero-slides" aria-hidden="true">
       {site.hero.images.map((src, i) => <Img src={src} eager={i === 0} style={`animation-delay:${i * 6}s`} />)}
     </div>
     <div class="wrap hero-content">
       <p class="eyebrow">{t(site.hero.eyebrow)}</p>
-      <h1 class="display hero-title">{t(site.hero.title)}</h1>
+      <h1 class="display hero-title">{t(site.hero.title).split(/(?<=[.!?])\s+/).map((line) => <span>{line}</span>)}</h1>
       <p class="lead">{t(site.hero.text)}</p>
       <div class="actions">
         {first && (
@@ -71,7 +71,7 @@ const marquee = [...site.styles, ...site.styles];
       </div>
       <div class="collage reveal">
         <Img src="/images/photos/havana-yemaya.webp" alt="" sizes="(min-width: 900px) 25vw, 50vw" />
-        <Img src="/images/photos/training-joy.webp" alt="" sizes="(min-width: 900px) 30vw, 60vw" />
+        <Img src="/images/photos/studio-hats.webp" alt="" sizes="(min-width: 900px) 30vw, 60vw" />
         <Img src="/images/photos/stage-chango.webp" alt="" sizes="(min-width: 900px) 25vw, 50vw" />
       </div>
     </div>

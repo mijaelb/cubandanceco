@@ -2,20 +2,20 @@
   "title": "Raíces Cubanas",
   "subtitle": "A 90-minute dance-theatre show in two parts",
   "poster": "/images/photos/raices-poster.webp",
-  "lead": "Water, myth and legend run through Cuban identity. Many cultures meet on the island, and together they shape the character of its people: rebellious, joyful, musical and united.",
-  "text": "Raíces Cubanas is presented by the Generación Abbilona Association and the International Company of Cuban Dances. The show follows the music and dance of African and Cuban origin from colonial times to today.",
+  "lead": "Raíces Cubanas tells the story of Cuban music and dance, from its African roots to the Cuba of today. A 90-minute show with 20 to 30 dancers, live drums and singing.",
+  "text": "The show was created by Leonardo Martínez Moya with Sergio Larrinaga, Mireisi Morales and Arelys Savón. It includes original choreographies from the early years of the Conjunto Folklórico Nacional de Cuba. It is presented with the Generación Abbilona Association.",
   "parts": [
     {
       "label": "Part one",
       "title": "Raíces",
       "image": "/images/photos/stage-africa.webp",
-      "text": "Raíces is about the Afro-Cuban religious world and its myths. It shows how the orishas and other African deities shaped Cuban culture, with choreographies for Elegguá, Ogún, Yemayá, Changó and Oyá, and a scene about the crossing of enslaved Africans to Cuba."
+      "text": "The first part is about the Afro-Cuban religious world. We dance for the orishas Elegguá, Ogún, Yemayá, Changó and Oyá. We also show the crossing of enslaved Africans to Cuba, and how their beliefs and music became part of Cuban identity."
     },
     {
       "label": "Part two",
       "title": "La Cubanía",
       "image": "/images/photos/stage-timba.webp",
-      "text": "La Cubanía covers the popular music and dances that developed from the birth of the Republic to today: danzón, mambo, cha-cha-chá, son, the street vendors' calls (pregones), rumba and carnival. It celebrates the mix of peoples and cultures that makes Cuba what it is."
+      "text": "The second part is about Cuba's popular dances, from the birth of the Republic to today. Danzón, mambo, cha-cha-chá, son, rumba, the street vendors' calls (pregones) and carnival. It celebrates the mix of cultures that makes Cuba what it is."
     }
   ],
   "upcoming": [
