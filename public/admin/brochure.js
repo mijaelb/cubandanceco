@@ -167,4 +167,15 @@ if (!data?.event) {
   document.body.dataset.file = `ICCD-${ev.city}-training-schedule`.replace(/[^\p{L}\p{N}-]+/gu, '-');
   document.title = document.body.dataset.file.replace(/-/g, ' ');
   document.fonts.ready.then(fit);
+  $('#tb-name').textContent = `${ev.city} · ${range(ev.start, ev.end)}`;
+  $('#tb-info').textContent = `${pages.children.length} pages · PDF with working links, or one image per page for Instagram and WhatsApp`;
+  // preview: pages scaled to the screen, side by side when there is room
+  const scale = () => {
+    const width = document.documentElement.clientWidth; // the screen, not the (wider) unscaled pages
+    const free = innerHeight - $('.toolbar').offsetHeight - 48;
+    pages.style.zoom = String(Math.min(1, (width - 32) / 810, Math.max(0.3, free / 1440)));
+  };
+  scale();
+  requestAnimationFrame(scale); // phones settle their width after the first layout
+  addEventListener('resize', scale);
 }

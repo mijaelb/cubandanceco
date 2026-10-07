@@ -24,9 +24,11 @@ const v = Date.now().toString(36); // new on every build, so browsers load the l
 </head>
 <body data-logo={url('/images/logo.svg')} data-tickets={site.links.tickets} data-handle={site.instagramHandle} data-email={site.links.email} data-whatsapp={site.links.whatsapp} data-instagram={site.links.instagram}>
   <div class="toolbar">
-    <button type="button" id="print">Download PDF</button>
-    <button type="button" id="images" class="secondary">Download images</button>
-    <span id="hint">PDF: all pages in one file, exactly as shown, with working links. Images: one picture per page, ready for Instagram stories and WhatsApp.</span>
+    <div class="tb-title"><b id="tb-name">Training brochure</b><span id="tb-info">PDF with working links, or one image per page for Instagram and WhatsApp</span></div>
+    <div class="tb-buttons">
+      <button type="button" id="print">Download PDF</button>
+      <button type="button" id="images" class="secondary">Download images</button>
+    </div>
   </div>
   <main id="pages"></main>
   <template id="qr" set:html={qr} />
@@ -76,7 +78,7 @@ const v = Date.now().toString(36); // new on every build, so browsers load the l
           // the PDF base font only knows Western European letters
           const text = (upper ? ln.text.toUpperCase() : ln.text).replace(/[^ -~ -ÿ–—‘’“”•…]/g, '').trim();
           if (!text) continue;
-          const size = parseFloat(cs.fontSize) * k;
+          const size = (parseFloat(cs.fontSize) * W) / page.offsetWidth; // font sizes are not affected by the preview zoom
           pdf.setFontSize(size * 0.75); // px → pt
           const w = pdf.getTextWidth(text);
           pdf.text(text, (ln.l - box.left) * k, (ln.t - box.top) * k + ((ln.b - ln.t) * k + size * 0.7) / 2, {
