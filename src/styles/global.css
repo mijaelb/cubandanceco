@@ -272,7 +272,7 @@ h1.hero-title { font-size: clamp(2.8rem, 7.6vw, 7.4rem); max-width: 17ch; color:
 /* ---------- People ---------- */
 .people { display: grid; gap: 28px 16px; grid-template-columns: repeat(auto-fill, minmax(min(44%, 160px), 1fr)); }
 .people-lg { grid-template-columns: repeat(auto-fit, minmax(min(44%, 230px), 1fr)); }
-.people-team { grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); }
+.people-team { grid-template-columns: repeat(auto-fit, minmax(min(44%, 170px), 1fr)); }
 .person { margin: 0; text-decoration: none; display: grid; gap: 4px; }
 .person img, .person-ph { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 16px; margin-bottom: 10px; background: var(--cream); transition: transform 0.5s var(--ease), filter 0.5s; filter: saturate(0.85); }
 .person:hover img { transform: translateY(-4px); filter: saturate(1.1); }
