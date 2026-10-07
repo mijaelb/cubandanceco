@@ -1,0 +1,28 @@
+---
+// One route renders every page in every language:
+//   /            /trainings     …  (English)
+//   /es/         /es/trainings  …  (other languages)
+import { LANGS } from '../i18n';
+import Home from '../views/Home.astro';
+import Trainings from '../views/Trainings.astro';
+import Show from '../views/Show.astro';
+import About from '../views/About.astro';
+import Company from '../views/Company.astro';
+import Gallery from '../views/Gallery.astro';
+import Faq from '../views/Faq.astro';
+
+export function getStaticPaths() {
+  const pages = ['', 'trainings', 'raices-cubanas', 'about', 'company', 'gallery', 'faq'];
+  return LANGS.flatMap((lang) =>
+    pages.map((page) => ({
+      params: { path: [lang === 'en' ? '' : lang, page].filter(Boolean).join('/') || undefined },
+      props: { lang, page },
+    })),
+  );
+}
+
+const views = { '': Home, trainings: Trainings, 'raices-cubanas': Show, about: About, company: Company, gallery: Gallery, faq: Faq };
+const { lang, page } = Astro.props;
+const View = views[page as keyof typeof views];
+---
+<View lang={lang} />

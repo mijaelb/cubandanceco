@@ -1,0 +1,183 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Img from '../components/Img.astro';
+import TrainingCard from '../components/TrainingCard.astro';
+import Video from '../components/Video.astro';
+import site from '../data/site.json';
+import trainings from '../data/trainings.json';
+import show from '../data/show.json';
+import teachers from '../data/teachers.json';
+import about from '../data/about.json';
+import gallery from '../data/gallery.json';
+import { url, link, upcoming, dateRange } from '../lib/utils';
+import { useT, locale } from '../i18n';
+
+const { lang } = Astro.props;
+const t = useT(lang);
+const next = upcoming(trainings.events);
+const first = next[0];
+const marquee = [...site.styles, ...site.styles];
+---
+<Layout lang={lang} page="">
+  <section class="hero dark">
+    <div class="hero-slides" aria-hidden="true">
+      {site.hero.images.map((src, i) => <Img src={src} eager={i === 0} style={`animation-delay:${i * 6}s`} />)}
+    </div>
+    <div class="wrap hero-content">
+      <p class="eyebrow">{t(site.hero.eyebrow)}</p>
+      <h1 class="display hero-title">{t(site.hero.title)}</h1>
+      <p class="lead">{t(site.hero.text)}</p>
+      <div class="actions">
+        {first && (
+          <a class="btn btn-gold" href={link(lang, 'trainings')}>
+            {t('Next training')}: {dateRange(first.start, first.end, locale(lang))} · {first.city}
+          </a>
+        )}
+        <a class="btn btn-ghost" href="#story">▶ {t('Watch our story')}</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="marquee" aria-label={site.styles.join(', ')}>
+    <div class="marquee-track" aria-hidden="true">{marquee.map((s) => <span>{s}<i>✦</i></span>)}</div>
+  </div>
+
+  <section class="section gold pattern" data-word={first?.city || 'ICCD'}>
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">{t('Season')} {trainings.season}</p>
+          <h2 class="display">{t('Next trainings')}</h2>
+        </div>
+        <a class="link-arrow" href={link(lang, 'trainings')}>{t('All dates & schedules')}</a>
+      </div>
+      <div class="tcards">
+        {next.slice(0, 3).map((e) => <TrainingCard e={e} lang={lang} />)}
+        {!next.length && <p class="lead">{t('New dates will be announced soon. Join our WhatsApp group to be the first to know.')}</p>}
+      </div>
+    </div>
+  </section>
+
+  <section class="section cream">
+    <div class="wrap split">
+      <div class="reveal">
+        <p class="eyebrow">{t(site.intro.title)}</p>
+        <h2 class="display">{t('Taught by the masters of the Conjunto Folklórico Nacional de Cuba')}</h2>
+        <p>{t(site.intro.text)}</p>
+        <a class="btn btn-dark" href={link(lang, 'about')}>{t('Our story')}</a>
+      </div>
+      <div class="collage reveal">
+        <Img src="/images/photos/havana-yemaya.webp" alt="" sizes="(min-width: 900px) 25vw, 50vw" />
+        <Img src="/images/photos/training-joy.webp" alt="" sizes="(min-width: 900px) 30vw, 60vw" />
+        <Img src="/images/photos/stage-chango.webp" alt="" sizes="(min-width: 900px) 25vw, 50vw" />
+      </div>
+    </div>
+    <div class="wrap stats reveal">
+      {site.stats.map((s) => <div><span class="display">{s.value}</span><span>{t(s.label)}</span></div>)}
+    </div>
+  </section>
+
+  <section class="family dark">
+    <Img src={site.family.image} alt="" sizes="100vw" class="family-bg" />
+    <div class="wrap family-inner reveal">
+      <p class="eyebrow">{t(site.family.title)}</p>
+      <blockquote>{t(site.family.text)}</blockquote>
+      <p class="display family-tag">{t(site.tagline)}</p>
+    </div>
+  </section>
+
+  <section class="section paper">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">{t('Two ways to train')}</p>
+          <h2 class="display">{t('Academy & Company')}</h2>
+        </div>
+      </div>
+      <div class="paths">
+        {about.paths.map((p) => (
+          <a class="path reveal" href={link(lang, 'faq')}>
+            <Img src={p.image} alt="" sizes="(min-width: 900px) 50vw, 100vw" />
+            <div><h3 class="display">{t(p.title)}</h3><p>{t(p.text)}</p><span class="link-arrow">{t('How to join')}</span></div>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section dark show-teaser">
+    <div class="wrap split">
+      <div class="poster reveal"><Img src={show.poster} alt={show.title} sizes="(min-width: 900px) 40vw, 100vw" /></div>
+      <div class="reveal">
+        <p class="eyebrow">{t('Our show')}</p>
+        <h2 class="display huge">{show.title}</h2>
+        <p class="lead">{t(show.lead)}</p>
+        <ol class="parts">
+          {show.parts.map((p, i) => <li><span class="display">0{i + 1}</span><div><strong>{t(p.title)}</strong><p>{t(p.text).split('. ')[0]}.</p></div></li>)}
+        </ol>
+        <a class="btn btn-gold" href={link(lang, 'raices-cubanas')}>{t('Discover the show')}</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section paper">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">{t('Choreographers & teachers')}</p>
+          <h2 class="display">{t('The masters')}</h2>
+        </div>
+        <a class="link-arrow" href={link(lang, 'about')}>{t('Read their stories')}</a>
+      </div>
+      <div class="people people-lg">
+        {teachers.masters.map((p) => (
+          <a class="person reveal" href={link(lang, 'about') + '#teachers'}>
+            <Img src={p.photo} alt={p.name} sizes="(min-width: 900px) 25vw, 50vw" />
+            <strong>{p.name}</strong><span>{t(p.role)}</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section dark" id="story">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">{t('Documentary')}</p>
+          <h2 class="display">{t(gallery.video.title)}</h2>
+        </div>
+        <p class="muted narrow">{t(gallery.video.text)}</p>
+      </div>
+      <Video src={gallery.video.src} poster={gallery.video.poster} label={t('Play video')} />
+    </div>
+  </section>
+
+  <section class="section paper">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">{t('Gallery')}</p>
+          <h2 class="display">{t('On stage & in the studio')}</h2>
+        </div>
+        <a class="link-arrow" href={link(lang, 'gallery')}>{t('See all photos')}</a>
+      </div>
+      <div class="mosaic">
+        {gallery.photos.slice(0, 7).map((p) => <Img src={p.src} alt={t(p.alt)} sizes="(min-width: 900px) 33vw, 50vw" class="reveal" />)}
+      </div>
+    </div>
+  </section>
+
+  <section class="section gold cta">
+    <div class="wrap cta-inner reveal">
+      <img src={url('/images/logo.svg')} alt="" width="120" height="120" loading="lazy" />
+      <h2 class="display huge">{t('Come dance with us')}</h2>
+      <p class="lead">{t('Join our WhatsApp group for training news, or follow us on Instagram.')}</p>
+      <div class="actions">
+        <a class="btn btn-dark" href={site.links.tickets} target="_blank" rel="noopener">{t('Book a training')}</a>
+        <a class="btn btn-line" href={site.links.whatsapp} target="_blank" rel="noopener">WhatsApp</a>
+        <a class="btn btn-line" href={site.links.instagram} target="_blank" rel="noopener">{site.instagramHandle}</a>
+      </div>
+    </div>
+  </section>
+</Layout>

@@ -1,0 +1,6 @@
+---
+import { url, srcset } from '../lib/utils';
+interface Props { src: string; alt?: string; sizes?: string; class?: string; eager?: boolean; style?: string }
+const { src, alt = '', sizes = '100vw', eager = false, ...rest } = Astro.props;
+---
+<img src={url(src)} srcset={srcset(src)} sizes={sizes} alt={alt} loading={eager ? 'eager' : 'lazy'} decoding="async" fetchpriority={eager ? 'high' : undefined} {...rest} />

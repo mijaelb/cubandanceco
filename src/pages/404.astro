@@ -1,0 +1,14 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { link } from '../lib/utils';
+---
+<Layout lang="en" page="" title="Page not found">
+  <section class="section dark page-top pattern" data-word="404">
+    <div class="wrap narrow-wrap">
+      <p class="eyebrow">404</p>
+      <h1 class="display huge">Lost the clave?</h1>
+      <p class="lead">This page doesn't exist (anymore). Let's get you back on the beat.</p>
+      <div class="actions"><a class="btn btn-gold" href={link('en')}>Back to home</a><a class="btn btn-ghost" href={link('en', 'trainings')}>Training dates</a></div>
+    </div>
+  </section>
+</Layout>

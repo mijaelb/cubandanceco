@@ -1,0 +1,39 @@
+---
+import { useT } from '../i18n';
+interface Props { days: any[]; lang: string }
+const { days, lang } = Astro.props;
+const t = useT(lang);
+const drum = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10l-1.6 18H8.6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M7.4 7.5h9.2M8 13h8" stroke="currentColor" stroke-width="1.2"/></svg>';
+---
+<div class="schedule">
+  <div class="schedule-legend">
+    <span><span class="ico" set:html={drum} /> {t('Live music')}</span>
+    <span><span class="tag">ICCD</span> {t('Company only')}</span>
+  </div>
+  <div class="schedule-days">
+    {days.map((d) => (
+      <div class="sday">
+        <p class="sday-head"><span class="display">{t(d.day)}</span> <span>{d.date}</span></p>
+        {d.slots.map((s: any) => s.isBreak ? (
+          <div class="slot slot-break"><span>{s.time}</span><strong>{t('Break')}</strong></div>
+        ) : (
+          <div class="slot">
+            <span class="slot-time">{s.time}</span>
+            <div class="slot-classes">
+              {s.classes.map((c: any) => (
+                <div class:list={['cls', { company: c.companyOnly }]}>
+                  <strong>{t(c.title)}</strong>
+                  <span>{c.teacher}</span>
+                  <span class="cls-flags">
+                    {c.liveMusic && <span class="ico" title={t('Live music')} set:html={drum} />}
+                    {c.companyOnly && <span class="tag">ICCD</span>}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    ))}
+  </div>
+</div>

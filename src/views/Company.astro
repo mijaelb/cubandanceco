@@ -1,0 +1,56 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
+import Img from '../components/Img.astro';
+import site from '../data/site.json';
+import people from '../data/people.json';
+import { link } from '../lib/utils';
+import { useT } from '../i18n';
+
+const { lang } = Astro.props;
+const t = useT(lang);
+const countries = new Set(people.members.map((m) => m.country)).size;
+---
+<Layout lang={lang} page="company" title="Company" description={people.membersIntro} image="/images/photos/studio-group.webp">
+  <PageHero image="/images/photos/group-studio.webp" eyebrow={`${people.members.length} ${t('dancers')} · ${countries} ${t('countries')}`} title={t('The company')} text={t(people.membersIntro)} position="center 40%" />
+
+  <section class="section paper">
+    <div class="wrap">
+      <div class="section-head"><div><p class="eyebrow">{t('Dancers')}</p><h2 class="display">{t('Company members')}</h2></div></div>
+      <div class="people">
+        {people.members.map((m) => (
+          <figure class="person reveal">
+            <Img src={m.photo} alt={m.name} sizes="(min-width: 1100px) 16vw, (min-width: 600px) 25vw, 50vw" />
+            <figcaption><strong>{m.name}</strong><span>{t(m.country)}</span></figcaption>
+          </figure>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section dark">
+    <div class="wrap">
+      <div class="section-head"><div><p class="eyebrow">{t('The heartbeat')}</p><h2 class="display">{t('Musicians')}</h2></div><p class="muted narrow">{t(people.musiciansIntro)}</p></div>
+      <div class="people">
+        {people.musicians.map((m) => (
+          <figure class="person reveal">
+            <Img src={m.photo} alt={m.name} sizes="(min-width: 1100px) 16vw, (min-width: 600px) 25vw, 50vw" />
+            <figcaption><strong>{m.name}</strong><span>{t(m.role)} · {t(m.country)}</span></figcaption>
+          </figure>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section gold cta">
+    <div class="wrap cta-inner reveal">
+      <h2 class="display huge">{t('Want to join the company?')}</h2>
+      <p class="lead">{t('Everyone starts in the academy. After three training weekends, the teachers decide when you are ready for the stage.')}</p>
+      <div class="actions">
+        <a class="btn btn-dark" href={link(lang, 'trainings')}>{t('See training dates')}</a>
+        <a class="btn btn-line" href={link(lang, 'faq')}>{t('Read the FAQ')}</a>
+        <a class="btn btn-line" href={site.links.whatsapp} target="_blank" rel="noopener">WhatsApp</a>
+      </div>
+    </div>
+  </section>
+</Layout>

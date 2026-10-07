@@ -1,0 +1,48 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Img from '../components/Img.astro';
+import Video from '../components/Video.astro';
+import gallery from '../data/gallery.json';
+import { url } from '../lib/utils';
+import { useT } from '../i18n';
+
+const { lang } = Astro.props;
+const t = useT(lang);
+const cats = [...new Set(gallery.photos.map((p) => p.category))];
+---
+<Layout lang={lang} page="gallery" title="Gallery">
+  <section class="section dark page-top">
+    <div class="wrap">
+      <div class="section-head">
+        <div><p class="eyebrow">{t('Gallery')}</p><h1 class="display huge">{t('On stage & in the studio')}</h1></div>
+        <p class="muted narrow">{t(gallery.video.text)}</p>
+      </div>
+      <Video src={gallery.video.src} poster={gallery.video.poster} label={t('Play video')} />
+    </div>
+  </section>
+
+  <section class="section paper">
+    <div class="wrap">
+      <div class="filters" role="group" aria-label={t('Filter photos')}>
+        <button aria-pressed="true" data-filter="">{t('All')}</button>
+        {cats.map((c) => <button aria-pressed="false" data-filter={c}>{t(c)}</button>)}
+      </div>
+      <div class="masonry">
+        {gallery.photos.map((p) => (
+          <a href={url(p.src)} data-cat={p.category} data-lightbox>
+            <Img src={p.src} alt={t(p.alt)} sizes="(min-width: 1100px) 25vw, (min-width: 600px) 33vw, 50vw" />
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <dialog class="lightbox" data-lb>
+    <img alt="" />
+    <p></p>
+    <button class="lb-close" aria-label={t('Close')} data-lb-close>×</button>
+    <button class="lb-prev" aria-label={t('Previous')} data-lb-step="-1">‹</button>
+    <button class="lb-next" aria-label={t('Next')} data-lb-step="1">›</button>
+  </dialog>
+
+</Layout>

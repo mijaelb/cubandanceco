@@ -1,0 +1,50 @@
+{
+  "masters": [
+    {
+      "name": "Leonardo Martínez Moya",
+      "role": "Founder & Director",
+      "photo": "/images/people/leonardo-moya.webp",
+      "bio": "Leonardo graduated from the Escuela Nacional de Arte (ENA) and the Instituto Superior de Arte (ISA) and became principal dancer at the Conjunto Folklórico Nacional de Cuba, where he danced for 25 years. As choreographer and professor at the Conjunto he created two important pieces: Moforibale a Changó and Ochanigue.\n\nHe arrived in Italy in 2008 and has been teaching and choreographing ever since, touring more than 30 countries around the world and promoting Cuban culture through Proyecto Lucumí. Today he teaches contemporary and Cuban folkloric technique, Afro-Cuban dances (Yoruba, Congo, Arará, Abakuá, Bantú), popular Cuban dances (Son, Mambo, Cha-cha-chá), Rumba (Yambú, Guaguancó, Columbia), dances campesinas, African-Haitian dances and Cuban salsa (Timba, Rueda de Casino)."
+    },
+    {
+      "name": "Arelys Savón Beltrán",
+      "role": "Choreographer and Teacher",
+      "photo": "/images/people/arelys-savon.webp",
+      "bio": "Arelys is a graduate of the Escuela Nacional de Arte and the Instituto Superior de Arte (ISA) in Cuba. She was a soloist and teacher of the Conjunto Folklórico Nacional de Cuba, touring Europe, Japan, Mexico, the Dominican Republic, the United States and many other countries, and took part in television programmes, films and modelling work.\n\nSince 2004 she has lived in Italy, where she is a member of the Italian Federation of Sports Dance and serves as a competition judge. She is a first-class MIDAS – ASC Danza teacher, contributing to the training, promotion and development of Cuban culture in Italy and across Europe."
+    },
+    {
+      "name": "Sergio Larrinaga Morejón",
+      "role": "Choreographer & Teacher",
+      "photo": "/images/people/sergio-larrinaga.webp",
+      "bio": "Sergio was principal dancer and choreographer at the Conjunto Folklórico Nacional de Cuba. Over his long career he was also teacher and choreographer at the Teatro América in Havana, and director and choreographer of the company Yoruba Andabo, among much more.\n\nHe now lives in Italy, where he is a member of the Federazione Professionale di Danza (FPD), and continues to teach Cuban and Afro-Cuban dances around the world."
+    },
+    {
+      "name": "Mireisi Muchuli Morales",
+      "role": "Choreographer and Teacher",
+      "photo": "/images/people/mireisi-morales.webp",
+      "bio": "Mireisi is a former dancer of the Conjunto Folklórico Nacional de Cuba. As choreographer and teacher of the company she leads technique and Orisha classes at our monthly trainings, passing on the knowledge, expression and musicality of Cuba's folkloric tradition."
+    }
+  ],
+  "guests": [
+    {
+      "name": "Javier Monier",
+      "role": "Teacher · Season 2026–2027",
+      "photo": "",
+      "bio": "Joining the ICCD teaching team for the 2026–2027 season."
+    },
+    {
+      "name": "Federico Núñez",
+      "role": "Teacher · Season 2026–2027",
+      "photo": "",
+      "bio": "Joining the ICCD teaching team for the 2026–2027 season."
+    }
+  ],
+  "visiting": [
+    "Leiván García Valle · Director of the Conjunto Folklórico Nacional de Cuba",
+    "Alfredo García",
+    "Ranses Charón",
+    "Niovis Soto",
+    "Juan Carlos Cabrera",
+    "Yoyo"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "name": "cubandance-co",
+  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "node scripts/strings.mjs && astro build",
+    "preview": "astro preview",
+    "strings": "node scripts/strings.mjs"
+  },
+  "dependencies": {
+    "@fontsource-variable/montserrat": "^5.3.0",
+    "@fontsource/anton": "^5.3.0",
+    "astro": "^7.3.6"
+  }
+}

@@ -1,0 +1,116 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
+import Schedule from '../components/Schedule.astro';
+import site from '../data/site.json';
+import trainings from '../data/trainings.json';
+import { link, upcoming, dateRange, slug } from '../lib/utils';
+import { useT, locale } from '../i18n';
+
+const { lang } = Astro.props;
+const t = useT(lang);
+const events = upcoming(trainings.events);
+// Past weekends: the archive plus this season's events that already happened, grouped by season (Aug–Jul)
+const today = new Date().toISOString().slice(0, 10);
+const past = [...trainings.history, ...trainings.events.filter((e) => e.end < today)].sort((a, b) => b.start.localeCompare(a.start));
+const season = (d: string) => { const y = +d.slice(0, 4), m = +d.slice(5, 7); const s = m >= 8 ? y : y - 1; return `${s} – ${s + 1}`; };
+const seasons = Object.entries(Object.groupBy(past, (e) => season(e.start)));
+const cities = [...new Set([...events, ...past].map((e) => e.city))];
+---
+<Layout lang={lang} page="trainings" title="Trainings" description={trainings.intro}>
+  <PageHero image="/images/photos/training-hall.webp" eyebrow={`${t('Season')} ${trainings.season}`} title={t('Monthly trainings across Europe')} text={t(trainings.intro)}>
+    <div class="actions"><a class="btn btn-gold" href={site.links.tickets} target="_blank" rel="noopener">{t('Get your ticket')}</a></div>
+  </PageHero>
+
+  <section class="section paper">
+    <div class="wrap split split-top">
+      <div class="reveal">
+        <p class="eyebrow">{t('What is included')}</p>
+        <h2 class="display">{t('A full cultural immersion')}</h2>
+        <ul class="checks">{trainings.included.map((i) => <li>{t(i)}</li>)}</ul>
+      </div>
+      <aside class="note-card reveal">
+        <p class="eyebrow">{t('Who is it for?')}</p>
+        <p>{t(trainings.level)}</p>
+        <p class="muted">{t(trainings.scheduleNote)}</p>
+        <a class="link-arrow" href={link(lang, 'faq')}>{t('Read the FAQ')}</a>
+      </aside>
+    </div>
+  </section>
+
+  <section class="section cream">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">{t('Upcoming dates')}</p>
+          <h2 class="display">{t('Where we meet next')}</h2>
+        </div>
+      </div>
+      {!events.length && <p class="lead">{t('New dates will be announced soon. Join our WhatsApp group to be the first to know.')}</p>}
+      <div class="events">
+        {events.map((e, i) => (
+          <article class="event reveal" id={slug(e.city + '-' + e.start)} data-end={e.end || e.start}>
+            <header class="event-head">
+              <div class="event-date display">{dateRange(e.start, e.end, locale(lang))}</div>
+              <div>
+                {e.badge && <span class="badge">{t(e.badge)}</span>}
+                <h3 class="display">{e.city} <span>{e.countryCode}</span></h3>
+                {e.note && <p class="tcard-note">{t(e.note)}</p>}
+              </div>
+              <a class="btn btn-dark" href={e.ticketUrl || site.links.tickets} target="_blank" rel="noopener">{t('Tickets')}</a>
+            </header>
+            <dl class="event-info">
+              <div><dt>{t('When')}</dt><dd>{t(e.time)}</dd></div>
+              <div><dt>{t('Where')}</dt><dd><strong>{e.venue}</strong><br />{e.address}</dd></div>
+              {e.mapUrl && <div><dt>{t('Map')}</dt><dd><a class="link-arrow" href={e.mapUrl} target="_blank" rel="noopener">{t('Open in Maps')}</a></dd></div>}
+            </dl>
+            {e.schedule.length > 0 ? (
+              <details class="event-schedule" open={i === 0}>
+                <summary>{t('Training schedule')}</summary>
+                <Schedule days={e.schedule} lang={lang} />
+              </details>
+            ) : <p class="muted">{t('The schedule will be published one week before the training.')}</p>}
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section dark">
+    <div class="wrap split split-top">
+      <div class="reveal">
+        <p class="eyebrow">{t('Before you come')}</p>
+        <h2 class="display">{t('Kind reminders')}</h2>
+        <ul class="checks">{trainings.reminders.map((r) => <li>{t(r)}</li>)}</ul>
+      </div>
+      <div class="reveal">
+        <p class="eyebrow">{t('Where we have danced')}</p>
+        <div class="chips">{cities.map((c) => <span>{c}</span>)}</div>
+        <p class="muted">{t('Would you like to host a training in your city? Get in touch!')}</p>
+        <div class="actions">
+          <a class="btn btn-gold" href={site.links.whatsapp} target="_blank" rel="noopener">{t('Join our WhatsApp group')}</a>
+        </div>
+      </div>
+    </div>
+  </section>
+  {past.length > 0 && (
+    <section class="section cream">
+      <div class="wrap">
+        <div class="section-head">
+          <div><p class="eyebrow">{past.length} {t('training weekends so far')}</p><h2 class="display">{t('Our journey')}</h2></div>
+          <p class="muted narrow">{t('Since 2022 we have met almost every month, in a different city each time.')}</p>
+        </div>
+        <div class="journey">
+          {seasons.map(([s, list], i) => (
+            <details open={i < 2}>
+              <summary><span class="display">{s}</span><span>{list!.length} {t('weekends')}</span></summary>
+              <ul>
+                {list!.map((e) => <li><span>{dateRange(e.start, e.end, locale(lang))}</span><strong>{e.city}</strong><em>{t(e.country)}{e.note && ` · ${t(e.note)}`}</em></li>)}
+              </ul>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+</Layout>

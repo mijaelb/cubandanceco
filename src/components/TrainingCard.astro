@@ -1,0 +1,25 @@
+---
+import site from '../data/site.json';
+import { dateRange, link, slug } from '../lib/utils';
+import { useT, locale } from '../i18n';
+interface Props { e: any; lang: string }
+const { e, lang } = Astro.props;
+const t = useT(lang);
+const range = dateRange(e.start, e.end, locale(lang));
+const [, days = range, month = ''] = range.match(/^(\S+) (\S+)$/) || [];
+---
+<article class="tcard reveal" data-end={e.end || e.start}>
+  {e.badge && <span class="badge">{t(e.badge)}</span>}
+  <div class="tcard-date"><span class="display">{days}</span><span>{month}</span></div>
+  <div class="tcard-body">
+    <p class="eyebrow">{t(e.country)}{e.countryCode && ` · ${e.countryCode}`}</p>
+    <h3 class="display">{e.city}</h3>
+    {e.note && <p class="tcard-note">{t(e.note)}</p>}
+    <p>{t(e.time)}</p>
+    <p class="muted">{e.venue}</p>
+  </div>
+  <div class="tcard-actions">
+    <a class="btn btn-dark btn-sm" href={e.ticketUrl || site.links.tickets} target="_blank" rel="noopener">{t('Tickets')}</a>
+    <a class="btn btn-line btn-sm" href={`${link(lang, 'trainings')}#${slug(e.city + '-' + e.start)}`}>{e.schedule?.length ? t('Schedule') : t('Details')}</a>
+  </div>
+</article>

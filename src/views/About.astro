@@ -1,0 +1,100 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
+import Img from '../components/Img.astro';
+import about from '../data/about.json';
+import teachers from '../data/teachers.json';
+import { url, link, paragraphs } from '../lib/utils';
+import { useT } from '../i18n';
+
+const { lang } = Astro.props;
+const t = useT(lang);
+---
+<Layout lang={lang} page="about" title="About" description={about.story[0]}>
+  <PageHero image="/images/photos/training-leonardo.webp" eyebrow={t('About us')} title={t('Preserving Cuba’s living heritage')} text={t(about.story[0])} position="center 30%" />
+
+  <section class="section paper">
+    <div class="wrap split">
+      <div class="reveal">
+        <p class="eyebrow">{t('Our story')}</p>
+        <h2 class="display">{t('From Havana to the stages of Europe')}</h2>
+        {about.story.slice(1).map((p) => <p>{t(p)}</p>)}
+      </div>
+      <div class="part-img reveal"><Img src="/images/photos/studio-group.webp" alt="" sizes="(min-width: 900px) 50vw, 100vw" /></div>
+    </div>
+  </section>
+
+  <section class="section cream">
+    <div class="wrap">
+      <div class="section-head"><div><p class="eyebrow">{t('What we do')}</p><h2 class="display">{t('One company, many cultures')}</h2></div></div>
+      <ol class="pillars">
+        {about.pillars.map((p, i) => <li class="reveal"><span class="display">0{i + 1}</span><h3>{t(p.title)}</h3><p>{t(p.text)}</p></li>)}
+      </ol>
+    </div>
+  </section>
+
+  <section class="section paper" id="teachers">
+    <div class="wrap">
+      <div class="section-head"><div><p class="eyebrow">{t('Choreographers & teachers')}</p><h2 class="display">{t('Former members of the Conjunto Folklórico Nacional de Cuba')}</h2></div></div>
+      <div class="bios">
+        {teachers.masters.map((p) => (
+          <article class="bio reveal">
+            <Img src={p.photo} alt={p.name} sizes="(min-width: 900px) 30vw, 100vw" />
+            <div>
+              <p class="eyebrow">{t(p.role)}</p>
+              <h3 class="display">{p.name}</h3>
+              {paragraphs(t(p.bio)).map((x) => <p>{x}</p>)}
+            </div>
+          </article>
+        ))}
+      </div>
+      {teachers.visiting.length > 0 && (
+        <div class="guests">
+          <p class="eyebrow">{t('Guest masters who have taught with us')}</p>
+          <div class="chips chips-dark">{teachers.visiting.map((v) => <span>{t(v)}</span>)}</div>
+        </div>
+      )}
+      {teachers.guests.length > 0 && (
+        <div class="guests">
+          <p class="eyebrow">{t('Joining us this season')}</p>
+          <div class="people">
+            {teachers.guests.map((p) => (
+              <div class="person">
+                {p.photo ? <Img src={p.photo} alt={p.name} sizes="25vw" /> : <div class="person-ph"><img src={url('/images/logo.svg')} alt="" /></div>}
+                <strong>{p.name}</strong><span>{t(p.role)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  </section>
+
+  <section class="section dark">
+    <div class="wrap split">
+      <div class="reveal">
+        <p class="eyebrow">{t('Our mission')}</p>
+        <h2 class="display">{t('Dance as memory, education and exchange')}</h2>
+        {about.mission.map((p) => <p>{t(p)}</p>)}
+      </div>
+      <div class="reveal">
+        <p class="eyebrow">{t(about.exchange.title)}</p>
+        <div class="trio">{about.exchange.images.map((s) => <Img src={s} alt="" sizes="(min-width: 900px) 16vw, 33vw" />)}</div>
+        <p>{t(about.exchange.text)}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section paper">
+    <div class="wrap">
+      <div class="paths">
+        {about.paths.map((p) => (
+          <a class="path reveal" href={link(lang, 'faq')}>
+            <Img src={p.image} alt="" sizes="(min-width: 900px) 50vw, 100vw" />
+            <div><h3 class="display">{t(p.title)}</h3><p>{t(p.text)}</p><span class="link-arrow">{t('How to join')}</span></div>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+</Layout>

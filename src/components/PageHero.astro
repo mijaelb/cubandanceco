@@ -1,0 +1,14 @@
+---
+import Img from './Img.astro';
+interface Props { image: string; eyebrow?: string; title: string; text?: string; position?: string }
+const { image, eyebrow, title, text, position = 'center' } = Astro.props;
+---
+<section class="page-hero dark">
+  <Img src={image} alt="" eager class="page-hero-bg" style={`object-position:${position}`} />
+  <div class="wrap page-hero-content">
+    {eyebrow && <p class="eyebrow">{eyebrow}</p>}
+    <h1 class="display">{title}</h1>
+    {text && <p class="lead">{text}</p>}
+    <slot />
+  </div>
+</section>

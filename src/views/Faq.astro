@@ -1,0 +1,29 @@
+---
+import Layout from '../layouts/Layout.astro';
+import site from '../data/site.json';
+import faq from '../data/faq.json';
+import { useT } from '../i18n';
+
+const { lang } = Astro.props;
+const t = useT(lang);
+---
+<Layout lang={lang} page="faq" title="FAQ" description={faq.items[0].a}>
+  <section class="section cream page-top pattern" data-word="FAQ">
+    <div class="wrap narrow-wrap">
+      <p class="eyebrow">{t('Frequently asked questions')}</p>
+      <h1 class="display huge">{t('Any questions?')}</h1>
+      <div class="faq">
+        {faq.items.map((f, i) => (
+          <details open={i === 0}>
+            <summary>{t(f.q)}</summary>
+            <p>{t(f.a)}</p>
+          </details>
+        ))}
+      </div>
+      <div class="actions">
+        <a class="btn btn-dark" href={site.links.whatsapp} target="_blank" rel="noopener">{t('Ask us on WhatsApp')}</a>
+        <a class="btn btn-line" href={site.links.tickets} target="_blank" rel="noopener">{t('Book a training')}</a>
+      </div>
+    </div>
+  </section>
+</Layout>

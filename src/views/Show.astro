@@ -1,0 +1,71 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
+import Img from '../components/Img.astro';
+import Video from '../components/Video.astro';
+import site from '../data/site.json';
+import show from '../data/show.json';
+import { upcoming, fullDate } from '../lib/utils';
+import { useT, locale } from '../i18n';
+
+const { lang } = Astro.props;
+const t = useT(lang);
+const next = upcoming(show.upcoming as any[]);
+const contact = site.links.email ? `mailto:${site.links.email}` : site.links.instagram;
+const strip = ['stage-ship', 'stage-oshun', 'stage-masks', 'stage-yemaya', 'stage-chango'].map((n) => `/images/photos/${n}.webp`);
+---
+<Layout lang={lang} page="raices-cubanas" title="Raíces Cubanas" description={show.text} image="/images/photos/stage-africa.webp">
+  <PageHero image="/images/photos/stage-ship.webp" eyebrow={t(show.subtitle)} title={show.title} text={t(show.lead)} />
+
+  <section class="section paper">
+    <div class="wrap split">
+      <div class="reveal">
+        <p class="eyebrow">{t('The show')}</p>
+        <h2 class="display">{t('A journey from Africa to the Cuba of today')}</h2>
+        <p>{t(show.text)}</p>
+        <p>{t('The show is divided into two main parts.')}</p>
+      </div>
+      <div class="reveal">
+        <Video src="/video/raices-intro.mp4" poster="/images/photos/raices-intro-poster.jpg" label={t('Play the intro')} />
+      </div>
+    </div>
+  </section>
+
+  {show.parts.map((p, i) => (
+    <section class:list={['section', i % 2 ? 'cream' : 'dark']}>
+      <div class:list={['wrap split', { flip: i % 2 }]}>
+        <div class="part-img reveal"><Img src={p.image} alt={t(p.title)} sizes="(min-width: 900px) 50vw, 100vw" /></div>
+        <div class="reveal">
+          <p class="part-num display">0{i + 1}</p>
+          <p class="eyebrow">{t(p.label)}</p>
+          <h2 class="display huge">{t(p.title)}</h2>
+          <p>{t(p.text)}</p>
+        </div>
+      </div>
+    </section>
+  ))}
+
+  <div class="strip" aria-hidden="true">{strip.map((s) => <Img src={s} sizes="30vw" />)}</div>
+
+  <section class="section paper">
+    <div class="wrap split split-top">
+      <div class="reveal">
+        <p class="eyebrow">{t('Performances')}</p>
+        <h2 class="display">{next.length ? t('Upcoming shows') : t('New dates coming soon')}</h2>
+        <ul class="timeline">
+          {next.map((s) => <li><span>{s.when ? t(s.when) : fullDate(s.date, locale(lang))}</span><strong>{t(s.title)}</strong><em>{[s.venue, t(s.city)].filter(Boolean).join(' · ')}</em>{s.url && <a class="link-arrow" href={s.url} target="_blank" rel="noopener">{t('Tickets')}</a>}</li>)}
+        </ul>
+        <p class="eyebrow">{t('Past performances')}</p>
+        <ul class="timeline past">
+          {show.past.map((s) => <li><span>{s.when ? t(s.when) : fullDate(s.date, locale(lang))}</span><strong>{t(s.title)}</strong><em>{[s.venue, t(s.city)].filter(Boolean).join(' · ')}</em></li>)}
+        </ul>
+      </div>
+      <aside class="note-card gold reveal">
+        <p class="eyebrow">{t('Bookings')}</p>
+        <h3 class="display">{t('Bring Raíces Cubanas to your stage')}</h3>
+        <p>{t(show.bookingText)}</p>
+        <a class="btn btn-dark" href={contact} target="_blank" rel="noopener">{t('Contact us')}</a>
+      </aside>
+    </div>
+  </section>
+</Layout>

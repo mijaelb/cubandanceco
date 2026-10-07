@@ -1,0 +1,153 @@
+{
+  "title": "Raíces Cubanas",
+  "subtitle": "A 90-minute dance-theatre show in two parts",
+  "poster": "/images/photos/raices-poster.webp",
+  "lead": "The sound of the waters echoes through the myths and legends that shape Cuban identity. The many cultural currents that coexist on the island come together to form the soul of its people. Rebellious, joyful, musical and united, these qualities reflect the true spirit of Cuba.",
+  "text": "Raíces Cubanas, presented by the Generación Abbilona Association and its International Folkloric Company of Traditional Cuban Dances, brings this spirit to the stage. The performance is a journey through musical and dance traditions of African and Cuban origin, tracing the richness of Cuban culture from the colonial era to the present day.",
+  "parts": [
+    {
+      "label": "Part one",
+      "title": "Raíces",
+      "image": "/images/photos/stage-africa.webp",
+      "text": "The first part explores the Afro-Cuban religious and mythological world. It highlights the influence of the orishas and other African deities on Cuban culture, with choreographies dedicated to Elegguá, Ogún, Yemayá, Changó and Oyá, as well as a portrayal of the journey of enslaved Africans to Cuba. It shows how their spiritual beliefs and musical traditions became a fundamental part of Cuban identity."
+    },
+    {
+      "label": "Part two",
+      "title": "La Cubanía",
+      "image": "/images/photos/stage-timba.webp",
+      "text": "The second part celebrates the popular music and dance genres born from the birth of the Cuban Republic up to the present day: danzón, mambo, cha-cha-chá, son, the street vendors' chants (pregones), rumba and the Cuban carnival. It highlights the racial and cultural blending that sets Cuba apart and celebrates the joy and diversity of the Cuban people."
+    }
+  ],
+  "upcoming": [
+    {
+      "date": "2027-04-04",
+      "when": "2–4 April 2027",
+      "title": "Afro-Cuban show · Timbalonia Festival",
+      "city": "Cologne, Germany",
+      "venue": "",
+      "url": ""
+    }
+  ],
+  "past": [
+    {
+      "date": "2026-04-12",
+      "when": "April 2026",
+      "title": "Gagá · Festival Cultura Cubana (9th edition)",
+      "city": "Montesilvano, Italy",
+      "venue": ""
+    },
+    {
+      "date": "2026-02-28",
+      "when": "",
+      "title": "Havana Night · Special Edition",
+      "city": "Bremen, Germany",
+      "venue": "Casa Cultural Bremen"
+    },
+    {
+      "date": "2025-10-11",
+      "when": "",
+      "title": "Company performance & rumba abierta",
+      "city": "Seville, Spain",
+      "venue": "Sala Havana"
+    },
+    {
+      "date": "2025-07-12",
+      "when": "",
+      "title": "Raíces Cubanas · Sabor y Raíces with TimbaLux",
+      "city": "Luxembourg",
+      "venue": "Centre Culturel de Bonnevoie"
+    },
+    {
+      "date": "2025-06-28",
+      "when": "",
+      "title": "Raíces Cubanas excerpts",
+      "city": "Montpellier, France",
+      "venue": "Le Temple de la Danse"
+    },
+    {
+      "date": "2025-04-27",
+      "when": "",
+      "title": "Raíces Cubanas · Timbalemania Festival",
+      "city": "Augsburg, Germany",
+      "venue": "Parktheater im Kurhaus Göggingen"
+    },
+    {
+      "date": "2025-04-12",
+      "when": "",
+      "title": "Festival Cultura Cubana (8th edition)",
+      "city": "Montesilvano, Italy",
+      "venue": "Grand Hotel Adriatico"
+    },
+    {
+      "date": "2025-03-15",
+      "when": "",
+      "title": "Raíces Cubanas",
+      "city": "Speyer, Germany",
+      "venue": "Salsa Tanzschule Habaneando"
+    },
+    {
+      "date": "2024-11-09",
+      "when": "November 2024",
+      "title": "Havana en Belgrado festival",
+      "city": "Belgrade, Serbia",
+      "venue": ""
+    },
+    {
+      "date": "2024-11-09",
+      "when": "November 2024",
+      "title": "Festival Afro Latino de Meaux",
+      "city": "Meaux, France",
+      "venue": ""
+    },
+    {
+      "date": "2024-07-20",
+      "when": "",
+      "title": "Berlin Pa'Ti Festival",
+      "city": "Berlin, Germany",
+      "venue": ""
+    },
+    {
+      "date": "2024-05-25",
+      "when": "",
+      "title": "Raíces Cubanas · Premiere",
+      "city": "Rome, Italy",
+      "venue": "Arca Social Club"
+    },
+    {
+      "date": "2024-01-20",
+      "when": "",
+      "title": "Company show",
+      "city": "Rome, Italy",
+      "venue": "Arca Social Club"
+    },
+    {
+      "date": "2023-11-26",
+      "when": "",
+      "title": "Azúca party",
+      "city": "Cologne, Germany",
+      "venue": "Roonburg"
+    },
+    {
+      "date": "2023-10-14",
+      "when": "",
+      "title": "Company show",
+      "city": "Rome, Italy",
+      "venue": "Arca Social Club"
+    },
+    {
+      "date": "2023-09-30",
+      "when": "September 2023",
+      "title": "Timba Paradise Festival · first international show",
+      "city": "Saarbrücken, Germany",
+      "venue": ""
+    },
+    {
+      "date": "2023-04-29",
+      "when": "",
+      "title": "First performance · Party Pa'Ti",
+      "city": "Berlin, Germany",
+      "venue": "Belushi's Berlin Mitte"
+    }
+  ],
+  "bookingText": "Would you like to bring Raíces Cubanas to your festival, theatre or cultural event? Get in touch with us."
+}

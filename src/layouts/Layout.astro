@@ -1,0 +1,113 @@
+---
+import '@fontsource/anton';
+import '@fontsource-variable/montserrat';
+import '../styles/global.css';
+import site from '../data/site.json';
+import { url, link } from '../lib/utils';
+import { LANGS, langName, useT } from '../i18n';
+
+interface Props { lang: string; page: string; title?: string; description?: string; image?: string }
+const { lang, page, title, description = site.description, image = '/images/og.jpg' } = Astro.props;
+const t = useT(lang);
+const fullTitle = title ? `${t(title)} · ${site.name}` : `${site.name} · ${t('Afro-Cuban folkloric dance')}`;
+const NAV = [
+  ['trainings', t('Trainings')],
+  ['raices-cubanas', t('Raíces Cubanas')],
+  ['about', t('About')],
+  ['company', t('Company')],
+  ['gallery', t('Gallery')],
+  ['faq', t('FAQ')],
+];
+const l = site.links;
+const socials = [
+  ['Instagram', l.instagram, 'M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 8.2a3.2 3.2 0 1 1 0-6.4 3.2 3.2 0 0 1 0 6.4zM17.3 5.5a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4zM21.9 7.9c-.1-1.6-.4-3-1.6-4.2S17.7 2.2 16.1 2.1C14.5 2 9.5 2 7.9 2.1 6.3 2.2 4.9 2.5 3.7 3.7S2.2 6.3 2.1 7.9C2 9.5 2 14.5 2.1 16.1c.1 1.6.4 3 1.6 4.2s2.6 1.5 4.2 1.6c1.6.1 6.6.1 8.2 0 1.6-.1 3-.4 4.2-1.6s1.5-2.6 1.6-4.2c.1-1.6.1-6.6 0-8.2zm-2.1 10a3.3 3.3 0 0 1-1.9 1.9c-1.3.5-4.4.4-5.9.4s-4.6.1-5.9-.4a3.3 3.3 0 0 1-1.9-1.9c-.5-1.3-.4-4.4-.4-5.9s-.1-4.6.4-5.9a3.3 3.3 0 0 1 1.9-1.9c1.3-.5 4.4-.4 5.9-.4s4.6-.1 5.9.4a3.3 3.3 0 0 1 1.9 1.9c.5 1.3.4 4.4.4 5.9s.1 4.6-.4 5.9z'],
+  ['Facebook', l.facebook, 'M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.3v7A10 10 0 0 0 22 12z'],
+  ['TikTok', l.tiktok, 'M16.6 2h-3.3v13.4a2.9 2.9 0 1 1-2-2.7V9.3a6.2 6.2 0 1 0 5.3 6.1V8.6a7.6 7.6 0 0 0 4.4 1.4V6.7a4.4 4.4 0 0 1-4.4-4.7z'],
+  ['WhatsApp', l.whatsapp, 'M17.5 14.4c-.3-.1-1.8-.9-2-1s-.5-.1-.7.1-.8 1-.9 1.2-.3.2-.6.1a8 8 0 0 1-2.4-1.5 9 9 0 0 1-1.6-2c-.2-.3 0-.5.1-.6l.4-.5.3-.5v-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6a1.1 1.1 0 0 0-.8.4 3.4 3.4 0 0 0-1 2.5 6 6 0 0 0 1.2 3.1 13.5 13.5 0 0 0 5.2 4.6c1.9.8 2.7.9 3.6.7a3.1 3.1 0 0 0 2-1.4 2.5 2.5 0 0 0 .2-1.4c-.1-.2-.3-.3-.6-.4zM12 21.8a9.8 9.8 0 0 1-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4a9.8 9.8 0 1 1 8.3 4.6zM20.5 3.5A11.8 11.8 0 0 0 1.9 17.7L.2 24l6.4-1.7a11.8 11.8 0 0 0 5.6 1.4A11.8 11.8 0 0 0 20.5 3.5z'],
+].filter((s) => s[1]);
+const canonical = new URL(link(lang, page), Astro.site);
+---
+<!doctype html>
+<html lang={lang}>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; media-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <title>{fullTitle}</title>
+  <meta name="description" content={t(description)} />
+  <meta name="theme-color" content="#14110d" />
+  <link rel="icon" href={url('/images/logo.svg')} type="image/svg+xml" />
+  <link rel="canonical" href={canonical} />
+  {LANGS.map((l) => <link rel="alternate" hreflang={l} href={new URL(link(l, page), Astro.site)} />)}
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content={fullTitle} />
+  <meta property="og:description" content={t(description)} />
+  <meta property="og:image" content={new URL(url(image), Astro.site)} />
+  <meta name="twitter:card" content="summary_large_image" />
+  <noscript><style>.reveal { opacity: 1; transform: none; }</style></noscript>
+</head>
+<body>
+  <a class="skip" href="#main">{t('Skip to content')}</a>
+  <header class="site-header" data-header>
+    {site.announcement?.text && (
+      <a class="announce" href={site.announcement.url ? (site.announcement.url.startsWith('http') ? site.announcement.url : link(lang, site.announcement.url)) : link(lang, 'trainings')}>
+        <span>{t(site.announcement.text)}</span><span aria-hidden="true">→</span>
+      </a>
+    )}
+    <div class="wrap header-inner">
+      <a href={link(lang)} class="brand" aria-label={site.name}>
+        <img src={url('/images/logo.svg')} alt="" width="46" height="46" />
+        <span>International Company<br />of Cuban Dances</span>
+      </a>
+      <nav class="nav" aria-label="Main">
+        {NAV.map(([p, label]) => <a href={link(lang, p)} aria-current={page === p ? 'page' : undefined}>{label}</a>)}
+      </nav>
+      <details class="lang">
+        <summary aria-label={t('Language')}>{lang.toUpperCase()}</summary>
+        <div>{LANGS.map((l) => <a href={link(l, page)} lang={l} aria-current={l === lang ? 'true' : undefined}>{langName(l)}</a>)}</div>
+      </details>
+      <a class="btn btn-gold btn-sm header-cta" href={l.tickets} target="_blank" rel="noopener">{t('Book a training')}</a>
+      <button class="menu-btn" aria-label={t('Menu')} aria-expanded="false" data-menu-btn><span></span><span></span></button>
+    </div>
+  </header>
+  <div class="menu" data-menu hidden>
+    <nav aria-label="Mobile">
+      <a href={link(lang)}>{t('Home')}</a>
+      {NAV.map(([p, label]) => <a href={link(lang, p)}>{label}</a>)}
+    </nav>
+    <a class="btn btn-gold" href={l.tickets} target="_blank" rel="noopener">{t('Book a training')}</a>
+  </div>
+
+  <main id="main"><slot /></main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div>
+        <img src={url('/images/logo.svg')} alt="" width="84" height="84" loading="lazy" />
+        <p class="footer-name">{site.name}</p>
+        <p class="muted">{t('Presented by the Generación Abbilona Association')}</p>
+      </div>
+      <nav aria-label="Footer">
+        {NAV.map(([p, label]) => <a href={link(lang, p)}>{label}</a>)}
+      </nav>
+      <div>
+        <p class="eyebrow">{t('Stay in the loop')}</p>
+        <p>{t('Training news, show dates and behind the scenes.')}</p>
+        <div class="socials">
+          {socials.map(([name, href, d]) => (
+            <a href={href} target="_blank" rel="noopener" aria-label={name}><svg viewBox="0 0 24 24" aria-hidden="true"><path d={d} /></svg></a>
+          ))}
+        </div>
+        {l.email && <p><a href={`mailto:${l.email}`}>{l.email}</a></p>}
+      </div>
+    </div>
+    <div class="wrap footer-bottom">
+      <span>© {new Date().getFullYear()} {site.name}</span>
+      <a href={url('/admin/')} rel="nofollow">Admin</a>
+    </div>
+  </footer>
+
+  <script is:inline src={url('/js/site.js')} type="module"></script>
+</body>
+</html>

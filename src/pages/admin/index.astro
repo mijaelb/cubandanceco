@@ -1,0 +1,24 @@
+---
+// Admin shell. All logic lives in /public/admin/admin.js and talks directly to
+// the GitHub API with the editor's personal token — there is no server.
+import { url } from '../../lib/utils';
+const repo = process.env.GITHUB_REPOSITORY || '';
+const site = url('/');
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' blob: data: https://raw.githubusercontent.com; style-src 'self'; script-src 'self'; connect-src https://api.github.com; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <meta name="referrer" content="no-referrer" />
+  <title>ICCD · Admin</title>
+  <link rel="icon" href={url('/images/logo.svg')} type="image/svg+xml" />
+  <link rel="stylesheet" href={url('/admin/admin.css')} />
+</head>
+<body data-repo={repo} data-site={site}>
+  <div id="app"><p class="boot">Loading…</p></div>
+  <script src={url('/admin/admin.js')} type="module" is:inline></script>
+</body>
+</html>

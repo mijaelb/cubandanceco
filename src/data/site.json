@@ -1,0 +1,72 @@
+{
+  "name": "International Company of Cuban Dances",
+  "shortName": "ICCD",
+  "description": "Afro-Cuban folkloric dance company and academy led by former masters of the Conjunto Folklórico Nacional de Cuba. Monthly intensive trainings in a different European city.",
+  "announcement": {
+    "text": "🎉 4 years of ICCD! Celebrate our anniversary with us at the Spijkenisse training, 10–11 October",
+    "url": "trainings"
+  },
+  "hero": {
+    "eyebrow": "Official EU representation of the Conjunto Folklórico Nacional de Cuba",
+    "title": "Dance the roots of Cuba",
+    "text": "Train with former masters of the Conjunto Folklórico Nacional de Cuba. Every month, a different city in Europe. Live drums, chants and a company of dancers from all over the world.",
+    "images": [
+      "/images/photos/stage-timba.webp",
+      "/images/photos/stage-africa.webp",
+      "/images/photos/havana-red-men.webp",
+      "/images/photos/stage-yemaya.webp",
+      "/images/photos/stage-finale.webp"
+    ]
+  },
+  "intro": {
+    "title": "Who we are",
+    "text": "ICCD is a collective of dancers, teachers and culture-bearers rooted in the legacy of the Conjunto Folklórico Nacional de Cuba. Founded in 2022 by former dancers and teachers of the Conjunto, we train, perform and build community around Afro-Cuban dance and tradition, with love, depth and rhythm. Our goal is to keep these folkloric traditions alive outside of Cuba and to share them with new generations."
+  },
+  "styles": [
+    "Yoruba",
+    "Arará",
+    "Palo",
+    "Makuta",
+    "Yuka",
+    "Rumba",
+    "Son",
+    "Mambo",
+    "Cha-cha-chá",
+    "Danzón",
+    "Abakuá",
+    "Orishas"
+  ],
+  "stats": [
+    {
+      "value": "2022",
+      "label": "Founded"
+    },
+    {
+      "value": "45+",
+      "label": "Training weekends"
+    },
+    {
+      "value": "20+",
+      "label": "Cities in Europe & Cuba"
+    },
+    {
+      "value": "22K",
+      "label": "Instagram followers"
+    }
+  ],
+  "links": {
+    "tickets": "https://my.weezevent.com/iccd-training-2026-2027",
+    "whatsapp": "https://chat.whatsapp.com/IlBcufjM7roFpM35FkA1EI",
+    "instagram": "https://www.instagram.com/cuban_dance_international_co/",
+    "facebook": "https://www.facebook.com/profile.php?id=100084622654660",
+    "tiktok": "https://www.tiktok.com/@conjujcybpz",
+    "email": ""
+  },
+  "instagramHandle": "@cuban_dance_international_co",
+  "tagline": "Come for the dance. Stay for the family.",
+  "family": {
+    "title": "More than a company, a family",
+    "text": "We came from different countries, with different stories, but one passion brought us together: Cuban culture and dance. We started by learning steps. We ended up building a family. We laugh together, struggle together, make sacrifices together, and when things get difficult, we stay united. No ego. No competition. Just passion, friendship and a shared mission: to keep Cuban culture alive and share it with the world.",
+    "image": "/images/photos/group-backstage.webp"
+  }
+}

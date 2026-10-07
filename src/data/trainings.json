@@ -1,0 +1,614 @@
+{
+  "season": "2026 – 2027",
+  "intro": "Train with ICCD and dive into the heart of Cuban folklore. Led by former masters of the Conjunto Folklórico Nacional de Cuba, these weekends are a rare chance to go deep into Afro-Cuban dance and music with live percussion and chants. More than a workshop, it is a full cultural immersion.",
+  "level": "These trainings are designed for intermediate to advanced dancers looking for meaningful growth and a deeper connection to Cuban folkloric dance and music. They are not beginner classes: a basic knowledge of Yoruba, Arará, Palo, Makuta, Yuka and Rumba is expected.",
+  "included": [
+    "10 hours of classes over 2 days (Saturday & Sunday)",
+    "Afro-Cuban dance and chants: Yoruba, Arará, Palo, Makuta, Yuka, Rumba",
+    "Live music: batá, tambor, güiro and vocals",
+    "Cuban popular dances: Son, Mambo, Cha-cha-chá and more",
+    "The methodology of Cuba's top folkloric school"
+  ],
+  "scheduleNote": "Trainings usually start on Saturday around noon and finish around 5 pm on Sunday. The full class schedule is published one week before each training.",
+  "reminders": [
+    "Please be on time, we recommend arriving 10 minutes early",
+    "Store your personal belongings in the locker rooms",
+    "Remove outdoor shoes before entering the dance room",
+    "Respect the line structure as presented by the direction",
+    "Eat before class",
+    "Wear proper training clothes",
+    "Bring your dance accessories (heels, skirts…)",
+    "Don't forget to bring water!",
+    "Schedules might be subject to changes"
+  ],
+  "events": [
+    {
+      "start": "2026-10-10",
+      "end": "2026-10-11",
+      "city": "Spijkenisse",
+      "country": "Netherlands",
+      "countryCode": "NL",
+      "note": "40 min by train from Rotterdam",
+      "badge": "4th anniversary weekend",
+      "time": "Saturday 1 pm – Sunday 5 pm",
+      "venue": "Nis (Cultural Centre)",
+      "address": "Nieuwstraat 83, 3201 EE Spijkenisse, Netherlands",
+      "mapUrl": "https://maps.app.goo.gl/DrSWRrroSnSLwb6A9",
+      "ticketUrl": "",
+      "schedule": [
+        {
+          "day": "Saturday",
+          "date": "10/10",
+          "slots": [
+            {
+              "time": "13:00 – 14:00",
+              "isBreak": false,
+              "classes": [
+                {
+                  "title": "Técnica",
+                  "teacher": "Federico",
+                  "liveMusic": false,
+                  "companyOnly": false
+                }
+              ]
+            },
+            {
+              "time": "14:05 – 15:05",
+              "isBreak": false,
+              "classes": [
+                {
+                  "title": "Oyá",
+                  "teacher": "Mireisi",
+                  "liveMusic": true,
+                  "companyOnly": false
+                }
+              ]
+            },
+            {
+              "time": "15:10 – 16:10",
+              "isBreak": false,
+              "classes": [
+                {
+                  "title": "Palo",
+                  "teacher": "Sergio",
+                  "liveMusic": false,
+                  "companyOnly": false
+                },
+                {
+                  "title": "Yemayá",
+                  "teacher": "Mireisi",
+                  "liveMusic": true,
+                  "companyOnly": true
+                }
+              ]
+            },
+            {
+              "time": "16:10 – 17:00",
+              "isBreak": true,
+              "classes": []
+            },
+            {
+              "time": "17:00 – 18:00",
+              "isBreak": false,
+              "classes": [
+                {
+                  "title": "Cabaret",
+                  "teacher": "Federico",
+                  "liveMusic": false,
+                  "companyOnly": false
+                },
+                {
+                  "title": "Ensayo Changó",
+                  "teacher": "Mijael",
+                  "liveMusic": true,
+                  "companyOnly": true
+                },
+                {
+                  "title": "Ensayo Elegguá",
+                  "teacher": "Sergio",
+                  "liveMusic": false,
+                  "companyOnly": true
+                }
+              ]
+            },
+            {
+              "time": "18:05 – 19:05",
+              "isBreak": false,
+              "classes": [
+                {
+                  "title": "Son",
+                  "teacher": "Sergio & Mireisi",
+                  "liveMusic": false,
+                  "companyOnly": false
+                },
+                {
+                  "title": "Ensayo Cabaret",
+                  "teacher": "Federico",
+                  "liveMusic": false,
+                  "companyOnly": true
+                }
+              ]
+            },
+            {
+              "time": "19:10 – 20:10",
+              "isBreak": false,
+              "classes": [
+                {
+                  "title": "Ensayo Oyá",
+                  "teacher": "Mireisi",
+                  "liveMusic": false,
+                  "companyOnly": true
+                },
+                {
+                  "title": "Ensayo Rumba",
+                  "teacher": "Sergio",
+                  "liveMusic": false,
+                  "companyOnly": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "day": "Sunday",
+          "date": "11/10",
+          "slots": [
+            {
+              "time": "10:00 – 11:00",
+              "isBreak": false,
+              "classes": [
+                {
+                  "title": "Técnica",
+                  "teacher": "Mireisi",
+                  "liveMusic": false,
+                  "companyOnly": false
+                },
+                {
+                  "title": "Técnica",
+                  "teacher": "Federico",
+                  "liveMusic": false,
+                  "companyOnly": true
+                }
+              ]
+            },
+            {
+              "time": "11:05 – 12:05",
+              "isBreak": false,
+              "classes": [
+                {
+                  "title": "Yemayá",
+                  "teacher": "Mireisi",
+                  "liveMusic": false,
+                  "companyOnly": false
+                },
+                {
+                  "title": "Changó",
+                  "teacher": "Sergio",
+                  "liveMusic": true,
+                  "companyOnly": true
+                }
+              ]
+            },
+            {
+              "time": "12:10 – 13:10",
+              "isBreak": false,
+              "classes": [
+                {
+                  "title": "Elegguá",
+                  "teacher": "Sergio",
+                  "liveMusic": true,
+                  "companyOnly": false
+                },
+                {
+                  "title": "Ensayo Cabaret",
+                  "teacher": "Federico",
+                  "liveMusic": false,
+                  "companyOnly": true
+                }
+              ]
+            },
+            {
+              "time": "13:10 – 14:00",
+              "isBreak": true,
+              "classes": []
+            },
+            {
+              "time": "14:00 – 15:00",
+              "isBreak": false,
+              "classes": [
+                {
+                  "title": "Oshún",
+                  "teacher": "Mireisi",
+                  "liveMusic": true,
+                  "companyOnly": false
+                },
+                {
+                  "title": "Ensayo Elegguá & Rumba (14:00 – 16:05)",
+                  "teacher": "Sergio",
+                  "liveMusic": false,
+                  "companyOnly": true
+                }
+              ]
+            },
+            {
+              "time": "15:05 – 16:05",
+              "isBreak": false,
+              "classes": [
+                {
+                  "title": "Columbia",
+                  "teacher": "Mijael",
+                  "liveMusic": true,
+                  "companyOnly": false
+                }
+              ]
+            },
+            {
+              "time": "16:10 – 17:10",
+              "isBreak": false,
+              "classes": [
+                {
+                  "title": "Ensayo Oyá",
+                  "teacher": "Mireisi",
+                  "liveMusic": false,
+                  "companyOnly": true
+                },
+                {
+                  "title": "Ensayo Changó",
+                  "teacher": "Mijael",
+                  "liveMusic": false,
+                  "companyOnly": true
+                },
+                {
+                  "title": "Ensayo Ad Hoc (if needed)",
+                  "teacher": "Sergio",
+                  "liveMusic": false,
+                  "companyOnly": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "start": "2026-11-14",
+      "end": "2026-11-15",
+      "city": "Brussels",
+      "country": "Belgium",
+      "countryCode": "BE",
+      "note": "",
+      "badge": "",
+      "time": "Saturday 1 pm – Sunday 5 pm",
+      "venue": "Camina Dance School",
+      "address": "Chaussée de Boondael 277, 1050 Ixelles, Belgium",
+      "mapUrl": "",
+      "ticketUrl": "",
+      "schedule": []
+    },
+    {
+      "start": "2026-12-12",
+      "end": "2026-12-13",
+      "city": "Bern",
+      "country": "Switzerland",
+      "countryCode": "CH",
+      "note": "",
+      "badge": "",
+      "time": "Saturday 12 pm – Sunday 5 pm",
+      "venue": "Salsadancers School",
+      "address": "Dalmaziquai 69, 3005 Bern, Switzerland",
+      "mapUrl": "",
+      "ticketUrl": "",
+      "schedule": []
+    }
+  ],
+  "history": [
+    {
+      "start": "2026-09-12",
+      "end": "2026-09-13",
+      "city": "Milan",
+      "country": "Italy",
+      "note": ""
+    },
+    {
+      "start": "2026-08-22",
+      "end": "2026-08-23",
+      "city": "Bremen",
+      "country": "Germany",
+      "note": ""
+    },
+    {
+      "start": "2026-07-11",
+      "end": "2026-07-12",
+      "city": "Paris",
+      "country": "France",
+      "note": ""
+    },
+    {
+      "start": "2026-06-20",
+      "end": "2026-06-21",
+      "city": "Brussels",
+      "country": "Belgium",
+      "note": ""
+    },
+    {
+      "start": "2026-05-10",
+      "end": "2026-05-17",
+      "city": "Sicily",
+      "country": "Italy",
+      "note": "Company Camp: a full study week"
+    },
+    {
+      "start": "2026-04-18",
+      "end": "2026-04-19",
+      "city": "Freiburg",
+      "country": "Germany",
+      "note": ""
+    },
+    {
+      "start": "2026-03-28",
+      "end": "2026-03-29",
+      "city": "Roccasecca",
+      "country": "Italy",
+      "note": ""
+    },
+    {
+      "start": "2026-02-28",
+      "end": "2026-03-01",
+      "city": "Bremen",
+      "country": "Germany",
+      "note": ""
+    },
+    {
+      "start": "2026-01-24",
+      "end": "2026-01-25",
+      "city": "Spijkenisse",
+      "country": "Netherlands",
+      "note": ""
+    },
+    {
+      "start": "2025-12-06",
+      "end": "2025-12-07",
+      "city": "Lucerne",
+      "country": "Switzerland",
+      "note": ""
+    },
+    {
+      "start": "2025-11-15",
+      "end": "2025-11-16",
+      "city": "Belgrade",
+      "country": "Serbia",
+      "note": ""
+    },
+    {
+      "start": "2025-10-11",
+      "end": "2025-10-12",
+      "city": "Seville",
+      "country": "Spain",
+      "note": ""
+    },
+    {
+      "start": "2025-09-20",
+      "end": "2025-09-21",
+      "city": "Milan",
+      "country": "Italy",
+      "note": ""
+    },
+    {
+      "start": "2025-08-30",
+      "end": "2025-08-31",
+      "city": "Rotterdam",
+      "country": "Netherlands",
+      "note": ""
+    },
+    {
+      "start": "2025-06-27",
+      "end": "2025-06-29",
+      "city": "Montpellier",
+      "country": "France",
+      "note": ""
+    },
+    {
+      "start": "2025-06-07",
+      "end": "2025-06-08",
+      "city": "Paris",
+      "country": "France",
+      "note": ""
+    },
+    {
+      "start": "2025-05-01",
+      "end": "2025-05-18",
+      "city": "Havana",
+      "country": "Cuba",
+      "note": "Encuentros: study trip with the Conjunto Folklórico Nacional de Cuba"
+    },
+    {
+      "start": "2025-03-29",
+      "end": "2025-03-30",
+      "city": "Paris",
+      "country": "France",
+      "note": ""
+    },
+    {
+      "start": "2025-03-01",
+      "end": "2025-03-02",
+      "city": "Lucerne",
+      "country": "Switzerland",
+      "note": ""
+    },
+    {
+      "start": "2025-02-08",
+      "end": "2025-02-09",
+      "city": "Milan",
+      "country": "Italy",
+      "note": ""
+    },
+    {
+      "start": "2025-01-18",
+      "end": "2025-01-19",
+      "city": "Freiburg",
+      "country": "Germany",
+      "note": ""
+    },
+    {
+      "start": "2024-12-14",
+      "end": "2024-12-15",
+      "city": "Milan",
+      "country": "Italy",
+      "note": ""
+    },
+    {
+      "start": "2024-11-30",
+      "end": "2024-12-01",
+      "city": "Paris",
+      "country": "France",
+      "note": ""
+    },
+    {
+      "start": "2024-10-12",
+      "end": "2024-10-13",
+      "city": "Speyer",
+      "country": "Germany",
+      "note": ""
+    },
+    {
+      "start": "2024-09-07",
+      "end": "2024-09-08",
+      "city": "Poznań",
+      "country": "Poland",
+      "note": ""
+    },
+    {
+      "start": "2024-07-27",
+      "end": "2024-07-28",
+      "city": "Milan",
+      "country": "Italy",
+      "note": ""
+    },
+    {
+      "start": "2024-05-11",
+      "end": "2024-05-12",
+      "city": "Cologne",
+      "country": "Germany",
+      "note": ""
+    },
+    {
+      "start": "2024-04-27",
+      "end": "2024-04-28",
+      "city": "Paris",
+      "country": "France",
+      "note": ""
+    },
+    {
+      "start": "2024-03-23",
+      "end": "2024-03-24",
+      "city": "Speyer",
+      "country": "Germany",
+      "note": ""
+    },
+    {
+      "start": "2024-02-16",
+      "end": "2024-03-01",
+      "city": "Havana",
+      "country": "Cuba",
+      "note": "Encuentros: study trip with the Conjunto Folklórico Nacional de Cuba"
+    },
+    {
+      "start": "2024-01-20",
+      "end": "2024-01-21",
+      "city": "Rome",
+      "country": "Italy",
+      "note": ""
+    },
+    {
+      "start": "2023-12-16",
+      "end": "2023-12-17",
+      "city": "Paris",
+      "country": "France",
+      "note": ""
+    },
+    {
+      "start": "2023-11-25",
+      "end": "2023-11-26",
+      "city": "Cologne",
+      "country": "Germany",
+      "note": ""
+    },
+    {
+      "start": "2023-10-14",
+      "end": "2023-10-15",
+      "city": "Rome",
+      "country": "Italy",
+      "note": ""
+    },
+    {
+      "start": "2023-09-16",
+      "end": "2023-09-17",
+      "city": "Milan",
+      "country": "Italy",
+      "note": ""
+    },
+    {
+      "start": "2023-08-26",
+      "end": "2023-08-27",
+      "city": "Milan",
+      "country": "Italy",
+      "note": ""
+    },
+    {
+      "start": "2023-06-24",
+      "end": "2023-06-25",
+      "city": "Paris",
+      "country": "France",
+      "note": ""
+    },
+    {
+      "start": "2023-05-27",
+      "end": "2023-05-28",
+      "city": "Paris",
+      "country": "France",
+      "note": ""
+    },
+    {
+      "start": "2023-04-29",
+      "end": "2023-04-30",
+      "city": "Berlin",
+      "country": "Germany",
+      "note": ""
+    },
+    {
+      "start": "2023-03-25",
+      "end": "2023-03-26",
+      "city": "Milan",
+      "country": "Italy",
+      "note": ""
+    },
+    {
+      "start": "2023-02-25",
+      "end": "2023-02-26",
+      "city": "Milan",
+      "country": "Italy",
+      "note": ""
+    },
+    {
+      "start": "2023-01-28",
+      "end": "2023-01-29",
+      "city": "Milan",
+      "country": "Italy",
+      "note": ""
+    },
+    {
+      "start": "2022-12-17",
+      "end": "2022-12-18",
+      "city": "Milan",
+      "country": "Italy",
+      "note": ""
+    },
+    {
+      "start": "2022-11-19",
+      "end": "2022-11-20",
+      "city": "Milan",
+      "country": "Italy",
+      "note": ""
+    }
+  ]
+}
