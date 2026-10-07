@@ -269,6 +269,7 @@ function input(s, obj, k, id) {
   }
 }
 const grow = (ta) => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 2 + 'px'; };
+const growObs = new ResizeObserver((entries) => entries.forEach((e) => grow(e.target)));
 
 function imageInput(value, set, id) {
   const img = h('img', { alt: '', src: imgSrc(value), onerror: () => { if (value && !img.dataset.raw) { img.dataset.raw = 1; img.src = rawUrl(value); } } });
@@ -293,9 +294,9 @@ function listEditor(s, arr) {
     box.replaceChildren(
       ...arr.map((item, i) => {
         const tools = h('span', { class: 'tools' },
-          h('button', { type: 'button', title: 'Move up', disabled: i === 0, onclick: () => move(i, -1) }, '↑'),
-          h('button', { type: 'button', title: 'Move down', disabled: i === arr.length - 1, onclick: () => move(i, 1) }, '↓'),
-          h('button', { type: 'button', title: 'Remove', class: 'danger', onclick: () => { if (confirm('Remove this item?')) { arr.splice(i, 1); changed(); draw(); } } }, '✕'));
+          iconBtn('up', 'Move up', (e) => { e.preventDefault(); move(i, -1); }, { disabled: i === 0 }),
+          iconBtn('down', 'Move down', (e) => { e.preventDefault(); move(i, 1); }, { disabled: i === arr.length - 1 }),
+          iconBtn('trash', 'Remove', (e) => { e.preventDefault(); if (confirm('Remove this item?')) { arr.splice(i, 1); changed(); draw(); } }, { class: 'danger' }));
         if (itemSchema) return h('div', { class: 'list-row' }, input(itemSchema, arr, i), tools);
         const sum = h('span', { class: 'sum' }, s.summary?.(item) || `${s.item} ${i + 1}`);
         const det = h('details', { class: 'item', open: i === openIndex, oninput: () => (sum.textContent = s.summary?.(item) || sum.textContent) },
@@ -304,7 +305,7 @@ function listEditor(s, arr) {
         if (i === openIndex) det.append(fieldsEditor(item, s.fields));
         return det;
       }),
-      h('button', { type: 'button', class: 'btn-add', onclick: () => { arr.push(itemSchema ? '' : blank(s.fields)); changed(); draw(arr.length - 1); } }, `+ Add ${s.item || 'line'}`),
+      h('button', { type: 'button', class: 'btn-add', onclick: () => { arr.push(itemSchema ? '' : blank(s.fields)); changed(); draw(arr.length - 1); } }, icon('plus'), `Add ${s.item || 'line'}`),
     );
   };
   draw();
@@ -334,15 +335,33 @@ function pickLists(events) {
   const extra = [...used.keys()].filter((n) => !teachers.includes(n)).sort();
   return { teachers: [...new Set([...teachers, ...extra])], titles: [...titles.keys()] };
 }
-// conga drum = live music (fixed markup, no user data)
-const DRUM_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="4.6" rx="5.6" ry="1.9"/><path d="M6.4 4.6c-1.3 3.4-1.2 7.4.3 11l1.8 5.4h7l1.8-5.4c1.5-3.6 1.6-7.6.3-11"/><path d="M6.3 7.2c3.8 1.6 7.6 1.6 11.4 0" stroke-width="1.3"/><path d="M8.4 8.3v2.6M12 8.8v2.6M15.6 8.3v2.6" stroke-width="1.3"/><path d="M8.6 18.6c2.3.6 4.5.6 6.8 0" stroke-width="1.3"/></svg>';
-const drumIcon = () => { const t = document.createElement('template'); t.innerHTML = DRUM_SVG; return t.content.firstChild; };
+// Simple line icons (fixed markup, no user data)
+const ICON_PATHS = {
+  up: '<path d="M12 19V5M6 11l6-6 6 6"/>',
+  down: '<path d="M12 5v14M6 13l6 6 6-6"/>',
+  cup: '<path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M16 11h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5c0 1.5 1.5 1.5 1.5 3M12 3.5c0 1.5 1.5 1.5 1.5 3"/>',
+  copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
+  trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  download: '<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',
+  pencil: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+  eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  drum: '<ellipse cx="12" cy="4.6" rx="5.6" ry="1.9"/><path d="M6.4 4.6c-1.3 3.4-1.2 7.4.3 11l1.8 5.4h7l1.8-5.4c1.5-3.6 1.6-7.6.3-11"/><path d="M6.3 7.2c3.8 1.6 7.6 1.6 11.4 0" stroke-width="1.3"/><path d="M8.4 8.3v2.6M12 8.8v2.6M15.6 8.3v2.6" stroke-width="1.3"/><path d="M8.6 18.6c2.3.6 4.5.6 6.8 0" stroke-width="1.3"/>',
+  close: '<path d="M6 6l12 12M18 6L6 18"/>',
+};
+function icon(name) {
+  const t = document.createElement('template');
+  t.innerHTML = `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON_PATHS[name]}</svg>`;
+  return t.content.firstChild;
+}
+const drumIcon = () => icon('drum');
+const iconBtn = (name, title, onclick, extra = {}) => h('button', { type: 'button', class: `ib${extra.class ? ' ' + extra.class : ''}`, title, 'aria-label': title, onclick, disabled: extra.disabled }, icon(name));
 const keepFocus = { onpointerdown: (e) => e.preventDefault(), onmousedown: (e) => e.preventDefault() };
 
 function titleField(c, lists) {
   const input = h('textarea', { class: 'tt-title oneline', rows: 1, value: c.title, placeholder: 'Class', onkeydown: (e) => e.key === 'Enter' && e.preventDefault(),
     oninput: (e) => { c.title = e.target.value; changed(); grow(input); } });
-  requestAnimationFrame(() => grow(input));
+  growObs.observe(input);
   const set = (v) => { c.title = input.value = v; changed(); grow(input); };
   const picks = h('div', { class: 'tt-picks' },
     h('button', { type: 'button', class: 'ensayo', ...keepFocus, onclick: () => set(/^Ensayo\b/i.test(c.title) ? c.title.replace(/^Ensayo\s*/i, '') : `Ensayo ${c.title}`.trim()) }, 'Ensayo +'),
@@ -396,8 +415,8 @@ function timetableView() {
       if (!i && ev.scheduleDraft == null) ev.scheduleDraft = true;
       ev.schedule.push({ day: weekday(ev.start, i), date: ddmm(ev.start, i), slots: [] });
       changed(); draw();
-    } }, '+ Day');
-    const pdf = h('button', { type: 'button', class: 'btn-pdf', title: 'Brochure with cover, info, timetable and closing page', onclick: () => exportPdf(ev) }, '⤓ Export PDF');
+    } }, icon('plus'), 'Day');
+    const pdf = h('button', { type: 'button', class: 'btn-pdf', title: 'Brochure with cover, info, timetable and closing page', onclick: () => exportPdf(ev) }, icon('download'), 'Export PDF');
 
     const days = ev.schedule.map((day, di) => {
       const addSlot = h('button', { type: 'button', class: 'btn-add', onclick: () => {
@@ -406,23 +425,23 @@ function timetableView() {
         const start = end != null ? end + 5 : 13 * 60;
         day.slots.push({ time: `${fromMin(start)} – ${fromMin(start + 60)}`, isBreak: false, classes: [{ title: '', teacher: '', liveMusic: false, companyOnly: false }] });
         changed(); draw();
-      } }, '+ Time slot');
+      } }, icon('plus'), 'Time slot');
       return h('section', { class: 'tt-day' },
         h('header', {},
           h('input', { class: 'tt-dayname', value: day.day, 'aria-label': 'Day', oninput: (e) => { day.day = e.target.value; changed(); } }),
           h('input', { class: 'tt-date', value: day.date, 'aria-label': 'Date', placeholder: 'dd/mm', oninput: (e) => { day.date = e.target.value; changed(); } }),
-          h('button', { type: 'button', class: 'tt-x', title: 'Remove this day', onclick: () => { if (confirm(`Remove ${day.day} and all its classes?`)) { ev.schedule.splice(di, 1); changed(); draw(); } } }, '✕')),
+          iconBtn('trash', 'Remove this day', () => { if (confirm(`Remove ${day.day} and all its classes?`)) { ev.schedule.splice(di, 1); changed(); draw(); } })),
         day.slots.map((slot, si) => slotRow(day, slot, si, draw, lists)), addSlot);
     });
 
     wrap.replaceChildren(
       h('div', { class: 'tt-bar' }, pick, copyFrom, addDay, pdf),
       ev.schedule.length > 0 ? h('div', { class: `tt-status ${ev.scheduleDraft ? 'draft' : 'live'}` },
-        h('span', {}, ev.scheduleDraft ? '✎ Draft · only visible in the editor' : '● Visible on the website'),
+        h('span', {}, icon(ev.scheduleDraft ? 'pencil' : 'eye'), ev.scheduleDraft ? 'Draft · only visible in the editor' : 'Visible on the website'),
         h('button', { type: 'button', class: 'btn-small', onclick: () => { ev.scheduleDraft = !ev.scheduleDraft; changed(); draw(); } },
           ev.scheduleDraft ? 'Make visible' : 'Back to draft')) : '',
       ev.schedule.length ? h('div', { class: 'tt-days' }, days) : h('p', { class: 'tt-empty' }, 'No timetable yet. Add a day, or copy the timetable of another training.'),
-      h('p', { class: 'tt-help' }, 'Tap a class or teacher field to pick from the list, or type. Drum = live music · ICCD = company only. Publish saves for the whole team; a draft stays hidden on the website.'),
+      h('p', { class: 'tt-help' }, 'Tap a class or teacher field to pick from the list, or type. Drum = live music, ICCD = company only. Publish saves for the whole team; a draft stays hidden on the website.'),
     );
   };
   draw();
@@ -431,31 +450,34 @@ function timetableView() {
 
 function slotRow(day, slot, si, redraw, lists) {
   const [from, to] = splitTime(slot.time);
-  const setTime = (a, b) => { slot.time = `${a} – ${b}`; changed(); };
+  const setTime = (x, y) => { slot.time = `${x} – ${y}`; changed(); };
   // 24-hour text boxes like the brochure: "1300", "13.00" or "13" all become 13:00
   const norm = (v) => { const d = v.replace(/\D/g, ''); if (!d) return ''; const [hh, mm] = d.length <= 2 ? [d, '00'] : [d.slice(0, d.length - 2), d.slice(-2)]; return `${pad(Math.min(23, +hh))}:${pad(Math.min(59, +mm))}`; };
-  const box = (value, label, other) => h('input', { type: 'text', inputmode: 'numeric', maxlength: 5, value: value || '', placeholder: '00:00', 'aria-label': label,
-    onfocus: (e) => e.target.select(), onchange: (e) => { e.target.value = norm(e.target.value); other(); } });
-  const fromIn = box(from, 'Start', () => setTime(fromIn.value, toIn.value));
-  const toIn = box(to, 'End', () => setTime(fromIn.value, toIn.value));
-  const move = (d) => { const s = day.slots; [s[si], s[si + d]] = [s[si + d], s[si]]; changed(); redraw(); };
-  const menu = h('div', { class: 'tt-tools' },
-    h('button', { type: 'button', title: 'Move up', disabled: si === 0, onclick: () => move(-1) }, '↑'),
-    h('button', { type: 'button', title: 'Move down', disabled: si === day.slots.length - 1, onclick: () => move(1) }, '↓'),
-    h('button', { type: 'button', class: slot.isBreak ? 'on' : '', title: slot.isBreak ? 'Make it a class slot' : 'Make it a break', onclick: () => { slot.isBreak = !slot.isBreak; changed(); redraw(); } }, '☕'),
-    h('button', { type: 'button', title: 'Duplicate this time slot', onclick: () => { day.slots.splice(si + 1, 0, structuredClone(slot)); changed(); redraw(); } }, '⧉'),
-    h('button', { type: 'button', title: 'Remove time slot', onclick: () => { if (confirm(`Remove ${slot.time}?`)) { day.slots.splice(si, 1); changed(); redraw(); } } }, '✕'));
-  const time = h('div', { class: 'tt-time' }, h('div', { class: 'tt-hours' }, fromIn, toIn), menu);
-  if (slot.isBreak) return h('div', { class: 'tt-slot tt-break' }, time, h('strong', {}, 'Break'));
-  const toggle = (c, key, label, title) => h('button', { type: 'button', class: `tt-flag${c[key] ? ' on' : ''}`, title, 'aria-pressed': String(!!c[key]), onclick: (e) => { c[key] = !c[key]; e.currentTarget.classList.toggle('on', c[key]); e.currentTarget.closest('.tt-class').classList.toggle('company', !!c.companyOnly); changed(); } }, label);
+  const box = (value, label) => h('input', { type: 'text', class: 'tt-hour', inputmode: 'numeric', maxlength: 5, value: value || '', placeholder: '00:00', 'aria-label': label,
+    onfocus: (e) => e.target.select(), onchange: (e) => { e.target.value = norm(e.target.value); setTime(fromIn.value, toIn.value); } });
+  const fromIn = box(from, 'Start');
+  const toIn = box(to, 'End');
+  const move = (d) => { const list = day.slots; [list[si], list[si + d]] = [list[si + d], list[si]]; changed(); redraw(); };
+  const addClass = () => { slot.classes.push({ title: '', teacher: '', liveMusic: false, companyOnly: true }); changed(); redraw(); };
+  const head = h('div', { class: 'tt-slot-head' },
+    h('div', { class: 'tt-hours' }, fromIn, h('span', {}, '–'), toIn),
+    !slot.isBreak && h('button', { type: 'button', class: 'tt-addclass', title: 'Add a class at the same time', onclick: addClass }, icon('plus'), 'Class'),
+    h('div', { class: 'tt-tools' },
+      iconBtn('up', 'Move up', () => move(-1), { disabled: si === 0 }),
+      iconBtn('down', 'Move down', () => move(1), { disabled: si === day.slots.length - 1 }),
+      iconBtn('cup', slot.isBreak ? 'Make it a class slot' : 'Make it a break', () => { slot.isBreak = !slot.isBreak; changed(); redraw(); }, { class: slot.isBreak ? 'on' : '' }),
+      iconBtn('copy', 'Duplicate this time slot', () => { day.slots.splice(si + 1, 0, structuredClone(slot)); changed(); redraw(); }),
+      iconBtn('trash', 'Remove this time slot', () => { if (confirm(`Remove ${slot.time}?`)) { day.slots.splice(si, 1); changed(); redraw(); } })));
+  if (slot.isBreak) return h('div', { class: 'tt-slot tt-break' }, head, h('div', { class: 'tt-breakbar' }, icon('cup'), 'Break'));
+  const toggle = (c, key, content, title) => h('button', { type: 'button', class: `tt-flag${c[key] ? ' on' : ''}`, title, 'aria-label': title, 'aria-pressed': String(!!c[key]),
+    onclick: (e) => { c[key] = !c[key]; e.currentTarget.classList.toggle('on', c[key]); e.currentTarget.setAttribute('aria-pressed', String(c[key])); e.currentTarget.closest('.tt-class').classList.toggle('company', !!c.companyOnly); changed(); } }, content);
   const cards = slot.classes.map((c, ci) => h('div', { class: `tt-class${c.companyOnly ? ' company' : ''}` },
     titleField(c, lists), teacherField(c, lists),
     h('div', { class: 'tt-flags' },
       toggle(c, 'liveMusic', drumIcon(), 'Live music'),
       toggle(c, 'companyOnly', 'ICCD', 'Company only'),
-      h('button', { type: 'button', class: 'tt-x', title: 'Remove class', onclick: () => { slot.classes.splice(ci, 1); changed(); redraw(); } }, '✕'))));
-  const add = h('button', { type: 'button', class: 'tt-addclass', title: 'Add a class at the same time', onclick: () => { slot.classes.push({ title: '', teacher: '', liveMusic: false, companyOnly: true }); changed(); redraw(); } }, '+');
-  return h('div', { class: 'tt-slot' }, time, h('div', { class: 'tt-classes' }, cards, add));
+      iconBtn('close', 'Remove this class', () => { slot.classes.splice(ci, 1); changed(); redraw(); }, { class: 'tt-del' }))));
+  return h('div', { class: 'tt-slot' }, head, h('div', { class: 'tt-classes' }, cards.length ? cards : h('button', { type: 'button', class: 'tt-empty-slot', onclick: addClass }, icon('plus'), 'Add a class')));
 }
 
 // ---------- Translations ----------
