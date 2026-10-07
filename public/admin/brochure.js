@@ -102,14 +102,16 @@ function schedule(ev, day, index) {
     // text size from the room the card has: its width (sub-columns), height (slots) and title length
     // one text size for every card, like the website; only the tags move in narrow cards
     class: ['cell', c.companyOnly && 'co', width <= 4 && 'narrow', rows > 1 && 'tall'].filter(Boolean).join(' '),
-    style: `grid-row:${row + 1}/span ${rows};grid-column:${col + 2}/span ${width}` },
+    style: `grid-row:${row + 1}/span ${rows};grid-column:${col + 2}/span ${width}`, 'data-row': row },
     h('b', {}, c.title), c.teacher && h('span', {}, c.teacher), (c.companyOnly || c.liveMusic) && h('div', { class: 'flags' }, c.liveMusic && drum(), c.companyOnly && tag())));
   // rows grow when a card needs more room; fit() then makes all rows shorter until the day fits the page
   const template = day.slots.map((s) => (s.isBreak ? `${BREAK_H}px` : 'minmax(var(--row), auto)')).join(' ');
   return h('section', { class: 'page' }, band(ev, 'Schedule'),
     h('div', { class: 'day' },
       h('div', { class: 'dayhead' }, h('b', {}, day.day), h('small', {}, longDate)),
-      h('div', { class: 'grid', style: `--row:${rowH}px;grid-template-rows:${template}`, 'data-row': rowH }, times, classes)),
+      h('div', { class: 'grid', style: `--row:${rowH}px;grid-template-rows:${template}`, 'data-row': rowH },
+        // in reading order (each time, then its classes), so copied PDF text makes sense
+        times.flatMap((t, r) => [t, ...classes.filter((c) => c.dataset.row === String(r))]))),
     h('div', { class: 'legend' }, h('span', {}, drum(), 'Live music'), h('span', {}, tag(), 'Company only')));
 }
 

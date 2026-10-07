@@ -52,6 +52,40 @@ const v = Date.now().toString(36); // new on every build, so browsers load the l
       }
     }
 
+    // Invisible text under the picture, line by line in the same place, so the PDF text
+    // can be selected, copied and searched (like a scanned document with OCR).
+    function textLayer(pdf: any, page: HTMLElement) {
+      const box = page.getBoundingClientRect(), k = W / box.width;
+      const walk = document.createTreeWalker(page, NodeFilter.SHOW_TEXT, {
+        acceptNode: (n) => (n.textContent!.trim() && !n.parentElement!.closest('.pattern, svg') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT),
+      });
+      pdf.setFont('helvetica', 'normal');
+      for (let n = walk.nextNode() as Text | null; n; n = walk.nextNode() as Text | null) {
+        const cs = getComputedStyle(n.parentElement!);
+        const upper = cs.textTransform === 'uppercase';
+        // group the words of this text into the lines they are drawn on
+        const lines: { text: string; l: number; r: number; t: number; b: number }[] = [];
+        for (const m of n.textContent!.matchAll(/\S+/g)) {
+          const rg = document.createRange(); rg.setStart(n, m.index!); rg.setEnd(n, m.index! + m[0].length);
+          const r = rg.getClientRects()[0]; if (!r) continue;
+          const last = lines.at(-1);
+          if (last && Math.abs(last.t - r.top) < r.height / 2) { last.text += ' ' + m[0]; last.r = r.right; }
+          else lines.push({ text: m[0], l: r.left, r: r.right, t: r.top, b: r.bottom });
+        }
+        for (const ln of lines) {
+          // the PDF base font only knows Western European letters
+          const text = (upper ? ln.text.toUpperCase() : ln.text).replace(/[^ -~ -ÿ–—‘’“”•…]/g, '').trim();
+          if (!text) continue;
+          const size = parseFloat(cs.fontSize) * k;
+          pdf.setFontSize(size * 0.75); // px → pt
+          const w = pdf.getTextWidth(text);
+          pdf.text(text, (ln.l - box.left) * k, (ln.t - box.top) * k + ((ln.b - ln.t) * k + size * 0.7) / 2, {
+            renderingMode: 'invisible', baseline: 'alphabetic', horizontalScale: w ? ((ln.r - ln.l) * k) / w : 1,
+          });
+        }
+      }
+    }
+
     async function makePdf(step: (i: number, n: number) => void) {
       const { jsPDF } = await import('jspdf');
       const pdf = new jsPDF({ unit: 'px', format: [W, H], orientation: 'portrait', hotfixes: ['px_scaling'], compress: true });
@@ -61,6 +95,7 @@ const v = Date.now().toString(36); // new on every build, so browsers load the l
         if (i) pdf.addPage([W, H], 'portrait');
         const canvas = await shot(page, 2); // sharp when zoomed in
         pdf.addImage(canvas.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, W, H, undefined, 'FAST');
+        textLayer(pdf, page);
         // keep the links: tickets, maps, WhatsApp, Instagram, email
         const box = page.getBoundingClientRect(), k = W / box.width;
         page.querySelectorAll<HTMLAnchorElement>('a[href]').forEach((a) => {
