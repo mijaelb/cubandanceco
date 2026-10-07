@@ -57,11 +57,12 @@ const t = useT(lang);
       {teachers.guests.length > 0 && (
         <div class="guests">
           <p class="eyebrow">{t('Joining us this season')}</p>
-          <div class="people">
+          <div class="people guests-grid">
             {teachers.guests.map((p) => (
               <div class="person">
                 {p.photo ? <Img src={p.photo} alt={p.name} sizes="25vw" /> : <div class="person-ph"><img src={url('/images/logo.svg')} alt="" /></div>}
                 <strong>{p.name}</strong><span>{t(p.role)}</span>
+                {p.bio && <p class="person-bio">{t(p.bio)}</p>}
               </div>
             ))}
           </div>

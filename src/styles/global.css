@@ -290,6 +290,8 @@ h1.hero-title { font-size: clamp(2.8rem, 7.6vw, 7.4rem); max-width: 17ch; color:
 .person span { display: block; font-size: 0.85rem; color: var(--muted); }
 .dark .person span { color: #b5a993; }
 .guests { margin-top: 64px; }
+.guests-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 32px; }
+.person-bio { font-size: 0.92rem; color: var(--muted); margin: 8px 0 0; }
 
 /* ---------- Video ---------- */
 .video { position: relative; border-radius: var(--radius); overflow: hidden; background: #000; aspect-ratio: 16 / 9; }
