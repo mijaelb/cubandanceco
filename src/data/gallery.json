@@ -1,46 +1,190 @@
 {
   "video": {
     "title": "Our story",
-    "text": "Behind the scenes of a company that travels across Europe to keep the Cuban folkloric tradition alive, told by our dancers.",
+    "text": "A short film about the company, told by our dancers.",
     "src": "/video/our-story.mp4",
-    "poster": "/images/photos/story-poster.jpg"
+    "poster": "/images/photos/stage-finale.webp"
   },
   "photos": [
-    { "src": "/images/photos/stage-timba.webp", "alt": "La Cubanía on stage at Timbalemania, Augsburg 2025", "category": "Stage" },
-    { "src": "/images/photos/havana-yemaya.webp", "alt": "Dancer dressed as Yemayá by the sea in Havana", "category": "Cuba" },
-    { "src": "/images/photos/stage-africa.webp", "alt": "Raíces: the journey from Africa, Augsburg 2025", "category": "Stage" },
-    { "src": "/images/photos/training-joy.webp", "alt": "Joy during a training weekend", "category": "Training" },
-    { "src": "/images/photos/stage-yemaya.webp", "alt": "Yemayá's skirts in blue light", "category": "Stage" },
-    { "src": "/images/photos/havana-red-men.webp", "alt": "Dancers in red costumes on the rocks in Havana", "category": "Cuba" },
-    { "src": "/images/photos/studio-hats.webp", "alt": "Costume photo shoot with sombreros", "category": "Costumes" },
-    { "src": "/images/photos/stage-chango.webp", "alt": "Changó performance", "category": "Stage" },
-    { "src": "/images/photos/havana-red-dresses.webp", "alt": "Dancers in red dresses, Havana", "category": "Cuba" },
-    { "src": "/images/photos/training-class.webp", "alt": "Training class", "category": "Training" },
-    { "src": "/images/photos/stage-masks.webp", "alt": "Masked dancers on stage", "category": "Stage" },
-    { "src": "/images/photos/studio-red.webp", "alt": "Dancers in red Changó costumes", "category": "Costumes" },
-    { "src": "/images/photos/havana-skirts.webp", "alt": "Colourful skirts at the Malecón, Havana", "category": "Cuba" },
-    { "src": "/images/photos/rome-couples.webp", "alt": "Popular dances at Arca Social Club, Rome 2024", "category": "Stage" },
-    { "src": "/images/photos/training-leonardo.webp", "alt": "Leonardo Moya teaching", "category": "Training" },
-    { "src": "/images/photos/studio-green.webp", "alt": "Ogún warriors in green", "category": "Costumes" },
-    { "src": "/images/photos/stage-oshun.webp", "alt": "Solo under purple stage lights", "category": "Stage" },
-    { "src": "/images/photos/havana-blue-trio.webp", "alt": "Three dancers in blue, Havana", "category": "Cuba" },
-    { "src": "/images/photos/training-bw.webp", "alt": "Black and white class moment", "category": "Training" },
-    { "src": "/images/photos/stage-ship.webp", "alt": "The ship: crossing the Atlantic", "category": "Stage" },
-    { "src": "/images/photos/rome-masks.webp", "alt": "Carnival masks, Rome 2024", "category": "Stage" },
-    { "src": "/images/photos/studio-group.webp", "alt": "The company in costume", "category": "Costumes" },
-    { "src": "/images/photos/havana-rumba.webp", "alt": "Rumba by the Havana bay", "category": "Cuba" },
-    { "src": "/images/photos/training-hall.webp", "alt": "A full hall of dancers", "category": "Training" },
-    { "src": "/images/photos/rome-musicians.webp", "alt": "Live musicians, Rome 2024", "category": "Stage" },
-    { "src": "/images/photos/group-havana.webp", "alt": "Group photo in Havana", "category": "Cuba" },
-    { "src": "/images/photos/training-energy.webp", "alt": "Energy in class", "category": "Training" },
-    { "src": "/images/photos/rome-white.webp", "alt": "Dancers in white, Rome 2024", "category": "Stage" },
-    { "src": "/images/photos/group-colors.webp", "alt": "Group photo after training", "category": "Training" },
-    { "src": "/images/photos/havana-flag.webp", "alt": "The Cuban flag in Havana", "category": "Cuba" },
-    { "src": "/images/photos/stage-finale.webp", "alt": "Finale bow, Augsburg 2025", "category": "Stage" },
-    { "src": "/images/photos/group-backstage.webp", "alt": "Backstage family photo", "category": "Training" },
-    { "src": "/images/photos/rome-red.webp", "alt": "Dancers in red, Rome 2024", "category": "Stage" },
-    { "src": "/images/photos/rome-flag.webp", "alt": "Cuban colours on stage, Rome 2024", "category": "Stage" },
-    { "src": "/images/photos/group-studio.webp", "alt": "Training weekend group photo", "category": "Training" },
-    { "src": "/images/photos/group-blue.webp", "alt": "Company in blue skirts", "category": "Costumes" }
+    {
+      "src": "/images/photos/stage-timba.webp",
+      "alt": "La Cubanía on stage at Timbalemania, Augsburg 2025",
+      "category": "Stage"
+    },
+    {
+      "src": "/images/photos/havana-yemaya.webp",
+      "alt": "Dancer dressed as Yemayá by the sea in Havana",
+      "category": "Cuba"
+    },
+    {
+      "src": "/images/photos/stage-africa.webp",
+      "alt": "Raíces: from Africa to Cuba, Augsburg 2025",
+      "category": "Stage"
+    },
+    {
+      "src": "/images/photos/training-joy.webp",
+      "alt": "Joy during a training weekend",
+      "category": "Training"
+    },
+    {
+      "src": "/images/photos/stage-yemaya.webp",
+      "alt": "Yemayá's skirts in blue light",
+      "category": "Stage"
+    },
+    {
+      "src": "/images/photos/havana-red-men.webp",
+      "alt": "Dancers in red costumes on the rocks in Havana",
+      "category": "Cuba"
+    },
+    {
+      "src": "/images/photos/studio-hats.webp",
+      "alt": "Costume photo shoot with sombreros",
+      "category": "Costumes"
+    },
+    {
+      "src": "/images/photos/stage-chango.webp",
+      "alt": "Changó performance",
+      "category": "Stage"
+    },
+    {
+      "src": "/images/photos/havana-red-dresses.webp",
+      "alt": "Dancers in red dresses, Havana",
+      "category": "Cuba"
+    },
+    {
+      "src": "/images/photos/training-class.webp",
+      "alt": "Training class",
+      "category": "Training"
+    },
+    {
+      "src": "/images/photos/stage-masks.webp",
+      "alt": "Masked dancers on stage",
+      "category": "Stage"
+    },
+    {
+      "src": "/images/photos/studio-red.webp",
+      "alt": "Dancers in red Changó costumes",
+      "category": "Costumes"
+    },
+    {
+      "src": "/images/photos/havana-skirts.webp",
+      "alt": "Colourful skirts at the Malecón, Havana",
+      "category": "Cuba"
+    },
+    {
+      "src": "/images/photos/rome-couples.webp",
+      "alt": "Popular dances at Arca Social Club, Rome 2024",
+      "category": "Stage"
+    },
+    {
+      "src": "/images/photos/training-leonardo.webp",
+      "alt": "Leonardo Moya teaching",
+      "category": "Training"
+    },
+    {
+      "src": "/images/photos/studio-green.webp",
+      "alt": "Ogún warriors in green",
+      "category": "Costumes"
+    },
+    {
+      "src": "/images/photos/stage-oshun.webp",
+      "alt": "Solo under purple stage lights",
+      "category": "Stage"
+    },
+    {
+      "src": "/images/photos/havana-blue-trio.webp",
+      "alt": "Three dancers in blue, Havana",
+      "category": "Cuba"
+    },
+    {
+      "src": "/images/photos/training-bw.webp",
+      "alt": "A class in black and white",
+      "category": "Training"
+    },
+    {
+      "src": "/images/photos/stage-ship.webp",
+      "alt": "The ship: crossing the Atlantic",
+      "category": "Stage"
+    },
+    {
+      "src": "/images/photos/rome-masks.webp",
+      "alt": "Carnival masks, Rome 2024",
+      "category": "Stage"
+    },
+    {
+      "src": "/images/photos/studio-group.webp",
+      "alt": "The company in costume",
+      "category": "Costumes"
+    },
+    {
+      "src": "/images/photos/havana-rumba.webp",
+      "alt": "Rumba by the Havana bay",
+      "category": "Cuba"
+    },
+    {
+      "src": "/images/photos/training-hall.webp",
+      "alt": "A full hall of dancers",
+      "category": "Training"
+    },
+    {
+      "src": "/images/photos/rome-musicians.webp",
+      "alt": "Live musicians, Rome 2024",
+      "category": "Stage"
+    },
+    {
+      "src": "/images/photos/group-havana.webp",
+      "alt": "Group photo in Havana",
+      "category": "Cuba"
+    },
+    {
+      "src": "/images/photos/training-energy.webp",
+      "alt": "Energy in class",
+      "category": "Training"
+    },
+    {
+      "src": "/images/photos/rome-white.webp",
+      "alt": "Dancers in white, Rome 2024",
+      "category": "Stage"
+    },
+    {
+      "src": "/images/photos/group-colors.webp",
+      "alt": "Group photo after training",
+      "category": "Training"
+    },
+    {
+      "src": "/images/photos/havana-flag.webp",
+      "alt": "The Cuban flag in Havana",
+      "category": "Cuba"
+    },
+    {
+      "src": "/images/photos/stage-finale.webp",
+      "alt": "Finale bow, Augsburg 2025",
+      "category": "Stage"
+    },
+    {
+      "src": "/images/photos/group-backstage.webp",
+      "alt": "Backstage family photo",
+      "category": "Training"
+    },
+    {
+      "src": "/images/photos/rome-red.webp",
+      "alt": "Dancers in red, Rome 2024",
+      "category": "Stage"
+    },
+    {
+      "src": "/images/photos/rome-flag.webp",
+      "alt": "Cuban colours on stage, Rome 2024",
+      "category": "Stage"
+    },
+    {
+      "src": "/images/photos/group-studio.webp",
+      "alt": "Training weekend group photo",
+      "category": "Training"
+    },
+    {
+      "src": "/images/photos/group-blue.webp",
+      "alt": "Company in blue skirts",
+      "category": "Costumes"
+    }
   ]
 }

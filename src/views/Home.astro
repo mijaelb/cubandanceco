@@ -38,8 +38,10 @@ const marquee = [...site.styles, ...site.styles];
     </div>
   </section>
 
-  <div class="marquee" aria-label={site.styles.join(', ')}>
-    <div class="marquee-track" aria-hidden="true">{marquee.map((s) => <span>{s}<i>✦</i></span>)}</div>
+  <div class="marquee-wrap">
+    <div class="marquee" aria-label={site.styles.join(', ')}>
+      <div class="marquee-track" aria-hidden="true">{marquee.map((s) => <span>{s}<i>✦</i></span>)}</div>
+    </div>
   </div>
 
   <section class="section gold pattern" data-word={first?.city || 'ICCD'}>
@@ -115,7 +117,7 @@ const marquee = [...site.styles, ...site.styles];
         <ol class="parts">
           {show.parts.map((p, i) => <li><span class="display">0{i + 1}</span><div><strong>{t(p.title)}</strong><p>{t(p.text).split('. ')[0]}.</p></div></li>)}
         </ol>
-        <a class="btn btn-gold" href={link(lang, 'raices-cubanas')}>{t('Discover the show')}</a>
+        <a class="btn btn-gold" href={link(lang, 'raices-cubanas')}>{t('About the show')}</a>
       </div>
     </div>
   </section>
@@ -127,7 +129,7 @@ const marquee = [...site.styles, ...site.styles];
           <p class="eyebrow">{t('Choreographers & teachers')}</p>
           <h2 class="display">{t('The masters')}</h2>
         </div>
-        <a class="link-arrow" href={link(lang, 'about')}>{t('Read their stories')}</a>
+        <a class="link-arrow" href={link(lang, 'about')}>{t('About the teachers')}</a>
       </div>
       <div class="people people-lg">
         {teachers.masters.map((p) => (
@@ -144,7 +146,7 @@ const marquee = [...site.styles, ...site.styles];
     <div class="wrap">
       <div class="section-head">
         <div>
-          <p class="eyebrow">{t('Documentary')}</p>
+          <p class="eyebrow">{t('Film')}</p>
           <h2 class="display">{t(gallery.video.title)}</h2>
         </div>
         <p class="muted narrow">{t(gallery.video.text)}</p>
@@ -162,8 +164,8 @@ const marquee = [...site.styles, ...site.styles];
         </div>
         <a class="link-arrow" href={link(lang, 'gallery')}>{t('See all photos')}</a>
       </div>
-      <div class="mosaic">
-        {gallery.photos.slice(0, 7).map((p) => <Img src={p.src} alt={t(p.alt)} sizes="(min-width: 900px) 33vw, 50vw" class="reveal" />)}
+      <div class="masonry masonry-home">
+        {gallery.photos.slice(0, 9).map((p) => <Img src={p.src} alt={t(p.alt)} sizes="(min-width: 900px) 33vw, 50vw" />)}
       </div>
     </div>
   </section>

@@ -1,15 +1,15 @@
 {
   "name": "International Company of Cuban Dances",
   "shortName": "ICCD",
-  "description": "Afro-Cuban folkloric dance company and academy led by former masters of the Conjunto Folklórico Nacional de Cuba. Monthly intensive trainings in a different European city.",
+  "description": "Afro-Cuban folkloric dance company and academy led by former dancers of the Conjunto Folklórico Nacional de Cuba. Training weekends every month in a different European city.",
   "announcement": {
-    "text": "🎉 4 years of ICCD! Celebrate our anniversary with us at the Spijkenisse training, 10–11 October",
+    "text": "ICCD turns 4! Celebrate with us at the Spijkenisse training, 10–11 October",
     "url": "trainings"
   },
   "hero": {
-    "eyebrow": "Official EU representation of the Conjunto Folklórico Nacional de Cuba",
+    "eyebrow": "Cuban folklore & popular dances",
     "title": "Dance the roots of Cuba",
-    "text": "Train with former masters of the Conjunto Folklórico Nacional de Cuba. Every month, a different city in Europe. Live drums, chants and a company of dancers from all over the world.",
+    "text": "Taught by former dancers of the Conjunto Folklórico Nacional de Cuba. One weekend a month, each time in a different European city, with live drums and singing.",
     "images": [
       "/images/photos/stage-timba.webp",
       "/images/photos/stage-africa.webp",
@@ -20,7 +20,7 @@
   },
   "intro": {
     "title": "Who we are",
-    "text": "ICCD is a collective of dancers, teachers and culture-bearers rooted in the legacy of the Conjunto Folklórico Nacional de Cuba. Founded in 2022 by former dancers and teachers of the Conjunto, we train, perform and build community around Afro-Cuban dance and tradition, with love, depth and rhythm. Our goal is to keep these folkloric traditions alive outside of Cuba and to share them with new generations."
+    "text": "ICCD was founded in 2022 by former dancers and teachers of the Conjunto Folklórico Nacional de Cuba. Today it brings together dancers from all over Europe. We train together every month, perform Cuban folkloric dance on stage and pass on what the maestros teach us."
   },
   "styles": [
     "Yoruba",
@@ -66,7 +66,7 @@
   "tagline": "Come for the dance. Stay for the family.",
   "family": {
     "title": "More than a company, a family",
-    "text": "We came from different countries, with different stories, but one passion brought us together: Cuban culture and dance. We started by learning steps. We ended up building a family. We laugh together, struggle together, make sacrifices together, and when things get difficult, we stay united. No ego. No competition. Just passion, friendship and a shared mission: to keep Cuban culture alive and share it with the world.",
+    "text": "We come from different countries and have different stories, but Cuban culture brought us together. We started by learning Cuban dance and ended up as a family. We laugh together, work hard together and stick together when things get difficult. No ego, no competition. Just friendship, and one mission: sharing music, dance and culture.",
     "image": "/images/photos/group-backstage.webp"
   }
 }

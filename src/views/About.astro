@@ -11,7 +11,7 @@ const { lang } = Astro.props;
 const t = useT(lang);
 ---
 <Layout lang={lang} page="about" title="About" description={about.story[0]}>
-  <PageHero image="/images/photos/training-leonardo.webp" eyebrow={t('About us')} title={t('Preserving Cuba’s living heritage')} text={t(about.story[0])} position="center 30%" />
+  <PageHero image="/images/photos/stage-finale.webp" eyebrow={t('About us')} title={t('Keeping Cuban folklore alive')} text={t(about.story[0])} />
 
   <section class="section paper">
     <div class="wrap split">
@@ -74,7 +74,7 @@ const t = useT(lang);
     <div class="wrap split">
       <div class="reveal">
         <p class="eyebrow">{t('Our mission')}</p>
-        <h2 class="display">{t('Dance as memory, education and exchange')}</h2>
+        <h2 class="display">{t('Teach, preserve, share')}</h2>
         {about.mission.map((p) => <p>{t(p)}</p>)}
       </div>
       <div class="reveal">

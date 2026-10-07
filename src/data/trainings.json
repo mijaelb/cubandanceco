@@ -1,25 +1,25 @@
 {
   "season": "2026 – 2027",
-  "intro": "Train with ICCD and dive into the heart of Cuban folklore. Led by former masters of the Conjunto Folklórico Nacional de Cuba, these weekends are a rare chance to go deep into Afro-Cuban dance and music with live percussion and chants. More than a workshop, it is a full cultural immersion.",
-  "level": "These trainings are designed for intermediate to advanced dancers looking for meaningful growth and a deeper connection to Cuban folkloric dance and music. They are not beginner classes: a basic knowledge of Yoruba, Arará, Palo, Makuta, Yuka and Rumba is expected.",
+  "intro": "Two days of Afro-Cuban dance with the maestros of the Conjunto Folklórico Nacional de Cuba, with live percussion and singing. Each weekend takes place in a different European city.",
+  "level": "The trainings are for intermediate and advanced dancers. They are not beginner classes: you should already know the basics of Yoruba, Arará, Palo, Makuta, Yuka and Rumba.",
   "included": [
-    "10 hours of classes over 2 days (Saturday & Sunday)",
-    "Afro-Cuban dance and chants: Yoruba, Arará, Palo, Makuta, Yuka, Rumba",
-    "Live music: batá, tambor, güiro and vocals",
-    "Cuban popular dances: Son, Mambo, Cha-cha-chá and more",
-    "The methodology of Cuba's top folkloric school"
+    "About 10 hours of classes over Saturday and Sunday",
+    "Afro-Cuban dances and songs: Yoruba, Arará, Palo, Makuta, Yuka, Rumba",
+    "Live music: batá, tambor, güiro and voice",
+    "Cuban popular dances: son, mambo, cha-cha-chá and more",
+    "Taught with the method of the Conjunto Folklórico Nacional de Cuba"
   ],
-  "scheduleNote": "Trainings usually start on Saturday around noon and finish around 5 pm on Sunday. The full class schedule is published one week before each training.",
+  "scheduleNote": "We usually start on Saturday around midday and finish on Sunday around 5 pm. The full timetable is published a week before each training.",
   "reminders": [
-    "Please be on time, we recommend arriving 10 minutes early",
-    "Store your personal belongings in the locker rooms",
-    "Remove outdoor shoes before entering the dance room",
-    "Respect the line structure as presented by the direction",
+    "Arrive 10 minutes early",
+    "Leave your belongings in the changing room",
+    "Take off outdoor shoes before entering the studio",
+    "Keep to the lines set by the teachers",
     "Eat before class",
-    "Wear proper training clothes",
-    "Bring your dance accessories (heels, skirts…)",
-    "Don't forget to bring water!",
-    "Schedules might be subject to changes"
+    "Wear training clothes",
+    "Bring your skirts, heels and other accessories",
+    "Bring water",
+    "The timetable may change"
   ],
   "events": [
     {
@@ -335,7 +335,7 @@
       "end": "2026-05-17",
       "city": "Sicily",
       "country": "Italy",
-      "note": "Company Camp: a full study week"
+      "note": "Company Camp: a week of training"
     },
     {
       "start": "2026-04-18",
@@ -419,7 +419,7 @@
       "end": "2025-05-18",
       "city": "Havana",
       "country": "Cuba",
-      "note": "Encuentros: study trip with the Conjunto Folklórico Nacional de Cuba"
+      "note": "Encuentros: two weeks of study with the Conjunto Folklórico Nacional de Cuba"
     },
     {
       "start": "2025-03-29",
@@ -510,7 +510,7 @@
       "end": "2024-03-01",
       "city": "Havana",
       "country": "Cuba",
-      "note": "Encuentros: study trip with the Conjunto Folklórico Nacional de Cuba"
+      "note": "Encuentros: two weeks of study with the Conjunto Folklórico Nacional de Cuba"
     },
     {
       "start": "2024-01-20",

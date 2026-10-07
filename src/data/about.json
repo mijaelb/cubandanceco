@@ -1,58 +1,58 @@
 {
   "story": [
-    "The company was founded by renowned professor and dancer Leonardo Martínez Moya. A group of former dancers and masters of the Conjunto Folklórico Nacional de Cuba, from different generations, came together to give birth to this project.",
-    "The objective is to promote, share and preserve the knowledge of traditional folkloric Cuban dances. For this group of masters it is an honour to work with passionate dancers and musicians from around the world who, through their love of Cuban culture, have joined them on this magical journey through dance, song and music. The company is directed by Leonardo Martínez Moya and Giuliana Cassarisi.",
-    "It is also a tribute to the Cuban people, their culture, their diverse ethnicity, and the legacy of all the masters, dancers, musicians and artists before them who spread Cuban culture around the world. In Cuba, the Conjunto Folklórico Nacional de Cuba has represented the island's heritage through dance and performance since 1962."
+    "The company was founded by the dancer and teacher Leonardo Martínez Moya, together with former dancers and teachers of the Conjunto Folklórico Nacional de Cuba from different generations.",
+    "The aim is to teach, share and preserve traditional Cuban folkloric dance. The maestros work with dancers and musicians from many countries who came to Cuban culture through its dance, songs and music. The company is directed by Leonardo Martínez Moya and Giuliana Cassarisi.",
+    "It is also a tribute to the Cuban people and to the maestros, dancers and musicians who took Cuban culture around the world before us. In Cuba, the Conjunto Folklórico Nacional de Cuba has represented the island's heritage on stage since 1962."
   ],
   "pillars": [
     {
       "title": "International dancers",
-      "text": "The company brings together dancers from all over the world, united by their passion for Cuban dance and culture."
+      "text": "Dancers from all over Europe and beyond, brought together by Cuban dance."
     },
     {
-      "title": "Traveling trainings",
-      "text": "Every month we meet in a different city in Europe for an intensive training weekend."
+      "title": "Training on the move",
+      "text": "Every month we meet for a training weekend in a different European city."
     },
     {
-      "title": "Academic & choreographic training",
-      "text": "A strong emphasis on the development of our members, with high-level academic and choreographic programmes."
+      "title": "Technique and choreography",
+      "text": "Regular classes in technique and repertoire, and rehearsals for our shows."
     },
     {
-      "title": "International performances",
-      "text": "We perform at festivals, cultural events and tours, highlighting the richness and diversity of Cuban culture."
+      "title": "Performances",
+      "text": "We perform at festivals, cultural events and on tour."
     },
     {
-      "title": "Artistic collaborations",
-      "text": "We collaborate with renowned artists, choreographers and musicians to create productions that blend tradition with modern expression."
+      "title": "Collaborations",
+      "text": "We work with other artists, choreographers and musicians on new productions."
     },
     {
-      "title": "Social & cultural integration",
-      "text": "Workshops and activities that engage local communities wherever we perform, creating real opportunities for cultural exchange."
+      "title": "Community",
+      "text": "Workshops and events that bring in local dancers wherever we go."
     }
   ],
   "mission": [
-    "The International Company of Cuban Dances is dedicated to preserving and promoting Cuban culture by safeguarding and sharing Cuba's artistic and cultural traditions through performances, workshops and international collaborations.",
-    "Education and training are at the heart of our work. We offer dedicated programmes for dancers, passing on Cuban dance techniques and the values of folklore to new generations across Europe and beyond.",
-    "We are also committed to the research and documentation of traditional Cuban dances, carefully recording choreographies, music and costumes to ensure their preservation and transmission for the future."
+    "We want to protect and share Cuba's dance and music traditions through performances, workshops and work with other artists.",
+    "Teaching is at the centre of what we do. Our programmes pass on Cuban dance technique and folklore to new generations of dancers in Europe.",
+    "We also document traditional Cuban dances, including choreographies, music and costumes, so that they can be passed on."
   ],
   "exchange": {
     "title": "Cultural exchange with Cuba",
-    "text": "A key objective is to foster integration and exchange between Cuba and other countries, through international festivals and collaborations with other dance companies, and to recognise and celebrate the African roots of Cuban culture. We are proud to be the official European representation of the Conjunto Folklórico Nacional de Cuba. With our Encuentros we travel to Havana to train with the maestros of the Conjunto and the Conjunto Ban Rarrá: two intensive weeks in 2024 and 2025, including the Conjunto's anniversary show.",
+    "text": "With our Encuentros we travel to Havana to train with the maestros of the Conjunto Folklórico Nacional de Cuba and of Conjunto Ban Rarrá: two weeks of classes in 2024 and again in 2025, including the Conjunto's anniversary show.",
     "images": [
       "/images/photos/havana-blue-trio.webp",
       "/images/photos/havana-red-men.webp",
-      "/images/photos/group-havana.webp"
+      "/images/photos/havana-yemaya.webp"
     ]
   },
   "paths": [
     {
       "title": "Academy",
-      "text": "The academy is open to everyone joining us for the first time. Study Afro-Cuban dances in depth at your own rhythm. Stay in the academy if your main goal is to train and grow as a dancer, or if you can't join every month.",
+      "text": "Everyone starts in the academy. You learn the dances in depth, at your own pace, and you can stay as long as you like, even if you can't come every month.",
       "image": "/images/photos/training-joy.webp"
     },
     {
       "title": "Company",
-      "text": "Become a member of the company and perform on stages across Europe. After at least three training weekends, the teachers decide whether you join the company or continue in the academy a little longer. Members commit to attending every month and rehearsing the choreographies.",
+      "text": "Company members perform on stage across Europe. After at least three training weekends, the teachers decide if you join the company or stay in the academy a little longer. Members come every month and also rehearse at home.",
       "image": "/images/photos/rome-couples.webp"
     }
   ]

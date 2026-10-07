@@ -2,20 +2,20 @@
   "title": "Raíces Cubanas",
   "subtitle": "A 90-minute dance-theatre show in two parts",
   "poster": "/images/photos/raices-poster.webp",
-  "lead": "The sound of the waters echoes through the myths and legends that shape Cuban identity. The many cultural currents that coexist on the island come together to form the soul of its people. Rebellious, joyful, musical and united, these qualities reflect the true spirit of Cuba.",
-  "text": "Raíces Cubanas, presented by the Generación Abbilona Association and its International Folkloric Company of Traditional Cuban Dances, brings this spirit to the stage. The performance is a journey through musical and dance traditions of African and Cuban origin, tracing the richness of Cuban culture from the colonial era to the present day.",
+  "lead": "Water, myth and legend run through Cuban identity. Many cultures meet on the island, and together they shape the character of its people: rebellious, joyful, musical and united.",
+  "text": "Raíces Cubanas is presented by the Generación Abbilona Association and the International Company of Cuban Dances. The show follows the music and dance of African and Cuban origin from colonial times to today.",
   "parts": [
     {
       "label": "Part one",
       "title": "Raíces",
       "image": "/images/photos/stage-africa.webp",
-      "text": "The first part explores the Afro-Cuban religious and mythological world. It highlights the influence of the orishas and other African deities on Cuban culture, with choreographies dedicated to Elegguá, Ogún, Yemayá, Changó and Oyá, as well as a portrayal of the journey of enslaved Africans to Cuba. It shows how their spiritual beliefs and musical traditions became a fundamental part of Cuban identity."
+      "text": "Raíces is about the Afro-Cuban religious world and its myths. It shows how the orishas and other African deities shaped Cuban culture, with choreographies for Elegguá, Ogún, Yemayá, Changó and Oyá, and a scene about the crossing of enslaved Africans to Cuba."
     },
     {
       "label": "Part two",
       "title": "La Cubanía",
       "image": "/images/photos/stage-timba.webp",
-      "text": "The second part celebrates the popular music and dance genres born from the birth of the Cuban Republic up to the present day: danzón, mambo, cha-cha-chá, son, the street vendors' chants (pregones), rumba and the Cuban carnival. It highlights the racial and cultural blending that sets Cuba apart and celebrates the joy and diversity of the Cuban people."
+      "text": "La Cubanía covers the popular music and dances that developed from the birth of the Republic to today: danzón, mambo, cha-cha-chá, son, the street vendors' calls (pregones), rumba and carnival. It celebrates the mix of peoples and cultures that makes Cuba what it is."
     }
   ],
   "upcoming": [
@@ -149,5 +149,5 @@
       "venue": "Belushi's Berlin Mitte"
     }
   ],
-  "bookingText": "Would you like to bring Raíces Cubanas to your festival, theatre or cultural event? Get in touch with us."
+  "bookingText": "Would you like Raíces Cubanas at your festival, theatre or event? Get in touch."
 }

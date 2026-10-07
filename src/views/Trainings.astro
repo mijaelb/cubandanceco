@@ -25,8 +25,8 @@ const cities = [...new Set([...events, ...past].map((e) => e.city))];
   <section class="section paper">
     <div class="wrap split split-top">
       <div class="reveal">
-        <p class="eyebrow">{t('What is included')}</p>
-        <h2 class="display">{t('A full cultural immersion')}</h2>
+        <p class="eyebrow">{t('What’s included')}</p>
+        <h2 class="display">{t('Two days of dance, music and song')}</h2>
         <ul class="checks">{trainings.included.map((i) => <li>{t(i)}</li>)}</ul>
       </div>
       <aside class="note-card reveal">
@@ -43,7 +43,7 @@ const cities = [...new Set([...events, ...past].map((e) => e.city))];
       <div class="section-head">
         <div>
           <p class="eyebrow">{t('Upcoming dates')}</p>
-          <h2 class="display">{t('Where we meet next')}</h2>
+          <h2 class="display">{t('Next dates')}</h2>
         </div>
       </div>
       {!events.length && <p class="lead">{t('New dates will be announced soon. Join our WhatsApp group to be the first to know.')}</p>}
@@ -57,7 +57,7 @@ const cities = [...new Set([...events, ...past].map((e) => e.city))];
                 <h3 class="display">{e.city} <span>{e.countryCode}</span></h3>
                 {e.note && <p class="tcard-note">{t(e.note)}</p>}
               </div>
-              <a class="btn btn-dark" href={e.ticketUrl || site.links.tickets} target="_blank" rel="noopener">{t('Tickets')}</a>
+              <a class="btn btn-gold" href={e.ticketUrl || site.links.tickets} target="_blank" rel="noopener">{t('Tickets')}</a>
             </header>
             <dl class="event-info">
               <div><dt>{t('When')}</dt><dd>{t(e.time)}</dd></div>
@@ -66,10 +66,10 @@ const cities = [...new Set([...events, ...past].map((e) => e.city))];
             </dl>
             {e.schedule.length > 0 ? (
               <details class="event-schedule" open={i === 0}>
-                <summary>{t('Training schedule')}</summary>
+                <summary>{t('Timetable')}</summary>
                 <Schedule days={e.schedule} lang={lang} />
               </details>
-            ) : <p class="muted">{t('The schedule will be published one week before the training.')}</p>}
+            ) : <p class="muted">{t('The timetable will be published a week before the training.')}</p>}
           </article>
         ))}
       </div>
@@ -86,7 +86,7 @@ const cities = [...new Set([...events, ...past].map((e) => e.city))];
       <div class="reveal">
         <p class="eyebrow">{t('Where we have danced')}</p>
         <div class="chips">{cities.map((c) => <span>{c}</span>)}</div>
-        <p class="muted">{t('Would you like to host a training in your city? Get in touch!')}</p>
+        <p class="muted">{t('Want to host a training in your city? Get in touch.')}</p>
         <div class="actions">
           <a class="btn btn-gold" href={site.links.whatsapp} target="_blank" rel="noopener">{t('Join our WhatsApp group')}</a>
         </div>
@@ -97,7 +97,7 @@ const cities = [...new Set([...events, ...past].map((e) => e.city))];
     <section class="section cream">
       <div class="wrap">
         <div class="section-head">
-          <div><p class="eyebrow">{past.length} {t('training weekends so far')}</p><h2 class="display">{t('Our journey')}</h2></div>
+          <div><p class="eyebrow">{past.length} {t('training weekends so far')}</p><h2 class="display">{t('Past trainings')}</h2></div>
           <p class="muted narrow">{t('Since 2022 we have met almost every month, in a different city each time.')}</p>
         </div>
         <div class="journey">

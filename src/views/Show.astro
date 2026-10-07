@@ -12,7 +12,7 @@ const { lang } = Astro.props;
 const t = useT(lang);
 const next = upcoming(show.upcoming as any[]);
 const contact = site.links.email ? `mailto:${site.links.email}` : site.links.instagram;
-const strip = ['stage-ship', 'stage-oshun', 'stage-masks', 'stage-yemaya', 'stage-chango'].map((n) => `/images/photos/${n}.webp`);
+const strip = ['stage-ship', 'stage-oshun', 'stage-masks'].map((n) => `/images/photos/${n}.webp`);
 ---
 <Layout lang={lang} page="raices-cubanas" title="Raíces Cubanas" description={show.text} image="/images/photos/stage-africa.webp">
   <PageHero image="/images/photos/stage-ship.webp" eyebrow={t(show.subtitle)} title={show.title} text={t(show.lead)} />
@@ -21,7 +21,7 @@ const strip = ['stage-ship', 'stage-oshun', 'stage-masks', 'stage-yemaya', 'stag
     <div class="wrap split">
       <div class="reveal">
         <p class="eyebrow">{t('The show')}</p>
-        <h2 class="display">{t('A journey from Africa to the Cuba of today')}</h2>
+        <h2 class="display">{t('From Africa to the Cuba of today')}</h2>
         <p>{t(show.text)}</p>
         <p>{t('The show is divided into two main parts.')}</p>
       </div>
@@ -45,7 +45,7 @@ const strip = ['stage-ship', 'stage-oshun', 'stage-masks', 'stage-yemaya', 'stag
     </section>
   ))}
 
-  <div class="strip" aria-hidden="true">{strip.map((s) => <Img src={s} sizes="30vw" />)}</div>
+  <div class="strip" aria-hidden="true">{strip.map((s) => <Img src={s} sizes="(min-width: 700px) 33vw, 100vw" />)}</div>
 
   <section class="section paper">
     <div class="wrap split split-top">

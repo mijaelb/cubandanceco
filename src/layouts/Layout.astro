@@ -92,8 +92,8 @@ const canonical = new URL(link(lang, page), Astro.site);
         {NAV.map(([p, label]) => <a href={link(lang, p)}>{label}</a>)}
       </nav>
       <div>
-        <p class="eyebrow">{t('Stay in the loop')}</p>
-        <p>{t('Training news, show dates and behind the scenes.')}</p>
+        <p class="eyebrow">{t('Follow us')}</p>
+        <p>{t('Training dates, shows and photos from our weekends.')}</p>
         <div class="socials">
           {socials.map(([name, href, d]) => (
             <a href={href} target="_blank" rel="noopener" aria-label={name}><svg viewBox="0 0 24 24" aria-hidden="true"><path d={d} /></svg></a>

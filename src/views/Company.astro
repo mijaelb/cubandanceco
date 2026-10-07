@@ -12,7 +12,7 @@ const t = useT(lang);
 const countries = new Set(people.members.map((m) => m.country)).size;
 ---
 <Layout lang={lang} page="company" title="Company" description={people.membersIntro} image="/images/photos/studio-group.webp">
-  <PageHero image="/images/photos/group-studio.webp" eyebrow={`${people.members.length} ${t('dancers')} · ${countries} ${t('countries')}`} title={t('The company')} text={t(people.membersIntro)} position="center 40%" />
+  <PageHero image="/images/photos/group-studio.webp" eyebrow={`${people.members.length} ${t('dancers')} · ${countries} ${t('countries')}`} title={t('The company')} text={t(people.membersIntro)} />
 
   <section class="section cream">
     <div class="wrap">
@@ -44,7 +44,7 @@ const countries = new Set(people.members.map((m) => m.country)).size;
 
   <section class="section dark">
     <div class="wrap">
-      <div class="section-head"><div><p class="eyebrow">{t('The heartbeat')}</p><h2 class="display">{t('Musicians')}</h2></div><p class="muted narrow">{t(people.musiciansIntro)}</p></div>
+      <div class="section-head"><div><p class="eyebrow">{t('Live music')}</p><h2 class="display">{t('Musicians')}</h2></div><p class="muted narrow">{t(people.musiciansIntro)}</p></div>
       <div class="people">
         {people.musicians.map((m) => (
           <figure class="person reveal">
@@ -59,7 +59,7 @@ const countries = new Set(people.members.map((m) => m.country)).size;
   <section class="section gold cta">
     <div class="wrap cta-inner reveal">
       <h2 class="display huge">{t('Want to join the company?')}</h2>
-      <p class="lead">{t('Everyone starts in the academy. After three training weekends, the teachers decide when you are ready for the stage.')}</p>
+      <p class="lead">{t('Everyone starts in the academy. After at least three training weekends, the teachers decide when you are ready for the stage.')}</p>
       <div class="actions">
         <a class="btn btn-dark" href={link(lang, 'trainings')}>{t('See training dates')}</a>
         <a class="btn btn-line" href={link(lang, 'faq')}>{t('Read the FAQ')}</a>

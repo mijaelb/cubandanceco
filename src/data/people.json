@@ -1,5 +1,5 @@
 {
-  "teamIntro": "The company is directed by Leonardo Martínez Moya and Giuliana Cassarisi, together with a team of dancers who organise the trainings, shows and travels.",
+  "teamIntro": "Leonardo Martínez Moya and Giuliana Cassarisi direct the company. A small team of dancers organises the trainings, shows and trips.",
   "team": [
     {
       "name": "Leonardo Martínez Moya",
@@ -32,7 +32,7 @@
       "photo": "/images/people/laura-torrenova-lopez.webp"
     }
   ],
-  "membersIntro": "We are a team of dancers from around Europe, united by our passion and love for Afro-Cuban dances. Our goal is to perform the traditional Cuban dances outside of Cuba, thereby preserving Cuba's rich folkloric traditions.",
+  "membersIntro": "Dancers from all over Europe who share a love of Afro-Cuban dance. Together we perform traditional Cuban dances outside Cuba and help keep them alive.",
   "members": [
     {
       "name": "Sofia De Endaya",
@@ -205,7 +205,7 @@
       "photo": "/images/people/mona-herter.webp"
     }
   ],
-  "musiciansIntro": "Live drums and voices are the heartbeat of every training and every show. These are the musicians who accompanied our first performance at the Arca Social Club in Rome on 25 May 2024.",
+  "musiciansIntro": "Live drums and singing are part of every training and every show. These musicians played at the Raíces Cubanas premiere at the Arca Social Club in Rome on 25 May 2024.",
   "musicians": [
     {
       "name": "Maaike Van Zetten",

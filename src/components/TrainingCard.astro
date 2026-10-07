@@ -7,19 +7,28 @@ const { e, lang } = Astro.props;
 const t = useT(lang);
 const range = dateRange(e.start, e.end, locale(lang));
 const [, days = range, month = ''] = range.match(/^(\S+) (\S+)$/) || [];
+const icon = {
+  time: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm1-13h-2v6l5 3 1-1.7-4-2.3z',
+  pin: 'M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z',
+};
 ---
 <article class="tcard reveal" data-end={e.end || e.start}>
-  {e.badge && <span class="badge">{t(e.badge)}</span>}
-  <div class="tcard-date"><span class="display">{days}</span><span>{month}</span></div>
+  <header class="tcard-top">
+    <span class="tcard-days display">{days}</span>
+    <span class="tcard-month"><b>{month}</b>{e.start.slice(0, 4)}</span>
+    {e.badge && <span class="tcard-badge">{t(e.badge)}</span>}
+  </header>
   <div class="tcard-body">
-    <p class="eyebrow">{t(e.country)}{e.countryCode && ` · ${e.countryCode}`}</p>
+    <p class="tcard-country">{e.countryCode} · {t(e.country)}</p>
     <h3 class="display">{e.city}</h3>
     {e.note && <p class="tcard-note">{t(e.note)}</p>}
-    <p>{t(e.time)}</p>
-    <p class="muted">{e.venue}</p>
+    <ul class="tcard-info">
+      <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d={icon.time} /></svg>{t(e.time)}</li>
+      <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d={icon.pin} /></svg>{e.venue}</li>
+    </ul>
   </div>
-  <div class="tcard-actions">
-    <a class="btn btn-dark btn-sm" href={e.ticketUrl || site.links.tickets} target="_blank" rel="noopener">{t('Tickets')}</a>
+  <footer class="tcard-actions">
+    <a class="btn btn-green btn-sm" href={e.ticketUrl || site.links.tickets} target="_blank" rel="noopener">{t('Tickets')}</a>
     <a class="btn btn-line btn-sm" href={`${link(lang, 'trainings')}#${slug(e.city + '-' + e.start)}`}>{e.schedule?.length ? t('Schedule') : t('Details')}</a>
-  </div>
+  </footer>
 </article>
