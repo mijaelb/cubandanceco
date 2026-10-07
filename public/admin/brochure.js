@@ -83,7 +83,7 @@ function schedule(ev, day, index) {
     h('div', { class: 'day' },
       h('div', { class: 'dayhead' }, h('b', {}, day.day), h('small', {}, longDate)),
       h('div', { class: 'grid' }, rows)),
-    h('div', { class: 'legend' }, h('span', {}, drum(), 'Live music'), h('span', {}, tag(), 'Company only')));
+    h('div', { class: 'legend' }, h('span', {}, h('i', { class: 'key' }), 'Everyone'), h('span', {}, h('i', { class: 'key co' }), tag(), 'Company only'), h('span', {}, drum(), 'Live music')));
 }
 
 function closing(ev) {
