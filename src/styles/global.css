@@ -115,7 +115,6 @@ body:has(main > .hero:first-child, main > .page-hero:first-child) .site-header:n
 .header-inner { display: flex; align-items: center; gap: 20px; padding: 14px 0; transition: padding 0.3s; }
 body:has(main > .hero:first-child, main > .page-hero:first-child) .site-header:not(.scrolled) .header-inner { padding: 22px 0; }
 .announce { display: flex; justify-content: center; gap: 10px; padding: 9px 16px; background: var(--gold); color: var(--ink); font: 700 0.78rem/1.35 var(--body); text-align: center; text-decoration: none; }
-@media (max-width: 600px) { .announce { font-size: 0.68rem; padding: 7px 12px; } .announce span:last-child { display: none; } }
 .announce:hover span:last-child { transform: translateX(4px); }
 .announce span:last-child { transition: transform 0.25s var(--ease); }
 .badge { display: inline-block; align-self: flex-start; background: var(--green); color: var(--gold-pale); font: 700 0.7rem/1 var(--body); text-transform: uppercase; letter-spacing: 0.12em; padding: 8px 12px; border-radius: 999px; margin-bottom: 10px; }
