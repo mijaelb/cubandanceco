@@ -7,8 +7,7 @@ const HANDLE = document.body.dataset.handle || '';
 const EMAIL = document.body.dataset.email || '';
 const WHATSAPP = document.body.dataset.whatsapp || '';
 const INSTAGRAM = document.body.dataset.instagram || '';
-// links work in the PDF; the address is written out too, for the images
-const bare = (url) => url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+// links work in the PDF; the images have the QR code for the WhatsApp group
 const footer = () => h('p', { class: 'foot' }, h('a', { href: 'https://cubandance.co' }, 'cubandance.co'), h('span', {}, '·'), INSTAGRAM ? h('a', { href: INSTAGRAM }, HANDLE) : HANDLE);
 
 function h(tag, attrs = {}, ...kids) {
@@ -126,7 +125,7 @@ function closing(ev) {
     pattern(...Array(9).fill(ev.city)),
     h('div', { class: 'content' }, logo(), h('h2', {}, 'Any', h('br'), 'questions?'),
       h('ul', { class: 'ask' },
-        WHATSAPP && h('li', {}, h('b', {}, 'WhatsApp'), h('div', {}, h('a', { href: WHATSAPP }, 'Join the ICCD group'), h('small', {}, bare(WHATSAPP)))),
+        WHATSAPP && h('li', {}, h('b', {}, 'WhatsApp'), h('div', {}, h('a', { href: WHATSAPP }, 'Join the ICCD group'))),
         HANDLE && h('li', {}, h('b', {}, 'Instagram'), h('div', {}, INSTAGRAM ? h('a', { href: INSTAGRAM }, HANDLE) : HANDLE)),
         EMAIL && h('li', {}, h('b', {}, 'Email'), h('div', {}, h('a', { href: `mailto:${EMAIL}` }, EMAIL))))),
     h('div', { class: 'book' }, h('p', {}, 'Ready to book your next training?'), h('a', { href: ev.ticketUrl || TICKETS }, 'Get your training ticket ↗')),
