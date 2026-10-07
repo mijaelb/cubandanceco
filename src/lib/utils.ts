@@ -1,3 +1,4 @@
+import gallery from '../data/gallery.json';
 import { existsSync, readFileSync } from 'node:fs';
 import { imageSize } from 'image-size';
 import { join } from 'node:path';
@@ -39,7 +40,10 @@ export function dateRange(start: string, end: string, loc = 'en-GB') {
 export const fullDate = (s: string, loc = 'en-GB') => d(s).toLocaleDateString(loc, { day: 'numeric', month: 'long', year: 'numeric' });
 
 /** Link to a page in a given language: English lives at the root, others under /<lang>/. */
-export const link = (lang: string, page = '') => url(`${lang === 'en' ? '' : '/' + lang}/${page}`);
+export const link = (lang: string, page = '') => url(`${lang === 'en' ? '' : '/' + lang}/${page}${page ? '/' : ''}`);
+
+/** Caption of a photo from the gallery, used as its alt text elsewhere on the site. */
+export const photoAlt = (src: string) => gallery.photos.find((p) => p.src === src)?.alt || '';
 
 /** Items (trainings `start`/`end`, shows `date`) that are today or later, soonest first. */
 export const upcoming = <T extends Record<string, any>>(list: T[]) => {

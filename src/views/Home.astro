@@ -11,7 +11,7 @@ import about from '../data/about.json';
 import gallery from '../data/gallery.json';
 import insta from '../lib/instagram.json';
 import perf from '../data/performances.json';
-import { url, link, upcoming, dateRange } from '../lib/utils';
+import { url, link, upcoming, dateRange, photoAlt } from '../lib/utils';
 import { useT, locale } from '../i18n';
 
 const { lang } = Astro.props;
@@ -73,9 +73,9 @@ const marquee = [...site.styles, ...site.styles];
         <a class="btn btn-dark" href={link(lang, 'about')}>{t('Our story')}</a>
       </div>
       <div class="collage reveal">
-        <Img src="/images/photos/havana-yemaya.webp" alt="" sizes="(min-width: 900px) 25vw, 50vw" />
-        <Img src="/images/photos/studio-hats.webp" alt="" sizes="(min-width: 900px) 30vw, 60vw" />
-        <Img src="/images/photos/stage-chango.webp" alt="" sizes="(min-width: 900px) 25vw, 50vw" />
+        <Img src="/images/photos/havana-yemaya.webp" alt={t(photoAlt("/images/photos/havana-yemaya.webp"))} sizes="(min-width: 900px) 25vw, 50vw" />
+        <Img src="/images/photos/studio-hats.webp" alt={t(photoAlt("/images/photos/studio-hats.webp"))} sizes="(min-width: 900px) 30vw, 60vw" />
+        <Img src="/images/photos/stage-chango.webp" alt={t(photoAlt("/images/photos/stage-chango.webp"))} sizes="(min-width: 900px) 25vw, 50vw" />
       </div>
     </div>
     <div class="wrap stats reveal">

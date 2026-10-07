@@ -7,7 +7,7 @@ import site from '../data/site.json';
 import show from '../data/show.json';
 import perf from '../data/performances.json';
 import Flag from '../components/Flag.astro';
-import { link, upcoming, places } from '../lib/utils';
+import { link, upcoming, places, photoAlt } from '../lib/utils';
 import { useT } from '../i18n';
 
 const { lang } = Astro.props;
@@ -62,7 +62,7 @@ const where = places([...perf.upcoming, ...perf.past]);
         </div>
         {mail && <p class="muted">{mail}</p>}
       </div>
-      <div class="part-img reveal"><Img src="/images/photos/stage-finale.webp" alt="" sizes="(min-width: 900px) 50vw, 100vw" /></div>
+      <div class="part-img reveal"><Img src="/images/photos/stage-finale.webp" alt={t(photoAlt("/images/photos/stage-finale.webp"))} sizes="(min-width: 900px) 50vw, 100vw" /></div>
     </div>
   </section>
 </Layout>

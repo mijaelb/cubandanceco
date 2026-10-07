@@ -8,10 +8,13 @@ import site from '../data/site.json';
 import { url, link, srcset } from '../lib/utils';
 import { LANGS, langName, useT, locale } from '../i18n';
 
-interface Props { lang: string; page: string; title?: string; description?: string; image?: string; events?: any[]; preload?: string }
-const { lang, page, title, description = site.description, image = '/images/og.jpg', events = [], preload } = Astro.props;
+interface Props { lang: string; page: string; title?: string; description?: string; image?: string; events?: any[]; preload?: string; noindex?: boolean }
+const { lang, page, title, description = site.description, image = '/images/og.jpg', events = [], preload, noindex = false } = Astro.props;
 const t = useT(lang);
-const fullTitle = title ? `${t(title)} · ${site.name}` : `${site.name} · ${t('Afro-Cuban folkloric dance')}`;
+// search title and description written for each page (site.json → seo), else built from the page
+const seo = noindex ? null : (site as any).seo?.[page];
+const fullTitle = seo ? t(seo.title) : title ? `${t(title)} · ${site.name}` : `${site.name} · ${t('Afro-Cuban folkloric dance')}`;
+const desc = t(seo?.description || description);
 const NAV = [
   ['trainings', t('Trainings')],
   ['performances', t('Performances')],
@@ -35,7 +38,9 @@ const org = { '@type': 'PerformingGroup', name: site.name, url: new URL(link(lan
 const schema = [org, ...events.map((e) => ({
   '@type': 'Event', name: e.name || `${t('Training weekend')} · ${e.city}`, startDate: e.start || e.date, endDate: e.end || e.start || e.date,
   eventStatus: 'https://schema.org/EventScheduled', eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
-  location: { '@type': 'Place', name: e.venue || e.city, address: e.address || e.city }, image: abs(image), organizer: org,
+  description: e.name ? desc : `${t('Training weekend')} · ${site.name} · ${e.city}`,
+  location: { '@type': 'Place', name: e.venue || e.city, address: { '@type': 'PostalAddress', streetAddress: e.address || undefined, addressLocality: e.city, addressCountry: e.countryCode || undefined } },
+  image: abs(image), organizer: org, performer: org,
   ...(e.name ? {} : { offers: { '@type': 'Offer', url: e.ticketUrl || site.links.tickets, availability: 'https://schema.org/InStock' } }),
 }))].map((x) => ({ '@context': 'https://schema.org', ...x }));
 const jsonld = JSON.stringify(schema).replace(/</g, '\\u003c');
@@ -48,18 +53,21 @@ const jsonld = JSON.stringify(schema).replace(/</g, '\\u003c');
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; media-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <title>{fullTitle}</title>
-  <meta name="description" content={t(description)} />
+  <meta name="description" content={desc} />
   <meta name="theme-color" content="#14110d" />
   <link rel="icon" href={url('/images/logo.svg')} type="image/svg+xml" />
   <link rel="icon" href={url('/images/favicon-48.png')} type="image/png" sizes="48x48" />
-  <link rel="canonical" href={canonical} />
-  {LANGS.map((l) => <link rel="alternate" hreflang={l} href={new URL(link(l, page), Astro.site)} />)}
+  {noindex ? <meta name="robots" content="noindex" /> : <>
+    <link rel="canonical" href={canonical} />
+    {LANGS.map((l) => <link rel="alternate" hreflang={l} href={new URL(link(l, page), Astro.site)} />)}
+    <link rel="alternate" hreflang="x-default" href={new URL(link('en', page), Astro.site)} />
+  </>}
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content={site.name} />
   <meta property="og:locale" content={locale(lang).replace('-', '_')} />
   <meta property="og:url" content={canonical} />
   <meta property="og:title" content={fullTitle} />
-  <meta property="og:description" content={t(description)} />
+  <meta property="og:description" content={desc} />
   <meta property="og:image" content={new URL(url(image), Astro.site)} />
   <meta name="twitter:card" content="summary_large_image" />
   <script type="application/ld+json" set:html={jsonld} />

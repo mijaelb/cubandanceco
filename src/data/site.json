@@ -71,5 +71,39 @@
     "title": "One company, many countries",
     "text": "We are dancers from more than fifteen countries. Once a month we travel to a different city, share a studio for a weekend, eat together, and go home tired and happy. What started as classes has turned into friendships across Europe. We are here to learn, to perform, and to share Cuban music and dance.",
     "image": "/images/photos/group-backstage.webp"
+  },
+  "seo": {
+    "": {
+      "title": "International Company of Cuban Dances · Afro-Cuban dance",
+      "description": "Afro-Cuban folkloric dance company led by former dancers of the Conjunto Folklórico Nacional de Cuba. Training weekends and shows across Europe."
+    },
+    "trainings": {
+      "title": "Afro-Cuban dance training weekends in Europe · ICCD",
+      "description": "Two days of Afro-Cuban folkloric dance with maestros of the Conjunto Folklórico Nacional de Cuba and live drums. A different European city each month."
+    },
+    "performances": {
+      "title": "Afro-Cuban dance shows for festivals and theatres · ICCD",
+      "description": "Book Afro-Cuban folklore and Cuban popular dance for your festival, theatre or cultural event, always with live drums and singing."
+    },
+    "raices-cubanas": {
+      "title": "Raíces Cubanas · Afro-Cuban folkloric dance show · ICCD",
+      "description": "A full-length Afro-Cuban folkloric dance show with live drums and singing, with original choreographies of the Conjunto Folklórico Nacional de Cuba."
+    },
+    "about": {
+      "title": "About us and our Cuban maestros · ICCD",
+      "description": "Our story and our maestros: former dancers of the Conjunto Folklórico Nacional de Cuba who teach Afro-Cuban folkloric dance across Europe."
+    },
+    "company": {
+      "title": "The company · Dancers and musicians · ICCD",
+      "description": "Meet the dancers and musicians of the ICCD. They come from all over Europe and perform traditional Afro-Cuban dance outside Cuba."
+    },
+    "gallery": {
+      "title": "Gallery · Afro-Cuban dance photos · ICCD",
+      "description": "Photos of the company on stage, in training and in Havana: Afro-Cuban folkloric dance, costumes and live drums."
+    },
+    "faq": {
+      "title": "Questions about trainings and joining · ICCD",
+      "description": "Who can join, what you need, where the trainings take place, what they cost and how to sign up for an ICCD training weekend."
+    }
   }
 }
