@@ -253,6 +253,18 @@
       "role": "Batá, tambor, güiro",
       "country": "Italy",
       "photo": "/images/people/davide-otranto.webp"
+    },
+    {
+      "name": "Juan Bauste",
+      "role": "Percussion",
+      "country": "Cuba",
+      "photo": "/images/people/juan-bauste.webp"
+    },
+    {
+      "name": "Alberto García",
+      "role": "Percussion",
+      "country": "Spain",
+      "photo": "/images/people/alberto-garcia.webp"
     }
   ]
 }

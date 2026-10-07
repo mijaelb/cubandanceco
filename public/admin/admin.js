@@ -48,6 +48,7 @@ const SECTIONS = [
       history: L('Past trainings archive', 'past training', { start: D('First day'), end: D('Last day'), city: T('City'), country: T('Country'), note: T('Note (optional)') }, (e) => `${e.start} · ${e.city}`, 'Trainings from the list above are added here automatically once they are over'),
     },
   },
+  { id: 'timetable', title: 'Timetable', help: 'The class timetable of each training weekend, shown on the Trainings page.' },
   {
     id: 'show', title: 'Raíces Cubanas', file: 'src/data/show.json',
     schema: {
@@ -128,7 +129,7 @@ const state = {
   repo: localStorage.getItem('iccd-repo') || document.body.dataset.repo || '',
   files: {}, // path -> { data, sha, snap }
   uploads: new Map(), // '/uploads/x.webp' -> Blob
-  images: [], langs: [], section: 'trainings', lang: '',
+  images: [], langs: [], section: SECTIONS.some((s) => s.id === location.hash.slice(1)) ? location.hash.slice(1) : 'trainings', lang: '', tt: null,
 };
 
 // ---------- Helpers ----------
@@ -289,6 +290,95 @@ function listEditor(s, arr) {
   return box;
 }
 
+// ---------- Timetable editor (visual, like the printed schedules) ----------
+const pad = (n) => String(n).padStart(2, '0');
+const toMin = (t) => { const [h, m] = (t || '').split(':').map(Number); return Number.isFinite(h) ? h * 60 + (m || 0) : null; };
+const fromMin = (m) => `${pad(Math.floor(m / 60) % 24)}:${pad(m % 60)}`;
+const splitTime = (s) => (s || '').split(/\s*[–-]\s*/);
+const ddmm = (iso, add = 0) => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + add); return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}`; };
+const weekday = (iso, add = 0) => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + add); return d.toLocaleDateString('en-GB', { weekday: 'long' }); };
+
+function timetableView() {
+  const data = state.files['src/data/trainings.json'].data;
+  const events = data.events;
+  if (!events.length) return h('p', { class: 'muted' }, 'Add a training weekend first (Trainings section).');
+  if (state.tt == null || !events[state.tt]) state.tt = 0;
+  const wrap = h('div', { class: 'tt' });
+  const teachers = new Set();
+  [...(state.files['src/data/teachers.json']?.data.masters || []), ...(state.files['src/data/teachers.json']?.data.guests || [])].forEach((p) => teachers.add(p.name.split(' ')[0]));
+  events.forEach((e) => (e.schedule || []).forEach((d) => d.slots.forEach((s) => s.classes.forEach((c) => c.teacher && teachers.add(c.teacher)))));
+  const list = h('datalist', { id: 'tt-teachers' }, [...teachers].map((t) => h('option', { value: t })));
+
+  const draw = () => {
+    const ev = events[state.tt];
+    ev.schedule ??= [];
+    const pick = h('select', { onchange: (e) => { state.tt = Number(e.target.value); draw(); } },
+      events.map((e, i) => h('option', { value: i, selected: i === state.tt }, `${e.start} · ${e.city}`)));
+    const others = events.map((e, i) => [e, i]).filter(([e, i]) => i !== state.tt && e.schedule?.length);
+    const copyFrom = !others.length ? null : h('select', { onchange: (e) => {
+      const src = events[Number(e.target.value)];
+      if (ev.schedule.length && !confirm(`Replace the timetable of ${ev.city} with a copy of ${src.city}?`)) { e.target.value = ''; return; }
+      ev.schedule = structuredClone(src.schedule).map((d, i) => ({ ...d, day: weekday(ev.start, i), date: ddmm(ev.start, i) }));
+      changed(); draw();
+    } }, h('option', { value: '' }, 'Copy a timetable from…'), others.map(([e, i]) => h('option', { value: i }, `${e.start} · ${e.city}`)));
+    const addDay = h('button', { type: 'button', class: 'btn-small', onclick: () => {
+      const i = ev.schedule.length;
+      ev.schedule.push({ day: weekday(ev.start, i), date: ddmm(ev.start, i), slots: [] });
+      changed(); draw();
+    } }, '+ Add day');
+
+    const days = ev.schedule.map((day, di) => {
+      const slots = day.slots.map((slot, si) => slotRow(day, slot, si, draw));
+      const addSlot = h('button', { type: 'button', class: 'btn-add', onclick: () => {
+        const last = day.slots.at(-1);
+        const end = last ? toMin(splitTime(last.time)[1]) : null;
+        const start = end != null ? end + 5 : 13 * 60;
+        day.slots.push({ time: `${fromMin(start)} – ${fromMin(start + 60)}`, isBreak: false, classes: [{ title: '', teacher: '', liveMusic: false, companyOnly: false }] });
+        changed(); draw();
+      } }, '+ Time slot');
+      return h('section', { class: 'tt-day' },
+        h('header', {},
+          h('input', { class: 'tt-dayname', value: day.day, 'aria-label': 'Day', oninput: (e) => { day.day = e.target.value; changed(); } }),
+          h('input', { class: 'tt-date', value: day.date, 'aria-label': 'Date', placeholder: 'dd/mm', oninput: (e) => { day.date = e.target.value; changed(); } }),
+          h('button', { type: 'button', class: 'tt-x', title: 'Remove this day', onclick: () => { if (confirm(`Remove ${day.day} and all its classes?`)) { ev.schedule.splice(di, 1); changed(); draw(); } } }, '✕')),
+        slots, addSlot);
+    });
+
+    wrap.replaceChildren(
+      h('div', { class: 'tt-bar' }, pick, copyFrom, addDay),
+      h('p', { class: 'muted' }, 'Tap a field to edit. 🥁 = live music, ICCD = company only. Press Publish when you are done; the website updates in about 2 minutes.'),
+      ev.schedule.length ? h('div', { class: 'tt-days' }, days) : h('p', { class: 'tt-empty' }, 'No timetable yet. Add a day, or copy the timetable of another training.'),
+      list,
+    );
+  };
+  draw();
+  return wrap;
+}
+
+function slotRow(day, slot, si, redraw) {
+  const [from, to] = splitTime(slot.time);
+  const setTime = (a, b) => { slot.time = `${a} – ${b}`; changed(); };
+  const fromIn = h('input', { type: 'time', value: from || '', 'aria-label': 'Start', onchange: (e) => setTime(e.target.value, toIn.value) });
+  const toIn = h('input', { type: 'time', value: to || '', 'aria-label': 'End', onchange: (e) => setTime(fromIn.value, e.target.value) });
+  const move = (d) => { const s = day.slots; [s[si], s[si + d]] = [s[si + d], s[si]]; changed(); redraw(); };
+  const tools = h('div', { class: 'tt-tools' },
+    h('button', { type: 'button', title: 'Move up', disabled: si === 0, onclick: () => move(-1) }, '↑'),
+    h('button', { type: 'button', title: 'Move down', disabled: si === day.slots.length - 1, onclick: () => move(1) }, '↓'),
+    h('button', { type: 'button', class: slot.isBreak ? 'on' : '', title: 'Break', onclick: () => { slot.isBreak = !slot.isBreak; changed(); redraw(); } }, '☕'),
+    h('button', { type: 'button', title: 'Remove time slot', onclick: () => { if (confirm(`Remove ${slot.time}?`)) { day.slots.splice(si, 1); changed(); redraw(); } } }, '✕'));
+  const time = h('div', { class: 'tt-time' }, fromIn, h('span', {}, '–'), toIn, tools);
+  if (slot.isBreak) return h('div', { class: 'tt-slot tt-break' }, time, h('strong', {}, 'Break'));
+  const cards = slot.classes.map((c, ci) => h('div', { class: `tt-class${c.companyOnly ? ' company' : ''}` },
+    h('input', { class: 'tt-title', value: c.title, placeholder: 'Class (e.g. Yemayá)', oninput: (e) => { c.title = e.target.value; changed(); } }),
+    h('input', { class: 'tt-teacher', value: c.teacher, placeholder: 'Teacher', list: 'tt-teachers', oninput: (e) => { c.teacher = e.target.value; changed(); } }),
+    h('div', { class: 'tt-flags' },
+      h('button', { type: 'button', class: c.liveMusic ? 'on' : '', 'aria-pressed': String(!!c.liveMusic), onclick: () => { c.liveMusic = !c.liveMusic; changed(); redraw(); } }, '🥁 Live music'),
+      h('button', { type: 'button', class: c.companyOnly ? 'on' : '', 'aria-pressed': String(!!c.companyOnly), onclick: () => { c.companyOnly = !c.companyOnly; changed(); redraw(); } }, 'ICCD only'),
+      h('button', { type: 'button', class: 'tt-x', title: 'Remove class', onclick: () => { slot.classes.splice(ci, 1); changed(); redraw(); } }, '✕'))));
+  const add = h('button', { type: 'button', class: 'tt-addclass', onclick: () => { slot.classes.push({ title: '', teacher: '', liveMusic: false, companyOnly: true }); changed(); redraw(); } }, '+ Class');
+  return h('div', { class: 'tt-slot' }, time, h('div', { class: 'tt-classes' }, cards, add));
+}
+
 // ---------- Translations ----------
 function collectStrings() {
   const ui = state.files['src/i18n/strings.json']?.data || { ui: [], content: [] };
@@ -411,7 +501,8 @@ function render() {
   statusEl = h('span', { class: 'status', role: 'status' });
   publishBtn = h('button', { class: 'publish', type: 'button', onclick: publish });
   const nav = h('nav', {}, SECTIONS.map((s) => h('button', { type: 'button', class: s.id === state.section ? 'active' : '', onclick: () => { state.section = s.id; render(); scrollTo(0, 0); } }, s.title)));
-  const body = sec.id === 'translations' ? translationsView() : fieldsEditor(state.files[sec.file].data, sec.schema);
+  const body = sec.id === 'translations' ? translationsView() : sec.id === 'timetable' ? timetableView() : fieldsEditor(state.files[sec.file].data, sec.schema);
+  if (location.hash.slice(1) !== state.section) history.replaceState(null, '', '#' + state.section);
   app.replaceChildren(
     h('header', { class: 'bar' },
       h('a', { class: 'brand', href: SITE + '/', target: '_blank', rel: 'noopener' }, h('img', { src: SITE + '/images/logo.svg', alt: '' }), h('span', {}, 'ICCD admin')),
@@ -466,7 +557,8 @@ function loginView(error) {
         h('li', {}, 'Repository access: "Only select repositories" → choose this website\'s repository.'),
         h('li', {}, 'Permissions: Contents → "Read and write". Optional: Actions → "Read-only" (shows when the site is live).'),
         h('li', {}, 'Set an expiration date (e.g. 90 days), generate, and paste the token here.'),
-        h('li', {}, 'Only use "Remember me" on your own device. Never share the token.'))),
+        h('li', {}, 'Only use "Remember me" on your own device. Never share the token.')),
+      h('p', {}, 'Team members: ask the owner to add you as a collaborator on the GitHub repository. Then create a classic token (Settings → Developer settings → Tokens (classic)) with only the "public_repo" box ticked, and an expiry date.')),
   );
   app.replaceChildren(form);
 }

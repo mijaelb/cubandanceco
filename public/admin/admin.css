@@ -98,3 +98,58 @@ main h1 { margin: 0 0 4px; font-size: 1.7rem; }
 .tr-row p { margin: 0; white-space: pre-wrap; font-size: 0.92rem; color: #4a4237; }
 .tr-row textarea.missing { border-color: #f0c36a; background: #fffaf0; }
 @media (max-width: 760px) { .tr-row { grid-template-columns: 1fr; } }
+
+/* Timetable editor */
+.tt-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 16px 0 8px; }
+.tt-bar select { width: auto; min-width: 220px; }
+.tt-bar .btn-small { margin: 0; }
+.tt-empty { padding: 28px; border: 2px dashed var(--line); border-radius: 14px; text-align: center; color: var(--muted); }
+.tt-days { display: grid; gap: 22px; margin-top: 14px; }
+@media (min-width: 1100px) { .tt-days { grid-template-columns: 1fr 1fr; } main:has(.tt) { max-width: 1400px; } }
+.tt-day { background: #fff; border: 1.5px solid var(--line); border-radius: 16px; padding: 14px; display: grid; gap: 10px; align-content: start; }
+.tt-day > header { display: flex; gap: 8px; align-items: center; background: #fdefc4; border-radius: 10px; padding: 8px; }
+.tt-day > header input { border: 0; background: transparent; font-weight: 800; padding: 6px 8px; }
+.tt-dayname { font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.05em; flex: 1; }
+.tt-date { width: 90px !important; color: var(--muted); }
+.tt-x { border: 0; background: none; cursor: pointer; color: var(--muted); font-size: 0.95rem; padding: 4px 8px; border-radius: 8px; }
+.tt-x:hover { background: #fdecea; color: var(--red); }
+.tt-slot { display: grid; grid-template-columns: 150px 1fr; gap: 8px; align-items: start; }
+@media (max-width: 640px) { .tt-slot { grid-template-columns: 1fr; } }
+.tt-time { background: #fdefc4; border-radius: 10px; padding: 8px; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; justify-content: center; }
+.tt-time input[type='time'] { width: 100%; padding: 4px 6px; font-size: 0.9rem; border-radius: 8px; }
+.tt-time > span { display: none; }
+.tt-tools { display: flex; gap: 2px; width: 100%; justify-content: center; margin-top: 2px; }
+.tt-tools button { border: 0; background: rgba(255, 255, 255, 0.7); border-radius: 6px; width: 28px; height: 26px; cursor: pointer; font-size: 0.8rem; }
+.tt-tools button:disabled { opacity: 0.3; }
+.tt-tools button.on { background: var(--ink); color: var(--gold); }
+.tt-classes { display: flex; flex-wrap: wrap; gap: 8px; }
+.tt-class { flex: 1 1 180px; background: #fdefc4; border-radius: 10px; padding: 8px; display: grid; gap: 4px; }
+.tt-class.company { background: #f6f1e4; outline: 1.5px dashed rgba(20, 17, 13, 0.25); outline-offset: -1.5px; }
+.tt-class input { border: 1px solid transparent !important; background: transparent !important; padding: 4px 6px !important; border-radius: 6px !important; }
+.tt-class input:focus { background: #fff !important; border-color: var(--gold-deep) !important; }
+.tt-title { font-weight: 800; font-size: 1rem; }
+.tt-teacher { font-size: 0.88rem; color: #4a4237; }
+.tt-flags { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+.tt-flags button:not(.tt-x) { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 3px 9px; font-size: 0.75rem; font-weight: 700; cursor: pointer; color: var(--muted); }
+.tt-flags button.on { background: var(--ink); color: var(--gold); border-color: var(--ink); }
+.tt-flags .tt-x { margin-left: auto; }
+.tt-addclass { flex: 0 0 auto; align-self: stretch; border: 1.5px dashed var(--gold-deep); background: none; color: var(--gold-deep); border-radius: 10px; padding: 8px 12px; font-weight: 700; cursor: pointer; }
+.tt-break { grid-template-columns: 150px 1fr; }
+.tt-break > strong { background: #e2ddd3; border-radius: 10px; display: grid; place-items: center; min-height: 48px; letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.85rem; }
+.layout > main, .tt-day, .tt-class, .tt-slot > * { min-width: 0; }
+.tt-class input, .tt-dayname { width: 100%; min-width: 0; }
+@media (max-width: 640px) {
+  .tt-time { flex-wrap: nowrap; }
+  .tt-time input[type='time'] { flex: 1; }
+  .tt-time > span { display: inline; }
+  .tt-tools { width: auto; margin: 0 0 0 4px; }
+  .tt-class { flex-basis: 100%; }
+  .tt-addclass { flex-basis: 100%; }
+  .tt-bar select { min-width: 0; width: 100%; }
+}
+@media (max-width: 640px) {
+  .tt-day { padding: 10px; }
+  .tt-time { padding: 6px; gap: 4px; }
+  .tt-time input[type='time'] { min-width: 0; width: 0; flex: 1 1 0; font-size: 0.85rem; padding: 4px; }
+  .tt-tools button { width: 26px; }
+}
