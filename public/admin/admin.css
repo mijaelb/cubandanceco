@@ -158,3 +158,8 @@ main h1 { margin: 0 0 4px; font-size: 1.7rem; }
 .tt-status.draft { background: #fff4d6; border: 1.5px dashed #c99a1d; color: #6b5210; }
 .tt-status.live { background: #e7f3ea; border: 1.5px solid #8cc39b; color: #1f5a2e; }
 .tt-status .btn-small { margin: 0; }
+
+.login-part { display: grid; gap: 10px; }
+.login .owner { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 14px; }
+.login .owner > summary { cursor: pointer; font-weight: 600; color: var(--muted); }
+.login .owner .login-part { margin-top: 12px; }

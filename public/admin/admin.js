@@ -125,7 +125,12 @@ const SKIP = new Set(['name', 'shortName', 'organizer', 'teacher', 'venue', 'add
 
 // ---------- State ----------
 const store = (remember) => (remember ? localStorage : sessionStorage);
+// Team mode: organisers sign in with a shared team password through a small gateway
+// (worker/index.js) that holds the GitHub key. They can only edit trainings and timetables.
+const TEAM_API = document.body.dataset.teamApi || '';
+const TEAM_SECTIONS = ['trainings', 'timetable'];
 const state = {
+  team: sessionStorage.getItem('iccd-team') || '',
   token: sessionStorage.getItem('iccd-token') || localStorage.getItem('iccd-token') || '',
   repo: localStorage.getItem('iccd-repo') || document.body.dataset.repo || '',
   files: {}, // path -> { data, sha, snap }
@@ -162,11 +167,19 @@ async function gh(path, opts = {}) {
   return r.status === 204 ? null : r.json();
 }
 const repo = (p) => `/repos/${state.repo}${p}`;
+async function team(path, opts = {}) {
+  const r = await fetch(TEAM_API + path, { ...opts, headers: { Authorization: `Bearer ${state.team}`, ...(opts.body ? { 'Content-Type': 'application/json' } : {}) } });
+  const d = await r.json().catch(() => ({}));
+  if (r.status === 401 && path !== '/login') { sessionStorage.removeItem('iccd-team'); state.team = ''; }
+  if (!r.ok) throw new Error(d.message || `${r.status}`);
+  return d;
+}
+const visibleSections = () => (state.team ? SECTIONS.filter((s) => TEAM_SECTIONS.includes(s.id)) : SECTIONS);
 const post = (p, body, method = 'POST') => gh(repo(p), { method, body: JSON.stringify(body) });
 
 async function loadFile(path, fallback) {
   try {
-    const r = await gh(repo(`/contents/${path}?ref=${BRANCH}`));
+    const r = state.team ? await team(`/file?path=${encodeURIComponent(path)}`) : await gh(repo(`/contents/${path}?ref=${BRANCH}`));
     const data = JSON.parse(fromB64(r.content));
     state.files[path] = { data, sha: r.sha, snap: json(data) };
   } catch (e) {
@@ -447,6 +460,23 @@ async function publish() {
   if (!files.length && !state.uploads.size) return status('Nothing to publish.');
   const btn = document.querySelector('.publish');
   btn.disabled = true;
+  if (state.team) {
+    try {
+      status('Saving…');
+      let commit;
+      for (const [p, f] of files) {
+        const r = await team('/file', { method: 'PUT', body: JSON.stringify({ path: p, content: json(f.data), sha: f.sha, message: `Update ${p.split('/').pop().replace('.json', '')}` }) });
+        f.sha = r.sha; f.snap = json(f.data); commit = r.commit;
+      }
+      updateBar();
+      watchDeploy(commit);
+    } catch (e) {
+      status(`⚠ ${e.message}`, true);
+    } finally {
+      btn.disabled = false;
+    }
+    return;
+  }
   try {
     status('Checking for changes made by others…');
     for (const [p, f] of files) {
@@ -486,8 +516,7 @@ async function watchDeploy(sha) {
   for (let i = 0; i < 60; i++) {
     await new Promise((r) => setTimeout(r, 6000));
     try {
-      const { workflow_runs: runs } = await gh(repo(`/actions/runs?head_sha=${sha}`));
-      const run = runs?.[0];
+      const run = state.team ? await team(`/status?sha=${sha}`) : (await gh(repo(`/actions/runs?head_sha=${sha}`))).workflow_runs?.[0];
       if (run?.status === 'completed') return status(run.conclusion === 'success' ? 'Live ✓ Your changes are on the website.' : `⚠ The website build failed (${run.conclusion}). Check the Actions tab on GitHub.`, run.conclusion !== 'success');
     } catch { return status('Saved ✓ The website updates in about 2 minutes.'); }
   }
@@ -504,15 +533,16 @@ function updateBar() {
 }
 
 function render() {
+  if (!visibleSections().some((s) => s.id === state.section)) state.section = visibleSections()[0].id;
   const sec = SECTIONS.find((s) => s.id === state.section);
   statusEl = h('span', { class: 'status', role: 'status' });
   publishBtn = h('button', { class: 'publish', type: 'button', onclick: publish });
-  const nav = h('nav', {}, SECTIONS.map((s) => h('button', { type: 'button', class: s.id === state.section ? 'active' : '', onclick: () => { state.section = s.id; render(); scrollTo(0, 0); } }, s.title)));
+  const nav = h('nav', {}, visibleSections().map((s) => h('button', { type: 'button', class: s.id === state.section ? 'active' : '', onclick: () => { state.section = s.id; render(); scrollTo(0, 0); } }, s.title)));
   const body = sec.id === 'translations' ? translationsView() : sec.id === 'timetable' ? timetableView() : fieldsEditor(state.files[sec.file].data, sec.schema);
   if (location.hash.slice(1) !== state.section) history.replaceState(null, '', '#' + state.section);
   app.replaceChildren(
     h('header', { class: 'bar' },
-      h('a', { class: 'brand', href: SITE + '/', target: '_blank', rel: 'noopener' }, h('img', { src: SITE + '/images/logo.svg', alt: '' }), h('span', {}, 'ICCD admin')),
+      h('a', { class: 'brand', href: SITE + '/', target: '_blank', rel: 'noopener' }, h('img', { src: SITE + '/images/logo.svg', alt: '' }), h('span', {}, state.team ? 'ICCD team editor' : 'ICCD admin')),
       statusEl, publishBtn,
       h('button', { type: 'button', class: 'link', onclick: logout }, 'Sign out')),
     h('div', { class: 'layout' }, nav,
@@ -526,20 +556,39 @@ function logout() {
   if (isDirty() && !confirm('You have unpublished changes. Sign out anyway?')) return;
   sessionStorage.removeItem('iccd-token');
   localStorage.removeItem('iccd-token');
+  sessionStorage.removeItem('iccd-team');
   state.token = '';
+  state.team = '';
   state.files = {};
   state.uploads.clear();
   loginView();
 }
 
 function loginView(error) {
+  const pass = h('input', { type: 'password', id: 'teampass', autocomplete: 'current-password', required: true });
+  const teamForm = TEAM_API && h('form', { class: 'login-part', onsubmit: async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button'); btn.disabled = true; btn.textContent = 'Signing in…';
+    try {
+      const { token } = await team('/login', { method: 'POST', body: JSON.stringify({ password: pass.value }) });
+      state.team = token; state.token = '';
+      sessionStorage.setItem('iccd-team', token);
+      if (!TEAM_SECTIONS.includes(state.section)) state.section = 'timetable';
+      await start();
+    } catch (err) { loginView(err.message); }
+  } },
+    h('label', { for: 'teampass' }, 'Team password'), pass,
+    h('button', { type: 'submit', class: 'publish ready' }, 'Sign in'),
+    h('p', { class: 'muted' }, 'For the organising team: edit trainings and timetables.'));
+
   const token = h('input', { type: 'password', id: 'token', autocomplete: 'off', placeholder: 'github_pat_…', required: true });
   const repoIn = h('input', { type: 'text', id: 'repo', value: state.repo, placeholder: 'owner/repository', required: true });
   const remember = h('input', { type: 'checkbox', id: 'remember' });
-  const form = h('form', { class: 'login', onsubmit: async (e) => {
+  const ghForm = h('form', { class: 'login-part', onsubmit: async (e) => {
     e.preventDefault();
     state.token = token.value.trim();
     state.repo = repoIn.value.trim();
+    state.team = '';
     try {
       const r = await gh(repo(''));
       if (!r.permissions?.push) throw new Error('This token cannot edit the repository. Give it "Contents: Read and write" access.');
@@ -551,27 +600,32 @@ function loginView(error) {
       loginView(err.message);
     }
   } },
-    h('img', { src: SITE + '/images/logo.svg', alt: '', width: 96, height: 96 }),
-    h('h1', {}, 'ICCD admin'),
-    error && h('p', { class: 'error' }, error),
     h('label', { for: 'token' }, 'GitHub access token'), token,
     h('label', { for: 'repo' }, 'Repository'), repoIn,
     h('label', { class: 'check' }, remember, ' Remember me on this device'),
-    h('button', { type: 'submit', class: 'publish ready' }, 'Sign in'),
+    h('button', { type: 'submit', class: 'publish ready' }, 'Sign in with GitHub'),
     h('details', {}, h('summary', {}, 'How do I get a token?'),
       h('ol', {},
         h('li', {}, 'Sign in to GitHub and open ', h('a', { href: 'https://github.com/settings/personal-access-tokens/new', target: '_blank', rel: 'noopener' }, 'Settings → Fine-grained tokens → Generate new token'), '.'),
         h('li', {}, 'Repository access: "Only select repositories" → choose this website\'s repository.'),
         h('li', {}, 'Permissions: Contents → "Read and write". Optional: Actions → "Read-only" (shows when the site is live).'),
         h('li', {}, 'Set an expiration date (e.g. 90 days), generate, and paste the token here.'),
-        h('li', {}, 'Only use "Remember me" on your own device. Never share the token.')),
-      h('p', {}, 'Team members: ask the owner to add you as a collaborator on the GitHub repository. Then create a classic token (Settings → Developer settings → Tokens (classic)) with only the "public_repo" box ticked, and an expiry date.')),
-  );
-  app.replaceChildren(form);
+        h('li', {}, 'Only use "Remember me" on your own device. Never share the token.'))));
+
+  app.replaceChildren(h('div', { class: 'login' },
+    h('img', { src: SITE + '/images/logo.svg', alt: '', width: 96, height: 96 }),
+    h('h1', {}, 'ICCD admin'),
+    error && h('p', { class: 'error' }, error),
+    teamForm || ghForm,
+    teamForm && h('details', { class: 'owner' }, h('summary', {}, 'Full admin (GitHub key)'), ghForm)));
 }
 
 async function start() {
   app.replaceChildren(h('p', { class: 'boot' }, 'Loading content…'));
+  if (state.team) {
+    await Promise.all(['src/data/trainings.json', 'src/data/teachers.json'].map((p) => loadFile(p)));
+    return render();
+  }
   await Promise.all([...SECTIONS.filter((s) => s.file).map((s) => loadFile(s.file)), loadFile('src/i18n/strings.json', { ui: [], content: [] })]);
   try {
     const { tree } = await gh(repo(`/git/trees/${BRANCH}?recursive=1`));
@@ -582,7 +636,7 @@ async function start() {
 }
 
 addEventListener('beforeunload', (e) => { if (isDirty()) e.preventDefault(); });
-addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 's' && state.token) { e.preventDefault(); publish(); } });
+addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 's' && (state.token || state.team)) { e.preventDefault(); publish(); } });
 
-if (state.token && state.repo) start().catch((e) => loginView(e.message));
+if (state.team || (state.token && state.repo)) start().catch((e) => loginView(e.message));
 else loginView();

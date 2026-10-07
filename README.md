@@ -38,6 +38,19 @@ and shows disappear on their own once they are over.
 
 Anyone who should edit the site needs write access to the repository and their own token.
 
+## Team editor (no GitHub account needed)
+
+Organisers can edit **trainings and timetables** with a shared team password.
+The admin page talks to a small Cloudflare Worker (`worker/`) that checks the password
+and saves the change to GitHub with its own key. Secrets live only in Cloudflare:
+
+```bash
+cd worker
+npx wrangler secret put TEAM_PASSWORD   # change the team password
+npx wrangler secret put GITHUB_TOKEN    # fine-grained token: this repo only, Contents read & write, Actions read
+npx wrangler deploy                     # after changing worker/index.js
+```
+
 ## Security
 
 - No server, no database, no passwords on the site: only static files.
