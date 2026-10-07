@@ -108,3 +108,6 @@ body { margin: 0; background: #444; font-family: 'Montserrat Variable', sans-ser
 .page .cell.time b { font-size: 23px; font-weight: 800; line-height: 1.1; }
 .page .cell.time b.end { font-weight: 500; color: #4a4438; }
 .page .cell.time .to { display: block; width: 1.5px; height: 12px; margin: 4px 0; background: rgba(6, 14, 10, 0.35); }
+/* both times equal: calm medium weight, same colour */
+.page .cell.time b, .page .cell.time b.end { font-size: 22px; font-weight: 600; color: var(--ink); letter-spacing: 0.02em; }
+.page .cell.time .to { height: 14px; margin: 5px 0; background: rgba(6, 14, 10, 0.3); }
