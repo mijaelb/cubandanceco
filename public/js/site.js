@@ -2,6 +2,9 @@
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 
+// Load deferred images (hidden slideshow photos) once the page is ready
+addEventListener('load', () => $$('img[data-src]').forEach((i) => { if (i.dataset.srcset) i.srcset = i.dataset.srcset; i.src = i.dataset.src; }));
+
 // Mobile menu
 const btn = $('[data-menu-btn]'), menu = $('[data-menu]');
 btn?.addEventListener('click', () => {

@@ -22,7 +22,7 @@ const O = (label, fields) => ({ type: 'object', label, fields });
 const L = (label, item, fields, summary, help) => ({ type: 'list', label, item, fields, summary, help });
 
 const person = { name: T('Name'), role: T('Role'), photo: I('Photo', 'Portrait, ideally 4:5'), bio: A('Biography', 'Leave an empty line between paragraphs') };
-const show = { date: D('Date', 'Used for sorting and to hide past shows'), when: T('Date text (optional)', 'Shown instead of the date, e.g. "2–4 April 2027"'), title: T('Title'), city: T('City, country'), venue: T('Venue (optional)'), url: U('Tickets link (optional)') };
+const show = { production: T('Production (optional)', 'Write "Raíces Cubanas" to also list it on the Raíces Cubanas page'), date: D('Date', 'Used for sorting and to hide past shows'), when: T('Date text (optional)', 'Shown instead of the date, e.g. "2–4 April 2027"'), title: T('Title'), city: T('City, country'), venue: T('Venue (optional)'), url: U('Tickets link (optional)') };
 
 const SECTIONS = [
   {
@@ -51,11 +51,18 @@ const SECTIONS = [
   {
     id: 'show', title: 'Raíces Cubanas', file: 'src/data/show.json',
     schema: {
-      upcoming: L('Upcoming shows', 'show', show, (s) => `${s.when || s.date} · ${s.title}`, 'Shows disappear automatically after their date'),
-      past: L('Past performances', 'performance', show, (s) => `${s.when || s.date} · ${s.title}`),
       title: T('Title'), subtitle: T('Subtitle'), poster: I('Poster'), lead: A('Lead text'), text: A('Description'),
       parts: L('Parts of the show', 'part', { label: T('Label'), title: T('Title'), image: I('Image'), text: A('Text') }, (p) => p.title),
       bookingText: A('Booking text'),
+    },
+  },
+  {
+    id: 'performances', title: 'Performances', file: 'src/data/performances.json',
+    help: 'Every show the company performs. Tag a performance with the production "Raíces Cubanas" to also show it on that page.',
+    schema: {
+      upcoming: L('Upcoming performances', 'performance', show, (s) => `${s.when || s.date} · ${s.title}`, 'They move out of this list automatically after their date'),
+      past: L('Past performances', 'performance', show, (s) => `${s.when || s.date} · ${s.title}`, 'Newest first'),
+      intro: A('Introduction'), bookingText: A('Booking text'),
     },
   },
   {

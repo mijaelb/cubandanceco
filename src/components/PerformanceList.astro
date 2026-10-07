@@ -1,0 +1,17 @@
+---
+import { fullDate } from '../lib/utils';
+import { useT, locale } from '../i18n';
+interface Props { items: any[]; lang: string; tag?: boolean; past?: boolean }
+const { items, lang, tag = true, past = false } = Astro.props;
+const t = useT(lang);
+---
+<ul class:list={['timeline', { past }]}>
+  {items.map((s) => (
+    <li data-end={past ? undefined : s.date}>
+      <span>{s.when ? t(s.when) : fullDate(s.date, locale(lang))}</span>
+      <strong>{t(s.title)}{tag && s.production && <em class="prod">{s.production}</em>}</strong>
+      <em>{[s.venue, t(s.city)].filter(Boolean).join(' · ')}</em>
+      {s.url && <a class="link-arrow" href={s.url} target="_blank" rel="noopener">{t('Tickets')}</a>}
+    </li>
+  ))}
+</ul>

@@ -4,6 +4,8 @@ import PageHero from '../components/PageHero.astro';
 import Img from '../components/Img.astro';
 import site from '../data/site.json';
 import people from '../data/people.json';
+import teachers from '../data/teachers.json';
+import { url } from '../lib/utils';
 import { link } from '../lib/utils';
 import { useT } from '../i18n';
 
@@ -29,6 +31,20 @@ const countries = new Set(people.members.map((m) => m.country)).size;
   </section>
 
   <section class="section paper">
+    <div class="wrap">
+      <div class="section-head"><div><p class="eyebrow">{t('Choreographers & teachers')}</p><h2 class="display">{t('The maestros')}</h2></div><a class="link-arrow" href={link(lang, 'about') + '#teachers'}>{t('About the teachers')}</a></div>
+      <div class="people people-team">
+        {[...teachers.masters, ...teachers.guests].map((p) => (
+          <a class="person reveal" href={link(lang, 'about') + '#teachers'}>
+            {p.photo ? <Img src={p.photo} alt={p.name} sizes="(min-width: 1100px) 16vw, (min-width: 600px) 25vw, 50vw" /> : <div class="person-ph"><img src={url('/images/logo.svg')} alt="" width="96" height="96" /></div>}
+            <strong>{p.name}</strong><span>{t(p.role)}</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section cream">
     <div class="wrap">
       <div class="section-head"><div><p class="eyebrow">{t('Dancers')}</p><h2 class="display">{t('Company members')}</h2></div></div>
       <div class="people">

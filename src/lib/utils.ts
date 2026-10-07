@@ -1,4 +1,5 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { imageSize } from 'image-size';
 import { join } from 'node:path';
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -6,13 +7,23 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 /** Prefix a site-relative path with the deploy base (GitHub Pages sub-path). */
 export const url = (p = '/') => (/^(https?:|mailto:|#)/.test(p) ? p : BASE + (p.startsWith('/') ? p : '/' + p));
 
-/** Build a srcset from the `-800` / `-2400` siblings that exist next to an image in /public. */
+/** srcset from the size variants (-300, -800, -2400) that exist next to an image in /public. */
 export function srcset(src: string) {
   const m = src.match(/^(.*)\.(webp|jpe?g|png)$/);
   if (!m) return undefined;
-  const has = (s: string) => existsSync(join(process.cwd(), 'public', `${m[1]}${s}.${m[2]}`));
-  const set = [has('-800') && `${url(`${m[1]}-800.${m[2]}`)} 800w`, `${url(src)} 1600w`, has('-2400') && `${url(`${m[1]}-2400.${m[2]}`)} 2400w`];
-  return set.filter(Boolean).length > 1 ? set.filter(Boolean).join(', ') : undefined;
+  const set = ['-300', '-800', '', '-2400']
+    .map((v) => `${m[1]}${v}.${m[2]}`)
+    .map((p) => [p, dims(p).width] as const)
+    .filter(([, w]) => w)
+    .map(([p, w]) => `${url(p)} ${w}w`);
+  return set.length > 1 ? set.join(', ') : undefined;
+}
+
+/** Intrinsic size of an image in /public (so the browser can reserve space while it loads). */
+export function dims(src: string) {
+  const file = join(process.cwd(), 'public', src);
+  if (!src.startsWith('/') || !existsSync(file)) return {};
+  try { const { width, height } = imageSize(readFileSync(file)); return { width, height }; } catch { return {}; }
 }
 
 const d = (s: string) => new Date(s + 'T12:00:00');

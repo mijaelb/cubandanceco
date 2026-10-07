@@ -2,7 +2,7 @@
 import { LANGS } from '../i18n';
 import { link } from '../lib/utils';
 
-const PAGES = ['', 'trainings', 'raices-cubanas', 'about', 'company', 'gallery', 'faq'];
+const PAGES = ['', 'trainings', 'performances', 'raices-cubanas', 'about', 'company', 'gallery', 'faq'];
 
 export function GET({ site }: { site: URL }) {
   const abs = (lang: string, page: string) => new URL(link(lang, page), site).href;

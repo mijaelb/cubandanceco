@@ -6,13 +6,14 @@ import { LANGS } from '../i18n';
 import Home from '../views/Home.astro';
 import Trainings from '../views/Trainings.astro';
 import Show from '../views/Show.astro';
+import Performances from '../views/Performances.astro';
 import About from '../views/About.astro';
 import Company from '../views/Company.astro';
 import Gallery from '../views/Gallery.astro';
 import Faq from '../views/Faq.astro';
 
 export function getStaticPaths() {
-  const pages = ['', 'trainings', 'raices-cubanas', 'about', 'company', 'gallery', 'faq'];
+  const pages = ['', 'trainings', 'performances', 'raices-cubanas', 'about', 'company', 'gallery', 'faq'];
   return LANGS.flatMap((lang) =>
     pages.map((page) => ({
       params: { path: [lang === 'en' ? '' : lang, page].filter(Boolean).join('/') || undefined },
@@ -21,7 +22,7 @@ export function getStaticPaths() {
   );
 }
 
-const views = { '': Home, trainings: Trainings, 'raices-cubanas': Show, about: About, company: Company, gallery: Gallery, faq: Faq };
+const views = { '': Home, trainings: Trainings, performances: Performances, 'raices-cubanas': Show, about: About, company: Company, gallery: Gallery, faq: Faq };
 const { lang, page } = Astro.props;
 const View = views[page as keyof typeof views];
 ---

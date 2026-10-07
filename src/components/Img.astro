@@ -1,9 +1,17 @@
 ---
-import { url, srcset } from '../lib/utils';
+import { url, srcset, dims } from '../lib/utils';
 import focus from '../lib/focus.json';
-interface Props { src: string; alt?: string; sizes?: string; class?: string; eager?: boolean; style?: string }
-const { src, alt = '', sizes = '100vw', eager = false, style = '', ...rest } = Astro.props;
+// defer: load only after the page has finished loading (used for hidden slideshow photos)
+interface Props { src: string; alt?: string; sizes?: string; class?: string; eager?: boolean; defer?: boolean; style?: string }
+const { src, alt = '', sizes = '100vw', eager = false, defer = false, style = '', ...rest } = Astro.props;
 // Keep faces in frame when the image is cropped (focus points come from scripts/focus.py)
 const pos = (focus as Record<string, string>)[src];
+const attrs = {
+  sizes, alt, ...dims(src), ...rest,
+  style: (pos ? `object-position:${pos};` : '') + style || undefined,
+  ...(defer
+    ? { 'data-src': url(src), 'data-srcset': srcset(src) }
+    : { src: url(src), srcset: srcset(src), loading: eager ? 'eager' : 'lazy', decoding: 'async', fetchpriority: eager ? 'high' : undefined }),
+};
 ---
-<img src={url(src)} srcset={srcset(src)} sizes={sizes} alt={alt} loading={eager ? 'eager' : 'lazy'} decoding="async" fetchpriority={eager ? 'high' : undefined} style={(pos ? `object-position:${pos};` : '') + style || undefined} {...rest} />
+<img {...attrs} />

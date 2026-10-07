@@ -5,12 +5,17 @@ import Img from '../components/Img.astro';
 import Video from '../components/Video.astro';
 import site from '../data/site.json';
 import show from '../data/show.json';
-import { upcoming, fullDate } from '../lib/utils';
-import { useT, locale } from '../i18n';
+import PerformanceList from '../components/PerformanceList.astro';
+import perf from '../data/performances.json';
+import { link, upcoming } from '../lib/utils';
+import { useT } from '../i18n';
 
 const { lang } = Astro.props;
 const t = useT(lang);
-const next = upcoming(show.upcoming as any[]);
+// Only the dates where Raíces Cubanas itself was performed (other shows live on the Performances page)
+const mine = (list: any[]) => list.filter((p) => p.production === show.title);
+const next = upcoming(mine(perf.upcoming));
+const past = mine(perf.past);
 const mail = site.links.bookingEmail || site.links.email;
 const contact = mail ? `mailto:${mail}?subject=${encodeURIComponent('Booking Raíces Cubanas')}` : site.links.instagram;
 const strip = ['stage-ship', 'stage-oshun', 'stage-masks'].map((n) => `/images/photos/${n}.webp`);
@@ -51,15 +56,11 @@ const strip = ['stage-ship', 'stage-oshun', 'stage-masks'].map((n) => `/images/p
   <section class="section paper">
     <div class="wrap split split-top">
       <div class="reveal">
-        <p class="eyebrow">{t('Performances')}</p>
-        <h2 class="display">{next.length ? t('Upcoming shows') : t('New dates coming soon')}</h2>
-        <ul class="timeline">
-          {next.map((s) => <li><span>{s.when ? t(s.when) : fullDate(s.date, locale(lang))}</span><strong>{t(s.title)}</strong><em>{[s.venue, t(s.city)].filter(Boolean).join(' · ')}</em>{s.url && <a class="link-arrow" href={s.url} target="_blank" rel="noopener">{t('Tickets')}</a>}</li>)}
-        </ul>
-        <p class="eyebrow">{t('Past performances')}</p>
-        <ul class="timeline past">
-          {show.past.map((s) => <li><span>{s.when ? t(s.when) : fullDate(s.date, locale(lang))}</span><strong>{t(s.title)}</strong><em>{[s.venue, t(s.city)].filter(Boolean).join(' · ')}</em></li>)}
-        </ul>
+        <p class="eyebrow">{t('Raíces Cubanas on stage')}</p>
+        <h2 class="display">{next.length ? t('Upcoming shows') : t('Next dates to be announced')}</h2>
+        <PerformanceList items={next} lang={lang} tag={false} />
+        <PerformanceList items={past} lang={lang} tag={false} past />
+        <a class="link-arrow" href={link(lang, 'performances')}>{t('All our performances')}</a>
       </div>
       <aside class="note-card gold reveal">
         <p class="eyebrow">{t('Bookings')}</p>

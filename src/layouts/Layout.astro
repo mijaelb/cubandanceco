@@ -1,17 +1,20 @@
 ---
 import '@fontsource/anton';
+import antonFont from '@fontsource/anton/files/anton-latin-400-normal.woff2?url';
+import textFont from '@fontsource-variable/montserrat/files/montserrat-latin-wght-normal.woff2?url';
 import '@fontsource-variable/montserrat';
 import '../styles/global.css';
 import site from '../data/site.json';
-import { url, link } from '../lib/utils';
+import { url, link, srcset } from '../lib/utils';
 import { LANGS, langName, useT } from '../i18n';
 
-interface Props { lang: string; page: string; title?: string; description?: string; image?: string; events?: any[] }
-const { lang, page, title, description = site.description, image = '/images/og.jpg', events = [] } = Astro.props;
+interface Props { lang: string; page: string; title?: string; description?: string; image?: string; events?: any[]; preload?: string }
+const { lang, page, title, description = site.description, image = '/images/og.jpg', events = [], preload } = Astro.props;
 const t = useT(lang);
 const fullTitle = title ? `${t(title)} · ${site.name}` : `${site.name} · ${t('Afro-Cuban folkloric dance')}`;
 const NAV = [
   ['trainings', t('Trainings')],
+  ['performances', t('Performances')],
   ['raices-cubanas', t('Raíces Cubanas')],
   ['about', t('About')],
   ['company', t('Company')],
@@ -56,6 +59,9 @@ const jsonld = JSON.stringify(schema).replace(/</g, '\\u003c');
   <meta property="og:image" content={new URL(url(image), Astro.site)} />
   <meta name="twitter:card" content="summary_large_image" />
   <script type="application/ld+json" set:html={jsonld} />
+  <link rel="preload" as="font" type="font/woff2" href={antonFont} crossorigin />
+  <link rel="preload" as="font" type="font/woff2" href={textFont} crossorigin />
+  {preload && <link rel="preload" as="image" href={url(preload)} imagesrcset={srcset(preload)} imagesizes="100vw" fetchpriority="high" />}
   <link rel="apple-touch-icon" href={url('/images/apple-touch-icon.png')} />
   <noscript><style>.reveal { opacity: 1; transform: none; }</style></noscript>
 </head>
@@ -76,7 +82,7 @@ const jsonld = JSON.stringify(schema).replace(/</g, '\\u003c');
         {NAV.map(([p, label]) => <a href={link(lang, p)} aria-current={page === p ? 'page' : undefined}>{label}</a>)}
       </nav>
       <details class="lang">
-        <summary aria-label={t('Language')}>{lang.toUpperCase()}</summary>
+        <summary aria-label={`${t('Language')}: ${lang.toUpperCase()}`}>{lang.toUpperCase()}</summary>
         <div>{LANGS.map((l) => <a href={link(l, page)} lang={l} aria-current={l === lang ? 'true' : undefined}>{langName(l)}</a>)}</div>
       </details>
       <a class="btn btn-gold btn-sm header-cta" href={l.tickets} target="_blank" rel="noopener">{t('Book a training')}</a>

@@ -19,10 +19,10 @@ const next = upcoming(trainings.events);
 const first = next[0];
 const marquee = [...site.styles, ...site.styles];
 ---
-<Layout lang={lang} page="" events={next}>
+<Layout lang={lang} page="" events={next} preload={site.hero.images[0]}>
   <section class="hero dark">
     <div class="hero-slides" aria-hidden="true">
-      {site.hero.images.map((src, i) => <Img src={src} eager={i === 0} style={`animation-delay:${i * 6}s`} />)}
+      {site.hero.images.map((src, i) => <Img src={src} eager={i === 0} defer={i > 0} style={`animation-delay:${i * 6}s`} />)}
     </div>
     <div class="wrap hero-content">
       <p class="eyebrow">{t(site.hero.eyebrow)}</p>
@@ -40,7 +40,7 @@ const marquee = [...site.styles, ...site.styles];
   </section>
 
   <div class="marquee-wrap">
-    <div class="marquee" aria-label={site.styles.join(', ')}>
+    <div class="marquee">
       <div class="marquee-track" aria-hidden="true">{marquee.map((s) => <span>{s}<i>✦</i></span>)}</div>
     </div>
   </div>

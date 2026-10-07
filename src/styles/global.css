@@ -25,7 +25,7 @@
 html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 body { margin: 0; font: 400 1.0625rem/1.7 var(--body); color: var(--text); background: var(--paper); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
 body.no-scroll { overflow: hidden; }
-img, video { display: block; max-width: 100%; object-position: 50% 30%; }
+img, video { display: block; max-width: 100%; height: auto; object-position: 50% 30%; }
 a { color: inherit; }
 p { margin: 0 0 1.1em; max-width: 68ch; }
 h1, h2, h3 { margin: 0 0 0.5em; }
@@ -141,14 +141,14 @@ body:has(main > .hero:first-child, main > .page-hero:first-child) .site-header:n
 .menu nav a { font: 400 clamp(2.2rem, 9vw, 3.4rem)/1.25 var(--display); text-transform: uppercase; text-decoration: none; }
 .menu nav a:hover { color: var(--gold); }
 .menu .btn { align-self: flex-start; }
-@media (min-width: 1180px) {
+@media (min-width: 1280px) {
   .nav, .header-cta { display: flex; }
   .menu-btn, .menu { display: none !important; }
 }
 @media (max-width: 420px) { .brand span { display: none; } }
 .header-cta { white-space: nowrap; }
 /* with the full menu showing, the logo alone is enough until there is room for the name */
-@media (min-width: 1180px) and (max-width: 1560px) { .brand span { display: none; } }
+@media (min-width: 1280px) and (max-width: 1680px) { .brand span { display: none; } }
 
 /* ---------- Home hero ---------- */
 .hero { position: relative; min-height: 100svh; display: flex; align-items: flex-end; overflow: hidden; }
@@ -257,6 +257,14 @@ h1.hero-title { font-size: clamp(2.8rem, 7.6vw, 7.4rem); max-width: 17ch; color:
 .timeline em { grid-column: 2; font-style: normal; color: var(--muted); font-size: 0.95rem; }
 .timeline a { grid-column: 2; }
 .timeline.past strong { font-weight: 600; }
+.timeline .prod { display: inline-block; margin-left: 10px; padding: 3px 9px; border-radius: 999px; background: var(--green); color: var(--gold-pale); font: 700 0.66rem/1.3 var(--body); letter-spacing: 0.08em; text-transform: uppercase; vertical-align: middle; }
+.feature { display: block; background: var(--ink); color: #f4ecdc; border-radius: 24px; overflow: hidden; text-decoration: none; }
+.feature img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
+.feature div { padding: clamp(22px, 3vw, 34px); }
+.feature h3 { font-size: clamp(2.2rem, 4vw, 3.2rem); color: var(--gold); }
+.feature .eyebrow { color: var(--gold); }
+.feature p { color: #e4d9c2; }
+.feature .link-arrow { color: var(--gold); }
 @media (max-width: 560px) { .timeline li { grid-template-columns: 1fr; } .timeline em, .timeline a { grid-column: 1; } }
 
 /* ---------- People ---------- */
