@@ -395,6 +395,16 @@ body:has(main > .hero:first-child, main > .page-hero:first-child) .site-header:n
 .faq details[open] summary::after { rotate: 45deg; }
 .faq details p { padding-right: 48px; color: #3d362c; }
 
+/* ---------- Instagram ---------- */
+.insta { display: grid; gap: 10px; grid-template-columns: repeat(2, 1fr); }
+@media (min-width: 800px) { .insta { grid-template-columns: repeat(4, 1fr); } }
+.insta a { position: relative; display: block; aspect-ratio: 4 / 5; border-radius: 14px; overflow: hidden; background: var(--paper); }
+.insta img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s var(--ease); }
+.insta span { position: absolute; inset: auto 0 0; padding: 40px 14px 12px; font-size: 0.8rem; line-height: 1.35; color: #fff; background: linear-gradient(transparent, rgba(20, 17, 13, 0.85)); opacity: 0; transition: opacity 0.3s; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.insta a:hover img { transform: scale(1.05); }
+.insta a:hover span, .insta a:focus-visible span { opacity: 1; }
+.insta a.video::after { content: '▶'; position: absolute; top: 10px; right: 12px; color: #fff; font-size: 0.9rem; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6); }
+
 /* ---------- CTA & footer ---------- */
 .cta-inner { text-align: center; display: grid; justify-items: center; }
 .cta-inner img { margin-bottom: 24px; }

@@ -9,6 +9,7 @@ import show from '../data/show.json';
 import teachers from '../data/teachers.json';
 import about from '../data/about.json';
 import gallery from '../data/gallery.json';
+import insta from '../lib/instagram.json';
 import { url, link, upcoming, dateRange } from '../lib/utils';
 import { useT, locale } from '../i18n';
 
@@ -169,6 +170,25 @@ const marquee = [...site.styles, ...site.styles];
       </div>
     </div>
   </section>
+
+  {insta.length > 0 && (
+    <section class="section cream">
+      <div class="wrap">
+        <div class="section-head">
+          <div><p class="eyebrow">{t('Latest posts')}</p><h2 class="display">{t('Follow us on Instagram')}</h2></div>
+          <a class="link-arrow" href={site.links.instagram} target="_blank" rel="noopener">{site.instagramHandle}</a>
+        </div>
+        <div class="insta">
+          {(insta as { image: string; url: string; caption: string; video: boolean }[]).map((p) => (
+            <a href={p.url} target="_blank" rel="noopener" class:list={{ video: p.video }}>
+              <img src={url(p.image)} alt={p.caption} loading="lazy" decoding="async" />
+              {p.caption && <span>{p.caption}</span>}
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
 
   <section class="section gold cta">
     <div class="wrap cta-inner reveal">

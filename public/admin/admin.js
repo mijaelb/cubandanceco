@@ -103,7 +103,7 @@ const SECTIONS = [
       tagline: T('Tagline'),
       stats: L('Numbers', 'number', { value: T('Value'), label: T('Label') }, (s) => `${s.value} ${s.label}`),
       styles: S('Dance styles (moving banner)'),
-      links: O('Links', { tickets: U('Tickets (Weezevent)'), whatsapp: U('WhatsApp group'), instagram: U('Instagram'), facebook: U('Facebook'), tiktok: U('TikTok'), email: T('Contact e-mail (optional)') }),
+      links: O('Links', { tickets: U('Tickets (Weezevent)'), whatsapp: U('WhatsApp group'), instagram: U('Instagram'), facebook: U('Facebook'), tiktok: U('TikTok'), email: T('Contact e-mail (optional)'), instagramFeed: U('Instagram feed (Behold JSON URL)', 'Shows your latest posts on the home page; updated once a day') }),
       instagramHandle: T('Instagram handle'),
       name: T('Company name'), description: A('Search engine description'),
     },

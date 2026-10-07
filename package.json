@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "astro dev",
-    "build": "node scripts/strings.mjs && astro build",
+    "build": "node scripts/strings.mjs && node scripts/instagram.mjs && astro build",
     "preview": "astro preview",
     "strings": "node scripts/strings.mjs"
   },
