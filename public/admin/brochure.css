@@ -122,3 +122,5 @@ body { margin: 0; background: #444; font-family: 'Montserrat Variable', sans-ser
 .legend .key.co { background: #fff; box-shadow: inset 0 0 0 1.5px rgba(6, 14, 10, 0.28); }
 .page .brk::before, .page .brk::after { height: 1.5px; background: rgba(6, 14, 10, 0.25); }
 .page .brk { color: #6f6656; }
+/* time slots as filled blocks again (preferred by the company), centred */
+.page .cell.time { background: var(--cell); box-shadow: none; padding: 6px; align-items: center; text-align: center; }
