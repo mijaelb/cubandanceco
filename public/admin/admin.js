@@ -348,6 +348,7 @@ const ICON_PATHS = {
   eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
   drum: '<ellipse cx="12" cy="4.6" rx="5.6" ry="1.9"/><path d="M6.4 4.6c-1.3 3.4-1.2 7.4.3 11l1.8 5.4h7l1.8-5.4c1.5-3.6 1.6-7.6.3-11"/><path d="M6.3 7.2c3.8 1.6 7.6 1.6 11.4 0" stroke-width="1.3"/><path d="M8.4 8.3v2.6M12 8.8v2.6M15.6 8.3v2.6" stroke-width="1.3"/><path d="M8.6 18.6c2.3.6 4.5.6 6.8 0" stroke-width="1.3"/>',
   close: '<path d="M6 6l12 12M18 6L6 18"/>',
+  rows: '<rect x="4" y="3.5" width="16" height="7.5" rx="1.5"/><rect x="4" y="13" width="16" height="7.5" rx="1.5"/>',
 };
 function icon(name) {
   const t = document.createElement('template');
@@ -441,7 +442,7 @@ function timetableView() {
         h('button', { type: 'button', class: 'btn-small', onclick: () => { ev.scheduleDraft = !ev.scheduleDraft; changed(); draw(); } },
           ev.scheduleDraft ? 'Make visible' : 'Back to draft')) : '',
       ev.schedule.length ? h('div', { class: 'tt-days' }, days) : h('p', { class: 'tt-empty' }, 'No timetable yet. Add a day, or copy the timetable of another training.'),
-      h('p', { class: 'tt-help' }, 'Tap a class or teacher field to pick from the list, or type. Drum = live music, ICCD = company only. Publish saves for the whole team; a draft stays hidden on the website.'),
+      h('p', { class: 'tt-help' }, 'Tap a class or teacher field to pick from the list, or type. Drum = live music, ICCD = company only, two boxes = the class lasts more than one time slot. Publish saves for the whole team; a draft stays hidden on the website.'),
     );
   };
   draw();
@@ -471,13 +472,29 @@ function slotRow(day, slot, si, redraw, lists) {
   if (slot.isBreak) return h('div', { class: 'tt-slot tt-break' }, head, h('div', { class: 'tt-breakbar' }, icon('cup'), 'Break'));
   const toggle = (c, key, content, title) => h('button', { type: 'button', class: `tt-flag${c[key] ? ' on' : ''}`, title, 'aria-label': title, 'aria-pressed': String(!!c[key]),
     onclick: (e) => { c[key] = !c[key]; e.currentTarget.classList.toggle('on', c[key]); e.currentTarget.setAttribute('aria-pressed', String(c[key])); e.currentTarget.closest('.tt-class').classList.toggle('company', !!c.companyOnly); changed(); } }, content);
+  // a class can last several time slots in a row, up to the next break
+  let room = 1;
+  while (si + room < day.slots.length && !day.slots[si + room].isBreak) room++;
+  const spanBtn = (c) => {
+    const n = Math.min(Number(c.span) || 1, room);
+    return h('button', { type: 'button', class: `tt-flag${n > 1 ? ' on' : ''}`, disabled: room < 2,
+      title: room < 2 ? 'Add a time slot below to make a class last longer' : 'How many time slots this class lasts (tap to change)',
+      onclick: () => { const next = n >= room ? 1 : n + 1; if (next > 1) c.span = next; else delete c.span; changed(); redraw(); } },
+      icon('rows'), n > 1 ? `${n} slots` : '');
+  };
+  // classes from the slots above that are still going on
+  const going = [];
+  for (let j = si - 1; j >= 0 && !day.slots[j].isBreak; j--) day.slots[j].classes.forEach((c) => { if ((Number(c.span) || 1) > si - j) going.push(c); });
+  const cont = going.map((c) => h('div', { class: 'tt-class tt-cont', title: 'Continues from the time slot above' },
+    h('b', {}, c.title || 'Class'), h('span', {}, `${c.teacher ? c.teacher + ' · ' : ''}continues`)));
   const cards = slot.classes.map((c, ci) => h('div', { class: `tt-class${c.companyOnly ? ' company' : ''}` },
     titleField(c, lists), teacherField(c, lists),
     h('div', { class: 'tt-flags' },
       toggle(c, 'liveMusic', drumIcon(), 'Live music'),
       toggle(c, 'companyOnly', 'ICCD', 'Company only'),
+      spanBtn(c),
       iconBtn('close', 'Remove this class', () => { slot.classes.splice(ci, 1); changed(); redraw(); }, { class: 'tt-del' }))));
-  return h('div', { class: 'tt-slot' }, head, h('div', { class: 'tt-classes' }, cards.length ? cards : h('button', { type: 'button', class: 'tt-empty-slot', onclick: addClass }, icon('plus'), 'Add a class')));
+  return h('div', { class: 'tt-slot' }, head, h('div', { class: 'tt-classes' }, cont, cards.length || cont.length ? cards : h('button', { type: 'button', class: 'tt-empty-slot', onclick: addClass }, icon('plus'), 'Add a class')));
 }
 
 // ---------- Translations ----------

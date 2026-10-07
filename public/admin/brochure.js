@@ -61,6 +61,28 @@ function info(ev, reminders) {
       reminders?.length && h('ul', {}, reminders.map((r) => h('li', {}, r)))));
 }
 
+// Places the classes of a day on 12 sub-columns, so a class can last several
+// slots (`span`) while the others share the rest. Same as src/lib/schedule.ts.
+const SUB = 12;
+function layoutDay(slots) {
+  const taken = slots.map(() => new Set());
+  const out = [];
+  slots.forEach((s, r) => {
+    if (s.isBreak || !s.classes?.length) return;
+    const free = [...Array(SUB).keys()].filter((x) => !taken[r].has(x));
+    const n = s.classes.length;
+    s.classes.forEach((c, i) => {
+      const cols = free.slice(Math.round((i * free.length) / n), Math.round(((i + 1) * free.length) / n));
+      if (!cols.length) return;
+      let rows = 1;
+      while (rows < (Number(c.span) || 1) && r + rows < slots.length && !slots[r + rows].isBreak) rows++;
+      for (let j = 1; j < rows; j++) cols.forEach((x) => taken[r + j].add(x));
+      out.push({ c, row: r, col: cols[0], width: cols.length, rows });
+    });
+  });
+  return out;
+}
+
 function schedule(ev, day, index) {
   const d = date(ev.start); d.setDate(d.getDate() + index);
   const longDate = Number.isNaN(d.getTime()) ? day.date : d.toLocaleString('en-GB', { day: 'numeric', month: 'long' });
@@ -69,20 +91,22 @@ function schedule(ev, day, index) {
   const nRows = day.slots.length - nBreaks;
   const free = 1440 - 386 - 46 - 104 - 130 - (day.slots.length - 1) * GAP - nBreaks * BREAK_H;
   const rowH = Math.max(64, Math.min(118, Math.floor(free / Math.max(nRows, 1))));
-  const big = rowH >= 100;
-  const rows = day.slots.map((s) => {
-    if (s.isBreak) return h('div', { class: 'brk', style: `height:${BREAK_H}px` }, h('span', { class: 'brk-time' }, s.time.replace(/\s*[–-]\s*/, ' – ')), h('b', {}, 'Break'));
-    const n = s.classes.length;
-    return h('div', { class: 'row', style: `height:${rowH}px` },
-      h('div', { class: 'cell time' }, ...(() => { const [a, b] = s.time.split(/\s*[–-]\s*/); return [h('span', { class: 'range' }, b ? `${a} – ${b}` : a)]; })()),
-      h('div', { class: 'classes' }, s.classes.map((c) => h('div', {
-        class: ['cell', c.companyOnly && 'co', (n >= 3 || c.title.length > 18) && 'small', c.title.length > 26 && 'xs', big && n < 3 && 'big'].filter(Boolean).join(' ') },
-        h('b', {}, c.title), c.teacher && h('span', {}, c.teacher), (c.companyOnly || c.liveMusic) && h('div', { class: 'flags' }, c.liveMusic && drum(), c.companyOnly && tag())))));
-  });
+  // one grid for the whole day: time column + 12 sub-columns, one row per slot
+  const times = day.slots.map((s, r) => s.isBreak
+    ? h('div', { class: 'brk', style: `grid-row:${r + 1};grid-column:1/-1` }, h('span', { class: 'brk-time' }, s.time.replace(/\s*[–-]\s*/, ' – ')), h('b', {}, 'Break'))
+    : h('div', { class: 'cell time', style: `grid-row:${r + 1};grid-column:1` }, h('span', { class: 'range' }, s.time.replace(/\s*[–-]\s*/, ' – '))));
+  const classes = layoutDay(day.slots).map(({ c, row, col, width, rows }) => h('div', {
+    // text size from the room the card has: its width (sub-columns), height (slots) and title length
+    // one text size for every card, like the website; only the tags move in narrow cards
+    class: ['cell', c.companyOnly && 'co', width <= 4 && 'narrow', rows > 1 && 'tall'].filter(Boolean).join(' '),
+    style: `grid-row:${row + 1}/span ${rows};grid-column:${col + 2}/span ${width}` },
+    h('b', {}, c.title), c.teacher && h('span', {}, c.teacher), (c.companyOnly || c.liveMusic) && h('div', { class: 'flags' }, c.liveMusic && drum(), c.companyOnly && tag())));
+  // rows grow when a card needs more room; fit() then makes all rows shorter until the day fits the page
+  const template = day.slots.map((s) => (s.isBreak ? `${BREAK_H}px` : 'minmax(var(--row), auto)')).join(' ');
   return h('section', { class: 'page' }, band(ev, 'Schedule'),
     h('div', { class: 'day' },
       h('div', { class: 'dayhead' }, h('b', {}, day.day), h('small', {}, longDate)),
-      h('div', { class: 'grid' }, rows)),
+      h('div', { class: 'grid', style: `--row:${rowH}px;grid-template-rows:${template}`, 'data-row': rowH }, times, classes)),
     h('div', { class: 'legend' }, h('span', {}, drum(), 'Live music'), h('span', {}, tag(), 'Company only')));
 }
 
@@ -106,6 +130,14 @@ function fit() {
     el.style.display = 'inline-block';
     while (el.scrollWidth > max && size > 60) { size -= 4; el.style.fontSize = size + 'px'; }
     el.style.display = 'block';
+  });
+  // timetable: keep the text size, make the rows shorter until the day ends above the legend
+  document.querySelectorAll('.page .grid[data-row]').forEach((grid) => {
+    const legend = grid.closest('.page').querySelector('.legend');
+    let row = Number(grid.dataset.row);
+    while (row > 56 && grid.getBoundingClientRect().bottom > legend.getBoundingClientRect().top - 28) {
+      row -= 2; grid.style.setProperty('--row', row + 'px');
+    }
   });
 }
 

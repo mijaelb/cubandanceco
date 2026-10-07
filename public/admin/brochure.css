@@ -136,3 +136,15 @@ body { margin: 0; background: #444; font-family: 'Montserrat Variable', sans-ser
 .page .cell:has(.flags) > b { padding-right: 34px; }
 .page .cell:has(.tag) > b { padding-right: 66px; }
 .page .cell:has(.tag):has(.drum) > b { padding-right: 98px; }
+
+/* a day is one grid, so classes can run over several slots */
+.page .grid { grid-template-columns: 176px repeat(12, minmax(0, 1fr)); gap: 10px 8px; }
+/* one text size in every timetable card */
+.page .grid .cell > b { font-size: 21px; line-height: 1.2; margin-top: 0; }
+.page .grid .cell > span { font-size: 17px; margin-top: 3px; }
+/* narrow cards: the tags sit above the title instead of beside it */
+.page .cell.narrow { padding: 8px 14px; }
+.page .cell.narrow:has(.flags) { padding-top: 42px; }
+.page .cell.narrow > b { padding-right: 0 !important; }
+/* cards over several slots have room for the title below the tags */
+.page .cell.tall > b { padding-right: 0 !important; }

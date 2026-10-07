@@ -170,6 +170,10 @@ textarea.oneline { min-height: 0; resize: none; overflow: hidden; line-height: 1
 .tt-flag { display: inline-flex; align-items: center; justify-content: center; height: 24px; min-width: 32px; padding: 0 8px; border: 1px solid rgba(20, 17, 13, 0.15); background: rgba(255, 255, 255, 0.6); border-radius: 999px; font-size: 0.7rem; font-weight: 800; color: #9a8f7c; cursor: pointer; }
 .tt-flag .ic { width: 16px; height: 16px; }
 .tt-flag.on { background: var(--ink); color: var(--gold); border-color: var(--ink); }
+.tt-flag { gap: 4px; white-space: nowrap; }
+.tt-flag:disabled { opacity: 0.35; cursor: default; }
+.tt-cont { background: none; outline: 1.5px dashed #d8c58c; outline-offset: -1.5px; padding: 8px 11px; align-content: center; color: #8a7d64; font-size: 0.78rem; }
+.tt-cont b { font-size: 0.9rem; color: #5d5240; }
 .tt-del { margin-left: auto; width: 26px; height: 26px; }
 .tt-del .ic { width: 14px; height: 14px; }
 .tt-empty-slot { display: inline-flex; gap: 6px; align-items: center; justify-content: center; min-height: 64px; border: 1.5px dashed #d2b45a; border-radius: 9px; background: none; color: var(--gold-deep); font-weight: 700; cursor: pointer; }

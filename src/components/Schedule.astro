@@ -1,10 +1,14 @@
 ---
 import { useT } from '../i18n';
+import { layoutDay } from '../lib/schedule';
 interface Props { days: any[]; lang: string }
 const { days, lang } = Astro.props;
 const t = useT(lang);
 // conga drum = live music
 const drum = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="4.6" rx="5.6" ry="1.9"/><path d="M6.4 4.6c-1.3 3.4-1.2 7.4.3 11l1.8 5.4h7l1.8-5.4c1.5-3.6 1.6-7.6.3-11"/><path d="M6.3 7.2c3.8 1.6 7.6 1.6 11.4 0" stroke-width="1.3"/><path d="M8.4 8.3v2.6M12 8.8v2.6M15.6 8.3v2.6" stroke-width="1.3"/><path d="M8.6 18.6c2.3.6 4.5.6 6.8 0" stroke-width="1.3"/></svg>';
+const ends = (time: string) => time.split(/\s*[–-]\s*/);
+// where each class sits on the day grid; a class with `span` lasts several slots
+const placed = (d: any) => new Map(layoutDay(d.slots).map((p) => [p.c, p]));
 ---
 <div class="schedule">
   <div class="schedule-legend">
@@ -12,29 +16,39 @@ const drum = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-
     <span><span class="tag">ICCD</span> {t('Company only')}</span>
   </div>
   <div class="schedule-days">
-    {days.map((d) => (
-      <div class="sday">
-        <p class="sday-head"><span class="display">{t(d.day)}</span> <span>{d.date}</span></p>
-        {d.slots.map((s: any) => s.isBreak ? (
-          <div class="slot slot-break"><span>{s.time}</span><strong>{t('Break')}</strong></div>
-        ) : (
-          <div class="slot">
-            <span class="slot-time">{s.time}</span>
-            <div class="slot-classes">
-              {s.classes.map((c: any) => (
-                <div class:list={['cls', { company: c.companyOnly }]}>
-                  <strong>{t(c.title)}</strong>
-                  <span>{c.teacher}</span>
-                  <span class="cls-flags">
-                    {c.liveMusic && <span class="ico" title={t('Live music')} set:html={drum} />}
-                    {c.companyOnly && <span class="tag">ICCD</span>}
-                  </span>
+    {days.map((d) => {
+      const at = placed(d);
+      return (
+        <div class="sday">
+          <p class="sday-head"><span class="display">{t(d.day)}</span> <span>{d.date}</span></p>
+          <div class="sday-body">
+            {d.slots.map((s: any, r: number) => s.isBreak ? (
+              <div class="slot slot-break" style={`--r:${r + 1}`}><span>{s.time}</span><strong>{t('Break')}</strong></div>
+            ) : (
+              <div class="slot">
+                <span class="slot-time" style={`--r:${r + 1}`}>{s.time}</span>
+                <div class="slot-classes">
+                  {s.classes.map((c: any) => {
+                    const p = at.get(c);
+                    if (!p) return null;
+                    return (
+                      <div class:list={['cls', { company: c.companyOnly }]} style={`--r:${r + 1};--h:${p.rows};--c:${p.col + 2};--w:${p.width}`}>
+                        <strong>{t(c.title)}</strong>
+                        <span>{c.teacher}</span>
+                        {p.rows > 1 && <small class="cls-until">{ends(s.time)[0]} – {ends(d.slots[r + p.rows - 1].time).at(-1)}</small>}
+                        <span class="cls-flags">
+                          {c.liveMusic && <span class="ico" title={t('Live music')} set:html={drum} />}
+                          {c.companyOnly && <span class="tag">ICCD</span>}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-    ))}
+        </div>
+      );
+    })}
   </div>
 </div>
