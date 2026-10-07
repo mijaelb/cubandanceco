@@ -111,7 +111,7 @@ const jsonld = JSON.stringify(schema).replace(/</g, '\\u003c');
             <a href={href} target="_blank" rel="noopener" aria-label={name}><svg viewBox="0 0 24 24" aria-hidden="true"><path d={d} /></svg></a>
           ))}
         </div>
-        {l.email && <p><a href={`mailto:${l.email}`}>{l.email}</a></p>}
+        {l.email && <p class="footer-mail"><a href={`mailto:${l.email}`}>{l.email}</a>{l.bookingEmail && <><br />{t('Shows & bookings')}: <a href={`mailto:${l.bookingEmail}`}>{l.bookingEmail}</a></>}</p>}
       </div>
     </div>
     <div class="wrap footer-bottom">

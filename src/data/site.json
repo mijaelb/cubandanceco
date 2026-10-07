@@ -8,7 +8,7 @@
   },
   "hero": {
     "eyebrow": "International Company of Cuban Dances",
-    "title": "Learn folkloric & popular dance from Cuba. European dancers. One company.",
+    "title": "Learn folkloric & popular dance from Cuba",
     "text": "Taught by former dancers of the Conjunto Folklórico Nacional de Cuba. One weekend a month, each time in a different European city, with live drums and singing.",
     "images": [
       "/images/photos/stage-timba.webp",
@@ -60,8 +60,9 @@
     "instagram": "https://www.instagram.com/cuban_dance_international_co/",
     "facebook": "https://www.facebook.com/profile.php?id=100084622654660",
     "tiktok": "https://www.tiktok.com/@conjujcybpz",
-    "email": "",
-    "instagramFeed": ""
+    "email": "info@cubandance.co",
+    "instagramFeed": "",
+    "bookingEmail": "booking@cubandance.co"
   },
   "instagramHandle": "@cuban_dance_international_co",
   "tagline": "Come for the dance. Stay for the family.",

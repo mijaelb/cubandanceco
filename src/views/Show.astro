@@ -11,7 +11,8 @@ import { useT, locale } from '../i18n';
 const { lang } = Astro.props;
 const t = useT(lang);
 const next = upcoming(show.upcoming as any[]);
-const contact = site.links.email ? `mailto:${site.links.email}` : site.links.instagram;
+const mail = site.links.bookingEmail || site.links.email;
+const contact = mail ? `mailto:${mail}?subject=${encodeURIComponent('Booking Raíces Cubanas')}` : site.links.instagram;
 const strip = ['stage-ship', 'stage-oshun', 'stage-masks'].map((n) => `/images/photos/${n}.webp`);
 ---
 <Layout lang={lang} page="raices-cubanas" title="Raíces Cubanas" description={show.text} image="/images/photos/stage-africa.webp">
@@ -64,7 +65,8 @@ const strip = ['stage-ship', 'stage-oshun', 'stage-masks'].map((n) => `/images/p
         <p class="eyebrow">{t('Bookings')}</p>
         <h3 class="display">{t('Bring Raíces Cubanas to your stage')}</h3>
         <p>{t(show.bookingText)}</p>
-        <a class="btn btn-dark" href={contact} target="_blank" rel="noopener">{t('Contact us')}</a>
+        <a class="btn btn-dark" href={contact}>{t('Contact us')}</a>
+        {mail && <p class="muted">{mail}</p>}
       </aside>
     </div>
   </section>
