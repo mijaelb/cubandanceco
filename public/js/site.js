@@ -3,7 +3,9 @@ const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 
 // Load deferred images (hidden slideshow photos) once the page is ready
-addEventListener('load', () => $$('img[data-src]').forEach((i) => { if (i.dataset.srcset) i.srcset = i.dataset.srcset; i.src = i.dataset.src; }));
+// Hero slideshow: each photo loads a few seconds before its turn (they change every 6 s),
+// so they never compete with the first photo and the fonts
+addEventListener('load', () => $$('img[data-src]').forEach((i, n) => setTimeout(() => { if (i.dataset.srcset) i.srcset = i.dataset.srcset; i.src = i.dataset.src; }, 2000 + n * 6000)));
 
 // Mobile menu
 const btn = $('[data-menu-btn]'), menu = $('[data-menu]');
@@ -36,6 +38,7 @@ $$('[data-end]').forEach((el) => el.dataset.end < today && el.remove());
 // Click-to-play videos (nothing is downloaded until play)
 $$('[data-play]').forEach((b) => b.addEventListener('click', () => {
   const v = $('video', b.parentElement);
+  $('.video-poster', b.parentElement)?.remove();
   v.controls = true;
   v.play();
   b.remove();

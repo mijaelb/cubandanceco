@@ -1,10 +1,13 @@
 ---
 import { url } from '../lib/utils';
+import Img from './Img.astro';
 interface Props { src: string; poster: string; label: string }
 const { src, poster, label } = Astro.props;
 ---
 <div class="video">
-  <video src={url(src)} poster={url(poster)} preload="none" playsinline></video>
+  <video src={url(src)} preload="none" playsinline></video>
+  <!-- a lazy, right-sized picture instead of poster="", which browsers download straight away -->
+  <Img src={poster} class="video-poster" sizes="(min-width: 1200px) 1100px, 100vw" />
   <button class="video-play" data-play aria-label={label}>
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
     <span>{label}</span>
