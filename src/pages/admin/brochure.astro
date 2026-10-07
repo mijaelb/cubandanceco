@@ -26,47 +26,80 @@ const v = Date.now().toString(36); // new on every build, so browsers load the l
   <div class="toolbar">
     <button type="button" id="print">Download PDF</button>
     <button type="button" id="images" class="secondary">Download images</button>
-    <span id="hint">PDF: in the print window choose <b>“Save as PDF”</b> (best in Chrome or Edge on a computer). Images: one picture per page, ready for Instagram stories and WhatsApp.</span>
+    <span id="hint">PDF: all pages in one file, exactly as shown, with working links. Images: one picture per page, ready for Instagram stories and WhatsApp.</span>
   </div>
   <main id="pages"></main>
   <template id="qr" set:html={qr} />
   <script src={url('/admin/brochure.js') + '?v=' + v} type="module" is:inline></script>
   <script>
-    // Page → PNG export (1080 × 1920, Instagram story size). On phones the images
-    // go straight to the share sheet; on computers they are downloaded.
-    import { toBlob } from 'html-to-image';
-    const btn = document.getElementById('images') as HTMLButtonElement;
-    btn.addEventListener('click', async () => {
-      const pages = [...document.querySelectorAll<HTMLElement>('.page')];
-      if (!pages.length) return;
-      const label = btn.textContent;
-      btn.disabled = true;
-      try {
-        await document.fonts.ready;
-        const name = (document.body.dataset.file || 'ICCD-training-schedule');
-        const files: File[] = [];
-        for (const [i, page] of pages.entries()) {
-          btn.textContent = `Preparing ${i + 1} / ${pages.length}…`;
-          const blob = await toBlob(page, { pixelRatio: 1080 / 810, cacheBust: false, skipAutoScale: true, style: { margin: '0', zoom: '1' } });
-          if (blob) files.push(new File([blob], `${name}-${i + 1}.png`, { type: 'image/png' }));
-        }
-        const touch = matchMedia('(pointer: coarse)').matches; // phones/tablets: share sheet; computers: download
-        if (touch && navigator.canShare?.({ files })) {
-          await navigator.share({ files, title: name });
-        } else {
-          for (const f of files) {
-            const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(f), download: f.name });
-            document.body.append(a); a.click(); a.remove();
-            await new Promise((r) => setTimeout(r, 300));
-          }
-        }
-      } catch (e) {
-        if ((e as Error).name !== 'AbortError') alert('Could not create the images: ' + (e as Error).message);
-      } finally {
-        btn.disabled = false;
-        btn.textContent = label;
+    // Exports the pages exactly as shown: a PDF made of page pictures (links stay tappable),
+    // or one 1080 × 1920 image per page (Instagram story size).
+    // On phones the files go to the share sheet; on computers they are downloaded.
+    import { toCanvas } from 'html-to-image';
+    const W = 810, H = 1440; // page size on screen
+    const pages = () => [...document.querySelectorAll<HTMLElement>('.page')];
+    const name = () => document.body.dataset.file || 'ICCD-training-schedule';
+    const shot = (page: HTMLElement, ratio: number) => toCanvas(page, { pixelRatio: ratio, cacheBust: false, skipAutoScale: true, style: { margin: '0', zoom: '1' } });
+    const blob = (c: HTMLCanvasElement, type: string, q?: number) => new Promise<Blob>((ok, no) => c.toBlob((b) => (b ? ok(b) : no(new Error('empty image'))), type, q));
+
+    async function deliver(files: File[]) {
+      const touch = matchMedia('(pointer: coarse)').matches;
+      if (touch && navigator.canShare?.({ files })) return navigator.share({ files, title: name() });
+      for (const f of files) {
+        const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(f), download: f.name });
+        document.body.append(a); a.click(); a.remove();
+        await new Promise((r) => setTimeout(r, 300));
       }
-    });
+    }
+
+    async function makePdf(step: (i: number, n: number) => void) {
+      const { jsPDF } = await import('jspdf');
+      const pdf = new jsPDF({ unit: 'px', format: [W, H], orientation: 'portrait', hotfixes: ['px_scaling'], compress: true });
+      const list = pages();
+      for (const [i, page] of list.entries()) {
+        step(i, list.length);
+        if (i) pdf.addPage([W, H], 'portrait');
+        const canvas = await shot(page, 2); // sharp when zoomed in
+        pdf.addImage(canvas.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, W, H, undefined, 'FAST');
+        // keep the links: tickets, maps, WhatsApp, Instagram, email
+        const box = page.getBoundingClientRect(), k = W / box.width;
+        page.querySelectorAll<HTMLAnchorElement>('a[href]').forEach((a) => {
+          const r = a.getBoundingClientRect();
+          pdf.link((r.left - box.left) * k, (r.top - box.top) * k, r.width * k, r.height * k, { url: a.href });
+        });
+      }
+      return new File([pdf.output('blob')], `${name()}.pdf`, { type: 'application/pdf' });
+    }
+
+    async function makeImages(step: (i: number, n: number) => void) {
+      const list = pages(), files: File[] = [];
+      for (const [i, page] of list.entries()) {
+        step(i, list.length);
+        files.push(new File([await blob(await shot(page, 1080 / W), 'image/png')], `${name()}-${i + 1}.png`, { type: 'image/png' }));
+      }
+      return files;
+    }
+
+    function wire(id: string, make: (step: (i: number, n: number) => void) => Promise<File | File[]>) {
+      const btn = document.getElementById(id) as HTMLButtonElement;
+      btn.addEventListener('click', async () => {
+        if (!pages().length) return;
+        const label = btn.textContent;
+        document.querySelectorAll<HTMLButtonElement>('.toolbar button').forEach((b) => (b.disabled = true));
+        try {
+          await document.fonts.ready;
+          const out = await make((i, n) => (btn.textContent = `Preparing ${i + 1} / ${n}…`));
+          await deliver(Array.isArray(out) ? out : [out]);
+        } catch (e) {
+          if ((e as Error).name !== 'AbortError') alert('Could not create the file: ' + (e as Error).message);
+        } finally {
+          document.querySelectorAll<HTMLButtonElement>('.toolbar button').forEach((b) => (b.disabled = false));
+          btn.textContent = label;
+        }
+      });
+    }
+    wire('print', makePdf);
+    wire('images', makeImages);
   </script>
 </body>
 </html>

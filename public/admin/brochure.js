@@ -166,4 +166,3 @@ if (!data?.event) {
   document.title = document.body.dataset.file.replace(/-/g, ' ');
   document.fonts.ready.then(fit);
 }
-$('#print').addEventListener('click', () => print());
