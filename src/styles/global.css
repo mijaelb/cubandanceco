@@ -163,7 +163,7 @@ body:has(main > .hero:first-child, main > .page-hero:first-child) .site-header:n
 }
 .hero::after, .page-hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(20, 17, 13, 0.72), rgba(20, 17, 13, 0) 65%), linear-gradient(to top, rgba(20, 17, 13, 0.96) 4%, rgba(20, 17, 13, 0.3) 55%, rgba(20, 17, 13, 0.55)); }
 .hero-content, .page-hero-content { position: relative; z-index: 2; padding: 140px 0 clamp(56px, 10vh, 110px); }
-h1.hero-title { font-size: clamp(2.5rem, 8.4vw, 8rem); color: #fff; margin-bottom: 0.3em; line-height: 1; }
+h1.hero-title { font-size: clamp(2.3rem, 6vw, 6rem); max-width: 16ch; color: #fff; margin-bottom: 0.3em; line-height: 1; }
 .hero-title span { display: block; }
 .hero-title span:last-child { color: var(--gold); }
 .hero .lead { color: #efe6d3; }
