@@ -148,3 +148,16 @@ body { margin: 0; background: #444; font-family: 'Montserrat Variable', sans-ser
 .page .cell.narrow > b { padding-right: 0 !important; }
 /* cards over several slots have room for the title below the tags */
 .page .cell.tall > b { padding-right: 0 !important; }
+
+/* background words: line height from Anton's cap height (0.87em), so the rows never touch */
+.pattern span { line-height: 1; }
+.band .pattern span:first-child, .band .pattern span:last-child { line-height: 1; }
+/* contact list with real links */
+.end .ask li { display: grid; grid-template-columns: 170px 1fr; align-items: baseline; }
+.end .ask b { min-width: 0; }
+.end .ask a, .foot a { color: inherit; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; text-decoration-color: rgba(6, 14, 10, 0.45); }
+.end .ask small { display: block; margin-top: 4px; font-size: 18px; font-weight: 500; color: rgba(6, 14, 10, 0.7); }
+.foot a { text-decoration: none; }
+.end .qr { position: absolute; right: var(--m); bottom: 118px; display: grid; justify-items: center; gap: 10px; padding: 14px 14px 12px; background: var(--paper); border-radius: 14px; color: var(--ink); text-decoration: none; }
+.end .qr svg { width: 132px; height: 132px; display: block; }
+.end .qr span { font-size: 15px; font-weight: 700; line-height: 1.25; text-align: center; letter-spacing: 0.02em; }

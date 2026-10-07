@@ -5,8 +5,11 @@ const LOGO = document.body.dataset.logo;
 const TICKETS = document.body.dataset.tickets;
 const HANDLE = document.body.dataset.handle || '';
 const EMAIL = document.body.dataset.email || '';
-const WHATSAPP = !!document.body.dataset.whatsapp;
-const footer = () => h('p', { class: 'foot' }, 'cubandance.co', h('span', {}, '·'), HANDLE);
+const WHATSAPP = document.body.dataset.whatsapp || '';
+const INSTAGRAM = document.body.dataset.instagram || '';
+// links work in the PDF; the address is written out too, for the images
+const bare = (url) => url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+const footer = () => h('p', { class: 'foot' }, h('a', { href: 'https://cubandance.co' }, 'cubandance.co'), h('span', {}, '·'), INSTAGRAM ? h('a', { href: INSTAGRAM }, HANDLE) : HANDLE);
 
 function h(tag, attrs = {}, ...kids) {
   const el = tag === 'svg' || tag === 'path' ? document.createElementNS('http://www.w3.org/2000/svg', tag) : document.createElement(tag);
@@ -38,7 +41,7 @@ function cover(ev) {
     pattern(...Array(9).fill(ev.city)),
     h('div', { class: 'content' }, logo(),
       ev.badge && h('p', { class: 'badge' }, ev.badge),
-      h('h1', {}, h('span', { 'data-fit': '710' }, ev.city), h('span', {}, 'Training'), h('span', {}, 'Schedule')),
+      h('h1', {}, h('span', { 'data-fit': '' }, ev.city), h('span', {}, 'Training'), h('span', {}, 'Schedule')),
       h('p', { class: 'date' }, range(ev.start, ev.end)),
       h('p', { class: 'where' }, [ev.venue, ev.countryCode ? `${ev.city} (${ev.countryCode})` : ev.city].filter(Boolean).join(' · ')),
       maestros(ev).length > 0 && h('p', { class: 'with' }, 'With ', h('b', {}, andList(maestros(ev))))),
@@ -58,7 +61,8 @@ function info(ev, reminders) {
       maestros(ev).length > 0 && h('h3', {}, 'Maestros'),
       maestros(ev).length > 0 && h('p', { class: 'maestros' }, maestros(ev).join(' · ')),
       reminders?.length && h('h3', {}, 'Kind reminders'),
-      reminders?.length && h('ul', {}, reminders.map((r) => h('li', {}, r)))));
+      reminders?.length && h('ul', {}, reminders.map((r) => h('li', {}, r)))),
+    footer());
 }
 
 // Places the classes of a day on 12 sub-columns, so a class can last several
@@ -110,25 +114,33 @@ function schedule(ev, day, index) {
     h('div', { class: 'legend' }, h('span', {}, drum(), 'Live music'), h('span', {}, tag(), 'Company only')));
 }
 
+// QR code for the WhatsApp group (an SVG made at build time, see brochure.astro)
+function qrCode() {
+  const svg = $('#qr')?.content.querySelector('svg');
+  if (!WHATSAPP || !svg) return null;
+  return h('a', { class: 'qr', href: WHATSAPP }, svg.cloneNode(true), h('span', {}, 'Scan to join', h('br'), 'the ICCD group'));
+}
+
 function closing(ev) {
   return h('section', { class: 'page gold end' },
     pattern(...Array(9).fill(ev.city)),
     h('div', { class: 'content' }, logo(), h('h2', {}, 'Any', h('br'), 'questions?'),
       h('ul', { class: 'ask' },
-        WHATSAPP && h('li', {}, h('b', {}, 'WhatsApp'), 'ICCD group'),
-        HANDLE && h('li', {}, h('b', {}, 'Instagram'), HANDLE),
-        EMAIL && h('li', {}, h('b', {}, 'Email'), EMAIL))),
+        WHATSAPP && h('li', {}, h('b', {}, 'WhatsApp'), h('div', {}, h('a', { href: WHATSAPP }, 'Join the ICCD group'), h('small', {}, bare(WHATSAPP)))),
+        HANDLE && h('li', {}, h('b', {}, 'Instagram'), h('div', {}, INSTAGRAM ? h('a', { href: INSTAGRAM }, HANDLE) : HANDLE)),
+        EMAIL && h('li', {}, h('b', {}, 'Email'), h('div', {}, h('a', { href: `mailto:${EMAIL}` }, EMAIL))))),
     h('div', { class: 'book' }, h('p', {}, 'Ready to book your next training?'), h('a', { href: ev.ticketUrl || TICKETS }, 'Get your training ticket ↗')),
+    qrCode(),
     footer());
 }
 
 // shrink a line until it fits its width (long city names)
 function fit() {
   document.querySelectorAll('[data-fit]').forEach((el) => {
-    const max = Number(el.dataset.fit);
+    const max = el.parentElement.clientWidth; // the width of the title block
     let size = parseFloat(getComputedStyle(el).fontSize);
     el.style.display = 'inline-block';
-    while (el.scrollWidth > max && size > 60) { size -= 4; el.style.fontSize = size + 'px'; }
+    while (el.scrollWidth > max && size > 60) { size -= 2; el.style.fontSize = size + 'px'; }
     el.style.display = 'block';
   });
   // timetable: keep the text size, make the rows shorter until the day ends above the legend

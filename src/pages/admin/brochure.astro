@@ -6,6 +6,9 @@ import '@fontsource/anton';
 import '@fontsource-variable/montserrat';
 import site from '../../data/site.json';
 import { url } from '../../lib/utils';
+import QRCode from 'qrcode';
+// QR code for the WhatsApp group, made at build time (the link is hard to type from an image)
+const qr = site.links.whatsapp ? await QRCode.toString(site.links.whatsapp, { type: 'svg', margin: 0, errorCorrectionLevel: 'M', color: { dark: '#060e0a', light: '#0000' } }) : '';
 const v = Date.now().toString(36); // new on every build, so browsers load the latest admin
 ---
 <!doctype html>
@@ -19,13 +22,14 @@ const v = Date.now().toString(36); // new on every build, so browsers load the l
   <link rel="icon" href={url('/images/logo.svg')} type="image/svg+xml" />
   <link rel="stylesheet" href={url('/admin/brochure.css') + '?v=' + v} />
 </head>
-<body data-logo={url('/images/logo.svg')} data-tickets={site.links.tickets} data-handle={site.instagramHandle} data-email={site.links.email} data-whatsapp={site.links.whatsapp ? 'yes' : ''}>
+<body data-logo={url('/images/logo.svg')} data-tickets={site.links.tickets} data-handle={site.instagramHandle} data-email={site.links.email} data-whatsapp={site.links.whatsapp} data-instagram={site.links.instagram}>
   <div class="toolbar">
     <button type="button" id="print">Download PDF</button>
     <button type="button" id="images" class="secondary">Download images</button>
     <span id="hint">PDF: in the print window choose <b>“Save as PDF”</b> (best in Chrome or Edge on a computer). Images: one picture per page, ready for Instagram stories and WhatsApp.</span>
   </div>
   <main id="pages"></main>
+  <template id="qr" set:html={qr} />
   <script src={url('/admin/brochure.js') + '?v=' + v} type="module" is:inline></script>
   <script>
     // Page → PNG export (1080 × 1920, Instagram story size). On phones the images

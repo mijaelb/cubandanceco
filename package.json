@@ -15,5 +15,8 @@
     "astro": "^7.3.6",
     "html-to-image": "^1.11.13",
     "image-size": "^2.0.4"
+  },
+  "devDependencies": {
+    "qrcode": "^1.5.4"
   }
 }
