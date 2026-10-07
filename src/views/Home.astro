@@ -18,7 +18,8 @@ const { lang } = Astro.props;
 const t = useT(lang);
 const next = upcoming(trainings.events);
 const first = next[0];
-const nextShow = upcoming(perf.upcoming)[0];
+// next date of Raíces Cubanas itself (other performances are listed on the Performances page)
+const nextShow = upcoming(perf.upcoming.filter((p) => p.production === show.title))[0];
 const marquee = [...site.styles, ...site.styles];
 ---
 <Layout lang={lang} page="" events={next} preload={site.hero.images[0]}>
@@ -120,7 +121,7 @@ const marquee = [...site.styles, ...site.styles];
         <ol class="parts">
           {show.parts.map((p, i) => <li><span class="display">0{i + 1}</span><div><strong>{t(p.title)}</strong><p>{t(p.text).split('. ')[0]}.</p></div></li>)}
         </ol>
-        {nextShow && <p class="next-show"><span>{t('Next performance')}</span>{t(nextShow.title)} · {t(nextShow.city)} · {nextShow.when ? t(nextShow.when) : nextShow.date}</p>}
+        {nextShow && <p class="next-show"><span>{t('Next date')}</span>{t(nextShow.title)} · {t(nextShow.city)} · {nextShow.when ? t(nextShow.when) : nextShow.date}</p>}
         <div class="actions">
           <a class="btn btn-gold" href={link(lang, 'raices-cubanas')}>{t('About the show')}</a>
           <a class="btn btn-line" href={link(lang, 'performances')}>{t('All our performances')}</a>
