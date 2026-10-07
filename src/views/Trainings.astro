@@ -65,7 +65,7 @@ const cities = places([...events, ...past]);
               <div><dt>{t('Where')}</dt><dd><strong>{e.venue}</strong><br />{e.address}</dd></div>
               {e.mapUrl && <div><dt>{t('Map')}</dt><dd><a class="link-arrow" href={e.mapUrl} target="_blank" rel="noopener">{t('Open in Maps')}</a></dd></div>}
             </dl>
-            {e.schedule.length > 0 ? (
+            {e.schedule.length > 0 && !e.scheduleDraft ? (
               <details class="event-schedule" open={i === 0}>
                 <summary>{t('Timetable')}</summary>
                 <Schedule days={e.schedule} lang={lang} />

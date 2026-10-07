@@ -29,6 +29,6 @@ const icon = {
   </div>
   <footer class="tcard-actions">
     <a class="btn btn-green btn-sm" href={e.ticketUrl || site.links.tickets} target="_blank" rel="noopener">{t('Tickets')}</a>
-    <a class="btn btn-line btn-sm" href={`${link(lang, 'trainings')}#${slug(e.city + '-' + e.start)}`}>{e.schedule?.length ? t('Schedule') : t('Details')}</a>
+    <a class="btn btn-line btn-sm" href={`${link(lang, 'trainings')}#${slug(e.city + '-' + e.start)}`}>{e.schedule?.length && !e.scheduleDraft ? t('Schedule') : t('Details')}</a>
   </footer>
 </article>

@@ -34,6 +34,7 @@ const SECTIONS = [
         badge: T('Badge (optional)', 'e.g. "4th anniversary weekend"'), note: T('Note (optional)', 'e.g. "40 min by train from Rotterdam"'),
         time: T('Time', 'e.g. Saturday 1 pm – Sunday 5 pm'), venue: T('Venue'), address: T('Address'),
         mapUrl: U('Google Maps link'), ticketUrl: U('Tickets link', 'Leave empty to use the main Weezevent link'),
+        scheduleDraft: B('Timetable is a draft (hidden on the website)'),
         schedule: L('Schedule (optional)', 'day', {
           day: T('Day', 'e.g. Saturday'), date: T('Date', 'e.g. 10/10'),
           slots: L('Time slots', 'time slot', {
@@ -319,10 +320,12 @@ function timetableView() {
       const src = events[Number(e.target.value)];
       if (ev.schedule.length && !confirm(`Replace the timetable of ${ev.city} with a copy of ${src.city}?`)) { e.target.value = ''; return; }
       ev.schedule = structuredClone(src.schedule).map((d, i) => ({ ...d, day: weekday(ev.start, i), date: ddmm(ev.start, i) }));
+      ev.scheduleDraft = true;
       changed(); draw();
     } }, h('option', { value: '' }, 'Copy a timetable from…'), others.map(([e, i]) => h('option', { value: i }, `${e.start} · ${e.city}`)));
     const addDay = h('button', { type: 'button', class: 'btn-small', onclick: () => {
       const i = ev.schedule.length;
+      if (!i && ev.scheduleDraft == null) ev.scheduleDraft = true;
       ev.schedule.push({ day: weekday(ev.start, i), date: ddmm(ev.start, i), slots: [] });
       changed(); draw();
     } }, '+ Add day');
@@ -346,7 +349,11 @@ function timetableView() {
 
     wrap.replaceChildren(
       h('div', { class: 'tt-bar' }, pick, copyFrom, addDay),
-      h('p', { class: 'muted' }, 'Tap a field to edit. 🥁 = live music, ICCD = company only. Press Publish when you are done; the website updates in about 2 minutes.'),
+      ev.schedule.length > 0 && h('div', { class: `tt-status ${ev.scheduleDraft ? 'draft' : 'live'}` },
+        h('span', {}, ev.scheduleDraft ? '✎ Draft: only visible here in the editor' : '● Visible on the website'),
+        h('button', { type: 'button', class: 'btn-small', onclick: () => { ev.scheduleDraft = !ev.scheduleDraft; changed(); draw(); } },
+          ev.scheduleDraft ? 'Make visible on the website' : 'Hide again (back to draft)')),
+      h('p', { class: 'muted' }, 'Tap a field to edit. 🥁 = live music, ICCD = company only. Publish saves your work for the whole team; a draft stays hidden on the website until you make it visible.'),
       ev.schedule.length ? h('div', { class: 'tt-days' }, days) : h('p', { class: 'tt-empty' }, 'No timetable yet. Add a day, or copy the timetable of another training.'),
       list,
     );
