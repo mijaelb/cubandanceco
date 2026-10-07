@@ -22,7 +22,7 @@ const O = (label, fields) => ({ type: 'object', label, fields });
 const L = (label, item, fields, summary, help) => ({ type: 'list', label, item, fields, summary, help });
 
 const person = { name: T('Name'), role: T('Role'), photo: I('Photo', 'Portrait, ideally 4:5'), bio: A('Biography', 'Leave an empty line between paragraphs') };
-const show = { production: T('Production (optional)', 'Write "Raíces Cubanas" to also list it on the Raíces Cubanas page'), date: D('Date', 'Used for sorting and to hide past shows'), when: T('Date text (optional)', 'Shown instead of the date, e.g. "2–4 April 2027"'), title: T('Title'), city: T('City, country'), venue: T('Venue (optional)'), url: U('Tickets link (optional)') };
+const show = { date: D('Date', 'Used for sorting and to hide past shows'), when: T('Date text (optional)', 'Shown instead of the date, e.g. "2–4 April 2027"'), title: T('Title'), production: T('Production (optional)', 'Write "Raíces Cubanas" to also list it on the Raíces Cubanas page'), city: T('City, country'), venue: T('Venue (optional)'), url: U('Tickets link (optional)') };
 
 const SECTIONS = [
   {
