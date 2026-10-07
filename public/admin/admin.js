@@ -312,21 +312,64 @@ const splitTime = (s) => (s || '').split(/\s*[–-]\s*/);
 const ddmm = (iso, add = 0) => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + add); return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}`; };
 const weekday = (iso, add = 0) => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + add); return d.toLocaleDateString('en-GB', { weekday: 'long' }); };
 
+// Quick picks: tap instead of typing
+const BASE_CLASSES = ['Técnica', 'Elegguá', 'Ogún', 'Ochosi', 'Obatalá', 'Oyá', 'Oshún', 'Yemayá', 'Changó', 'Babalú Ayé', 'Palo', 'Arará', 'Makuta', 'Yuka', 'Rumba', 'Columbia', 'Guaguancó', 'Yambú', 'Son', 'Mambo', 'Cha-cha-chá', 'Cabaret', 'Canto'];
+function pickLists(events) {
+  const t = state.files['src/data/teachers.json']?.data || {};
+  const teachers = [...(t.masters || []), ...(t.guests || [])].map((p) => p.name.split(' ')[0]);
+  const used = new Map();
+  const titles = new Map(BASE_CLASSES.map((c) => [c, 0]));
+  events.forEach((e) => (e.schedule || []).forEach((d) => d.slots.forEach((s) => s.classes.forEach((c) => {
+    (c.teacher || '').split(/\s*&\s*/).filter(Boolean).forEach((n) => used.set(n, (used.get(n) || 0) + 1));
+    const base = (c.title || '').replace(/^Ensayo\s+/i, '').trim();
+    if (base && !/[()]/.test(base)) titles.set(base, (titles.get(base) || 0) + 1);
+  }))));
+  const extra = [...used.keys()].filter((n) => !teachers.includes(n)).sort();
+  return { teachers: [...new Set([...teachers, ...extra])], titles: [...titles.keys()] };
+}
+const keepFocus = { onpointerdown: (e) => e.preventDefault(), onmousedown: (e) => e.preventDefault() };
+
+function titleField(c, lists) {
+  const input = h('input', { class: 'tt-title', value: c.title, placeholder: 'Class', oninput: (e) => { c.title = e.target.value; changed(); } });
+  const set = (v) => { c.title = input.value = v; changed(); };
+  const picks = h('div', { class: 'tt-picks' },
+    h('button', { type: 'button', class: 'ensayo', ...keepFocus, onclick: () => set(/^Ensayo\b/i.test(c.title) ? c.title.replace(/^Ensayo\s*/i, '') : `Ensayo ${c.title}`.trim()) }, 'Ensayo +'),
+    lists.titles.map((n) => h('button', { type: 'button', ...keepFocus, onclick: () => set(/^Ensayo\b/i.test(c.title) ? `Ensayo ${n}` : n) }, n)));
+  return h('div', { class: 'tt-f' }, input, picks);
+}
+function teacherField(c, lists) {
+  const input = h('input', { class: 'tt-teacher', value: c.teacher, placeholder: 'Teacher', oninput: (e) => { c.teacher = e.target.value; changed(); mark(); } });
+  const names = () => c.teacher.split(/\s*&\s*/).filter(Boolean);
+  const buttons = lists.teachers.map((n) => h('button', { type: 'button', ...keepFocus, onclick: () => {
+    const cur = names();
+    const next = cur.includes(n) ? cur.filter((x) => x !== n) : [...cur, n];
+    c.teacher = input.value = next.join(' & '); changed(); mark();
+  } }, n));
+  const mark = () => buttons.forEach((b) => b.classList.toggle('on', names().includes(b.textContent)));
+  mark();
+  return h('div', { class: 'tt-f' }, input, h('div', { class: 'tt-picks' }, h('small', {}, 'Tap one or more'), buttons));
+}
+
+function exportPdf(ev) {
+  const data = state.files['src/data/trainings.json'].data;
+  try {
+    localStorage.setItem('iccd-brochure', JSON.stringify({ event: ev, reminders: data.reminders || [] }));
+  } catch { return alert('Your browser blocked the export. Allow site data for cubandance.co and try again.'); }
+  open(SITE + '/admin/brochure/', '_blank');
+}
+
 function timetableView() {
   const data = state.files['src/data/trainings.json'].data;
   const events = data.events;
   if (!events.length) return h('p', { class: 'muted' }, 'Add a training weekend first (Trainings section).');
   if (state.tt == null || !events[state.tt]) state.tt = 0;
   const wrap = h('div', { class: 'tt' });
-  const teachers = new Set();
-  [...(state.files['src/data/teachers.json']?.data.masters || []), ...(state.files['src/data/teachers.json']?.data.guests || [])].forEach((p) => teachers.add(p.name.split(' ')[0]));
-  events.forEach((e) => (e.schedule || []).forEach((d) => d.slots.forEach((s) => s.classes.forEach((c) => c.teacher && teachers.add(c.teacher)))));
-  const list = h('datalist', { id: 'tt-teachers' }, [...teachers].map((t) => h('option', { value: t })));
+  const lists = pickLists(events);
 
   const draw = () => {
     const ev = events[state.tt];
     ev.schedule ??= [];
-    const pick = h('select', { onchange: (e) => { state.tt = Number(e.target.value); draw(); } },
+    const pick = h('select', { class: 'tt-pick', onchange: (e) => { state.tt = Number(e.target.value); draw(); } },
       events.map((e, i) => h('option', { value: i, selected: i === state.tt }, `${e.start} · ${e.city}`)));
     const others = events.map((e, i) => [e, i]).filter(([e, i]) => i !== state.tt && e.schedule?.length);
     const copyFrom = !others.length ? null : h('select', { onchange: (e) => {
@@ -335,16 +378,16 @@ function timetableView() {
       ev.schedule = structuredClone(src.schedule).map((d, i) => ({ ...d, day: weekday(ev.start, i), date: ddmm(ev.start, i) }));
       ev.scheduleDraft = true;
       changed(); draw();
-    } }, h('option', { value: '' }, 'Copy a timetable from…'), others.map(([e, i]) => h('option', { value: i }, `${e.start} · ${e.city}`)));
+    } }, h('option', { value: '' }, 'Copy from…'), others.map(([e, i]) => h('option', { value: i }, `${e.start} · ${e.city}`)));
     const addDay = h('button', { type: 'button', class: 'btn-small', onclick: () => {
       const i = ev.schedule.length;
       if (!i && ev.scheduleDraft == null) ev.scheduleDraft = true;
       ev.schedule.push({ day: weekday(ev.start, i), date: ddmm(ev.start, i), slots: [] });
       changed(); draw();
-    } }, '+ Add day');
+    } }, '+ Day');
+    const pdf = ev.schedule.length > 0 && h('button', { type: 'button', class: 'btn-pdf', onclick: () => exportPdf(ev) }, '⤓ Export PDF');
 
     const days = ev.schedule.map((day, di) => {
-      const slots = day.slots.map((slot, si) => slotRow(day, slot, si, draw));
       const addSlot = h('button', { type: 'button', class: 'btn-add', onclick: () => {
         const last = day.slots.at(-1);
         const end = last ? toMin(splitTime(last.time)[1]) : null;
@@ -357,45 +400,49 @@ function timetableView() {
           h('input', { class: 'tt-dayname', value: day.day, 'aria-label': 'Day', oninput: (e) => { day.day = e.target.value; changed(); } }),
           h('input', { class: 'tt-date', value: day.date, 'aria-label': 'Date', placeholder: 'dd/mm', oninput: (e) => { day.date = e.target.value; changed(); } }),
           h('button', { type: 'button', class: 'tt-x', title: 'Remove this day', onclick: () => { if (confirm(`Remove ${day.day} and all its classes?`)) { ev.schedule.splice(di, 1); changed(); draw(); } } }, '✕')),
-        slots, addSlot);
+        day.slots.map((slot, si) => slotRow(day, slot, si, draw, lists)), addSlot);
     });
 
     wrap.replaceChildren(
-      h('div', { class: 'tt-bar' }, pick, copyFrom, addDay),
+      h('div', { class: 'tt-bar' }, pick, copyFrom, addDay, pdf),
       ev.schedule.length > 0 && h('div', { class: `tt-status ${ev.scheduleDraft ? 'draft' : 'live'}` },
-        h('span', {}, ev.scheduleDraft ? '✎ Draft: only visible here in the editor' : '● Visible on the website'),
+        h('span', {}, ev.scheduleDraft ? '✎ Draft · only visible in the editor' : '● Visible on the website'),
         h('button', { type: 'button', class: 'btn-small', onclick: () => { ev.scheduleDraft = !ev.scheduleDraft; changed(); draw(); } },
-          ev.scheduleDraft ? 'Make visible on the website' : 'Hide again (back to draft)')),
-      h('p', { class: 'muted' }, 'Tap a field to edit. 🥁 = live music, ICCD = company only. Publish saves your work for the whole team; a draft stays hidden on the website until you make it visible.'),
+          ev.scheduleDraft ? 'Make visible' : 'Back to draft')),
       ev.schedule.length ? h('div', { class: 'tt-days' }, days) : h('p', { class: 'tt-empty' }, 'No timetable yet. Add a day, or copy the timetable of another training.'),
-      list,
+      h('p', { class: 'tt-help' }, 'Tap a class or teacher field to pick from the list, or type. 🥁 live music · ICCD company only. Publish saves for the whole team; a draft stays hidden on the website.'),
     );
   };
   draw();
   return wrap;
 }
 
-function slotRow(day, slot, si, redraw) {
+function slotRow(day, slot, si, redraw, lists) {
   const [from, to] = splitTime(slot.time);
   const setTime = (a, b) => { slot.time = `${a} – ${b}`; changed(); };
-  const fromIn = h('input', { type: 'time', value: from || '', 'aria-label': 'Start', onchange: (e) => setTime(e.target.value, toIn.value) });
-  const toIn = h('input', { type: 'time', value: to || '', 'aria-label': 'End', onchange: (e) => setTime(fromIn.value, e.target.value) });
+  // 24-hour text boxes like the brochure: "1300", "13.00" or "13" all become 13:00
+  const norm = (v) => { const d = v.replace(/\D/g, ''); if (!d) return ''; const [hh, mm] = d.length <= 2 ? [d, '00'] : [d.slice(0, d.length - 2), d.slice(-2)]; return `${pad(Math.min(23, +hh))}:${pad(Math.min(59, +mm))}`; };
+  const box = (value, label, other) => h('input', { type: 'text', inputmode: 'numeric', maxlength: 5, value: value || '', placeholder: '00:00', 'aria-label': label,
+    onfocus: (e) => e.target.select(), onchange: (e) => { e.target.value = norm(e.target.value); other(); } });
+  const fromIn = box(from, 'Start', () => setTime(fromIn.value, toIn.value));
+  const toIn = box(to, 'End', () => setTime(fromIn.value, toIn.value));
   const move = (d) => { const s = day.slots; [s[si], s[si + d]] = [s[si + d], s[si]]; changed(); redraw(); };
-  const tools = h('div', { class: 'tt-tools' },
+  const menu = h('div', { class: 'tt-tools' },
     h('button', { type: 'button', title: 'Move up', disabled: si === 0, onclick: () => move(-1) }, '↑'),
     h('button', { type: 'button', title: 'Move down', disabled: si === day.slots.length - 1, onclick: () => move(1) }, '↓'),
-    h('button', { type: 'button', class: slot.isBreak ? 'on' : '', title: 'Break', onclick: () => { slot.isBreak = !slot.isBreak; changed(); redraw(); } }, '☕'),
+    h('button', { type: 'button', class: slot.isBreak ? 'on' : '', title: slot.isBreak ? 'Make it a class slot' : 'Make it a break', onclick: () => { slot.isBreak = !slot.isBreak; changed(); redraw(); } }, '☕'),
+    h('button', { type: 'button', title: 'Duplicate this time slot', onclick: () => { day.slots.splice(si + 1, 0, structuredClone(slot)); changed(); redraw(); } }, '⧉'),
     h('button', { type: 'button', title: 'Remove time slot', onclick: () => { if (confirm(`Remove ${slot.time}?`)) { day.slots.splice(si, 1); changed(); redraw(); } } }, '✕'));
-  const time = h('div', { class: 'tt-time' }, fromIn, h('span', {}, '–'), toIn, tools);
+  const time = h('div', { class: 'tt-time' }, h('div', { class: 'tt-hours' }, fromIn, toIn), menu);
   if (slot.isBreak) return h('div', { class: 'tt-slot tt-break' }, time, h('strong', {}, 'Break'));
+  const toggle = (c, key, label, title) => h('button', { type: 'button', class: `tt-flag${c[key] ? ' on' : ''}`, title, 'aria-pressed': String(!!c[key]), onclick: (e) => { c[key] = !c[key]; e.currentTarget.classList.toggle('on', c[key]); e.currentTarget.closest('.tt-class').classList.toggle('company', !!c.companyOnly); changed(); } }, label);
   const cards = slot.classes.map((c, ci) => h('div', { class: `tt-class${c.companyOnly ? ' company' : ''}` },
-    h('input', { class: 'tt-title', value: c.title, placeholder: 'Class (e.g. Yemayá)', oninput: (e) => { c.title = e.target.value; changed(); } }),
-    h('input', { class: 'tt-teacher', value: c.teacher, placeholder: 'Teacher', list: 'tt-teachers', oninput: (e) => { c.teacher = e.target.value; changed(); } }),
+    titleField(c, lists), teacherField(c, lists),
     h('div', { class: 'tt-flags' },
-      h('button', { type: 'button', class: c.liveMusic ? 'on' : '', 'aria-pressed': String(!!c.liveMusic), onclick: () => { c.liveMusic = !c.liveMusic; changed(); redraw(); } }, '🥁 Live music'),
-      h('button', { type: 'button', class: c.companyOnly ? 'on' : '', 'aria-pressed': String(!!c.companyOnly), onclick: () => { c.companyOnly = !c.companyOnly; changed(); redraw(); } }, 'ICCD only'),
+      toggle(c, 'liveMusic', '🥁', 'Live music'),
+      toggle(c, 'companyOnly', 'ICCD', 'Company only'),
       h('button', { type: 'button', class: 'tt-x', title: 'Remove class', onclick: () => { slot.classes.splice(ci, 1); changed(); redraw(); } }, '✕'))));
-  const add = h('button', { type: 'button', class: 'tt-addclass', onclick: () => { slot.classes.push({ title: '', teacher: '', liveMusic: false, companyOnly: true }); changed(); redraw(); } }, '+ Class');
+  const add = h('button', { type: 'button', class: 'tt-addclass', title: 'Add a class at the same time', onclick: () => { slot.classes.push({ title: '', teacher: '', liveMusic: false, companyOnly: true }); changed(); redraw(); } }, '+');
   return h('div', { class: 'tt-slot' }, time, h('div', { class: 'tt-classes' }, cards, add));
 }
 

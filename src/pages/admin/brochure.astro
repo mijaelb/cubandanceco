@@ -1,0 +1,29 @@
+---
+// Printable training brochure (5 story-size pages, like the Instagram brochures).
+// Opened from the timetable editor, which passes the training via localStorage,
+// so drafts can be exported before they are published.
+import '@fontsource/anton';
+import '@fontsource-variable/montserrat';
+import site from '../../data/site.json';
+import { url } from '../../lib/utils';
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <title>Training brochure · ICCD</title>
+  <link rel="icon" href={url('/images/logo.svg')} type="image/svg+xml" />
+  <link rel="stylesheet" href={url('/admin/brochure.css')} />
+</head>
+<body data-logo={url('/images/logo.svg')} data-tickets={site.links.tickets}>
+  <div class="toolbar">
+    <button type="button" id="print">Download PDF</button>
+    <span>In the print window choose <b>“Save as PDF”</b>, paper size is set automatically. Works best in Chrome or Edge on a computer.</span>
+  </div>
+  <main id="pages"></main>
+  <script src={url('/admin/brochure.js')} type="module" is:inline></script>
+</body>
+</html>

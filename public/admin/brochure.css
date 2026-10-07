@@ -1,0 +1,71 @@
+/* Training brochure — 810 × 1440 px pages, same look as the Instagram schedules */
+@page { size: 810px 1440px; margin: 0; }
+:root { --gold: #e8cd68; --ink: #060e0a; --cell: #feefc9; --cell-co: #f8f4ea; --paper: #fdfcfa; --break: #d9d9d9; --tag: #4d4d4d; }
+* { box-sizing: border-box; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { margin: 0; background: #444; font-family: 'Montserrat Variable', sans-serif; color: var(--ink); }
+.toolbar { position: sticky; top: 0; z-index: 5; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; padding: 12px 20px; background: #14110d; color: #e9e1cf; font-size: 14px; }
+.toolbar button { border: 0; border-radius: 999px; background: var(--gold); color: var(--ink); font: 700 15px/1 'Montserrat Variable', sans-serif; padding: 12px 22px; cursor: pointer; }
+.empty { color: #fff; padding: 40px; font-size: 18px; }
+#pages { display: grid; justify-content: center; gap: 30px; padding: 30px 0 60px; }
+.page { width: 810px; height: 1440px; position: relative; overflow: hidden; background: var(--paper); break-after: page; page-break-after: always; }
+@media screen and (max-width: 860px) { #pages { zoom: 0.45; } }
+@media print { body { background: none; } .toolbar { display: none; } #pages { display: block; padding: 0; zoom: 1; } }
+
+/* Gold backgrounds with the big repeated word */
+.gold { background: var(--gold); }
+.pattern { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.pattern span { display: block; font: 400 185px/0.82 'Anton', sans-serif; text-transform: uppercase; white-space: nowrap; color: rgba(255, 255, 255, 0.26); margin-left: -6px; letter-spacing: 0.005em; }
+.logo { width: 112px; height: 112px; display: block; }
+
+/* Cover */
+.cover .content { position: absolute; left: 50px; right: 40px; top: 360px; }
+.cover h1 { margin: 34px 0 30px; font: 400 150px/1.02 'Anton', sans-serif; text-transform: uppercase; }
+.cover h1 span { display: block; white-space: nowrap; }
+.cover .date { font-size: 46px; margin: 0; }
+
+/* Header band of the inner pages */
+.band { position: relative; height: 386px; background: var(--gold); overflow: hidden; }
+.band .pattern span:first-child { font-size: 150px; }
+.band .pattern span:last-child { font-size: 285px; line-height: 0.9; }
+.band .head { position: absolute; inset: 0; display: grid; justify-items: center; align-content: center; gap: 22px; padding-top: 30px; }
+.band .logo { width: 96px; height: 96px; }
+.band h2 { margin: 0; font: 400 66px/1 'Anton', sans-serif; text-transform: uppercase; }
+
+/* General info */
+.info { padding: 70px 60px 0; }
+.info h3 { font: 400 32px/1.1 'Anton', sans-serif; text-transform: uppercase; margin: 0 0 14px; }
+.info p { font-size: 27px; line-height: 1.5; margin: 0; }
+.info .when { margin-top: 14px; font-weight: 600; }
+.info .maps { display: inline-flex; gap: 8px; margin: 18px 0 70px; font-weight: 700; font-size: 27px; color: var(--ink); text-decoration: underline; text-underline-offset: 6px; text-decoration-color: var(--gold); text-decoration-thickness: 4px; }
+.info ul { margin: 0; padding-left: 28px; font-size: 25px; line-height: 1.5; }
+
+/* Timetable */
+.day { padding: 52px 47px 0; }
+.dayhead { background: var(--cell); text-align: center; padding: 14px; margin-bottom: 26px; }
+.dayhead small { display: block; font-size: 22px; }
+.dayhead b { font: 400 30px/1.2 'Anton', sans-serif; text-transform: uppercase; }
+.grid { display: grid; gap: 10px 8px; }
+.cell { background: var(--cell); position: relative; padding: 10px 14px; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+.cell.time { font-size: 19px; text-align: center; padding: 6px; }
+.cell.co { background: var(--cell-co); padding-top: 18px; }
+.cell b { font-size: 22px; line-height: 1.2; }
+.cell span { font-size: 18px; margin-top: 2px; }
+.cell.small b { font-size: 18px; }
+.cell.small span { font-size: 16px; }
+.cell.xs b { font-size: 15px; }
+.cell.xs span { font-size: 14px; }
+.tag { position: absolute; top: -9px; right: -6px; background: var(--tag); color: #fff; border-radius: 999px; font: 700 13px/1 'Montserrat Variable', sans-serif; padding: 4px 13px; }
+.drum { position: absolute; right: 12px; bottom: 10px; width: 26px; height: 26px; color: var(--ink); }
+.brk { grid-column: 1 / -1; background: var(--break); text-align: center; font-weight: 700; font-size: 20px; }
+.legend { position: absolute; left: 0; right: 0; bottom: 48px; display: flex; justify-content: center; gap: 46px; font-size: 20px; align-items: center; }
+.legend > span { display: inline-flex; gap: 12px; align-items: center; }
+.legend .tag { position: static; font-size: 15px; padding: 5px 16px; }
+.legend .drum { position: static; }
+
+/* Closing page */
+.end .content { position: absolute; left: 50px; right: 40px; top: 380px; }
+.end h2 { margin: 30px 0 0; font: 400 150px/1.05 'Anton', sans-serif; text-transform: uppercase; }
+.end .book { position: absolute; left: 50px; bottom: 90px; }
+.end .book p { margin: 0 0 10px; font: 400 30px/1.1 'Anton', sans-serif; text-transform: uppercase; }
+.end .book a { font-weight: 700; font-size: 31px; color: var(--ink); text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 3px; }
