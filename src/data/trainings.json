@@ -283,7 +283,14 @@
       "address": "Chaussée de Boondael 277, 1050 Ixelles, Belgium",
       "mapUrl": "",
       "ticketUrl": "",
-      "schedule": []
+      "schedule": [
+        {
+          "day": "Saturday",
+          "date": "14/11",
+          "slots": []
+        }
+      ],
+      "scheduleDraft": true
     },
     {
       "start": "2026-12-12",
