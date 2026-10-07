@@ -102,3 +102,9 @@ body { margin: 0; background: #444; font-family: 'Montserrat Variable', sans-ser
 .page .cell .tag, .legend .tag { background: var(--ink); color: var(--gold); font-weight: 800; letter-spacing: 0.08em; }
 .page .cell.co { box-shadow: inset 0 0 0 1.5px rgba(6, 14, 10, 0.12); }
 .drum, .legend .drum { color: var(--ink); }
+
+/* time range: start and end the same size, joined by a short line = "from … to …" */
+.page .cell.time { gap: 0; font-variant-numeric: tabular-nums; }
+.page .cell.time b { font-size: 23px; font-weight: 800; line-height: 1.1; }
+.page .cell.time b.end { font-weight: 500; color: #4a4438; }
+.page .cell.time .to { display: block; width: 1.5px; height: 12px; margin: 4px 0; background: rgba(6, 14, 10, 0.35); }
