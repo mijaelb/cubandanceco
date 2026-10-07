@@ -14,17 +14,55 @@ const v = Date.now().toString(36); // new on every build, so browsers load the l
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
-  <title>Training brochure · ICCD</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self' data:; connect-src 'self' data: blob:; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <title>ICCD training schedule</title>
   <link rel="icon" href={url('/images/logo.svg')} type="image/svg+xml" />
   <link rel="stylesheet" href={url('/admin/brochure.css') + '?v=' + v} />
 </head>
-<body data-logo={url('/images/logo.svg')} data-tickets={site.links.tickets}>
+<body data-logo={url('/images/logo.svg')} data-tickets={site.links.tickets} data-handle={site.instagramHandle}>
   <div class="toolbar">
     <button type="button" id="print">Download PDF</button>
-    <span>In the print window choose <b>“Save as PDF”</b>, paper size is set automatically. Works best in Chrome or Edge on a computer.</span>
+    <button type="button" id="images" class="secondary">Download images</button>
+    <span id="hint">PDF: in the print window choose <b>“Save as PDF”</b> (best in Chrome or Edge on a computer). Images: one picture per page, ready for Instagram stories and WhatsApp.</span>
   </div>
   <main id="pages"></main>
   <script src={url('/admin/brochure.js') + '?v=' + v} type="module" is:inline></script>
+  <script>
+    // Page → PNG export (1080 × 1920, Instagram story size). On phones the images
+    // go straight to the share sheet; on computers they are downloaded.
+    import { toBlob } from 'html-to-image';
+    const btn = document.getElementById('images') as HTMLButtonElement;
+    btn.addEventListener('click', async () => {
+      const pages = [...document.querySelectorAll<HTMLElement>('.page')];
+      if (!pages.length) return;
+      const label = btn.textContent;
+      btn.disabled = true;
+      try {
+        await document.fonts.ready;
+        const name = (document.body.dataset.file || 'ICCD-training-schedule');
+        const files: File[] = [];
+        for (const [i, page] of pages.entries()) {
+          btn.textContent = `Preparing ${i + 1} / ${pages.length}…`;
+          const blob = await toBlob(page, { pixelRatio: 1080 / 810, cacheBust: false, skipAutoScale: true, style: { margin: '0', zoom: '1' } });
+          if (blob) files.push(new File([blob], `${name}-${i + 1}.png`, { type: 'image/png' }));
+        }
+        const touch = matchMedia('(pointer: coarse)').matches; // phones/tablets: share sheet; computers: download
+        if (touch && navigator.canShare?.({ files })) {
+          await navigator.share({ files, title: name });
+        } else {
+          for (const f of files) {
+            const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(f), download: f.name });
+            document.body.append(a); a.click(); a.remove();
+            await new Promise((r) => setTimeout(r, 300));
+          }
+        }
+      } catch (e) {
+        if ((e as Error).name !== 'AbortError') alert('Could not create the images: ' + (e as Error).message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = label;
+      }
+    });
+  </script>
 </body>
 </html>

@@ -334,6 +334,9 @@ function pickLists(events) {
   const extra = [...used.keys()].filter((n) => !teachers.includes(n)).sort();
   return { teachers: [...new Set([...teachers, ...extra])], titles: [...titles.keys()] };
 }
+// conga drum = live music (fixed markup, no user data)
+const DRUM_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="4.6" rx="5.6" ry="1.9"/><path d="M6.4 4.6c-1.3 3.4-1.2 7.4.3 11l1.8 5.4h7l1.8-5.4c1.5-3.6 1.6-7.6.3-11"/><path d="M6.3 7.2c3.8 1.6 7.6 1.6 11.4 0" stroke-width="1.3"/><path d="M8.4 8.3v2.6M12 8.8v2.6M15.6 8.3v2.6" stroke-width="1.3"/><path d="M8.6 18.6c2.3.6 4.5.6 6.8 0" stroke-width="1.3"/></svg>';
+const drumIcon = () => { const t = document.createElement('template'); t.innerHTML = DRUM_SVG; return t.content.firstChild; };
 const keepFocus = { onpointerdown: (e) => e.preventDefault(), onmousedown: (e) => e.preventDefault() };
 
 function titleField(c, lists) {
@@ -419,7 +422,7 @@ function timetableView() {
         h('button', { type: 'button', class: 'btn-small', onclick: () => { ev.scheduleDraft = !ev.scheduleDraft; changed(); draw(); } },
           ev.scheduleDraft ? 'Make visible' : 'Back to draft')) : '',
       ev.schedule.length ? h('div', { class: 'tt-days' }, days) : h('p', { class: 'tt-empty' }, 'No timetable yet. Add a day, or copy the timetable of another training.'),
-      h('p', { class: 'tt-help' }, 'Tap a class or teacher field to pick from the list, or type. 🥁 live music · ICCD company only. Publish saves for the whole team; a draft stays hidden on the website.'),
+      h('p', { class: 'tt-help' }, 'Tap a class or teacher field to pick from the list, or type. Drum = live music · ICCD = company only. Publish saves for the whole team; a draft stays hidden on the website.'),
     );
   };
   draw();
@@ -448,7 +451,7 @@ function slotRow(day, slot, si, redraw, lists) {
   const cards = slot.classes.map((c, ci) => h('div', { class: `tt-class${c.companyOnly ? ' company' : ''}` },
     titleField(c, lists), teacherField(c, lists),
     h('div', { class: 'tt-flags' },
-      toggle(c, 'liveMusic', '🥁', 'Live music'),
+      toggle(c, 'liveMusic', drumIcon(), 'Live music'),
       toggle(c, 'companyOnly', 'ICCD', 'Company only'),
       h('button', { type: 'button', class: 'tt-x', title: 'Remove class', onclick: () => { slot.classes.splice(ci, 1); changed(); redraw(); } }, '✕'))));
   const add = h('button', { type: 'button', class: 'tt-addclass', title: 'Add a class at the same time', onclick: () => { slot.classes.push({ title: '', teacher: '', liveMusic: false, companyOnly: true }); changed(); redraw(); } }, '+');

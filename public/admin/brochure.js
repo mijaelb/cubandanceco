@@ -3,6 +3,8 @@
 const $ = (s) => document.querySelector(s);
 const LOGO = document.body.dataset.logo;
 const TICKETS = document.body.dataset.tickets;
+const HANDLE = document.body.dataset.handle || '';
+const footer = () => h('p', { class: 'foot' }, 'cubandance.co', h('span', {}, '·'), HANDLE);
 
 function h(tag, attrs = {}, ...kids) {
   const el = tag === 'svg' || tag === 'path' ? document.createElementNS('http://www.w3.org/2000/svg', tag) : document.createElement(tag);
@@ -10,9 +12,9 @@ function h(tag, attrs = {}, ...kids) {
   for (const c of kids.flat(Infinity)) if (c != null && c !== false) el.append(c instanceof Node ? c : String(c));
   return el;
 }
-const drum = () => h('svg', { class: 'drum', viewBox: '0 0 24 24', 'aria-hidden': 'true' },
-  h('path', { d: 'M7 3h10l-1.6 18H8.6z', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.4', 'stroke-linejoin': 'round' }),
-  h('path', { d: 'M7.4 7.5h9.2M8 13h8', stroke: 'currentColor', 'stroke-width': '1.1' }));
+// conga drum = live music
+const DRUM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="4.6" rx="5.6" ry="1.9"/><path d="M6.4 4.6c-1.3 3.4-1.2 7.4.3 11l1.8 5.4h7l1.8-5.4c1.5-3.6 1.6-7.6.3-11"/><path d="M6.3 7.2c3.8 1.6 7.6 1.6 11.4 0" stroke-width="1.3"/><path d="M8.4 8.3v2.6M12 8.8v2.6M15.6 8.3v2.6" stroke-width="1.3"/><path d="M8.6 18.6c2.3.6 4.5.6 6.8 0" stroke-width="1.3"/></svg>';
+const drum = () => { const t = document.createElement('template'); t.innerHTML = DRUM; const svg = t.content.firstChild; svg.setAttribute('class', 'drum'); return svg; };
 const tag = () => h('span', { class: 'tag' }, 'ICCD');
 const logo = () => h('img', { class: 'logo', src: LOGO, alt: '' });
 const pattern = (...rows) => h('div', { class: 'pattern', 'aria-hidden': 'true' }, rows.map((r) => h('span', {}, r)));
@@ -30,7 +32,8 @@ function cover(ev) {
     pattern(...Array(9).fill(ev.city)),
     h('div', { class: 'content' }, logo(),
       h('h1', {}, h('span', { 'data-fit': '710' }, ev.city), h('span', {}, 'Training'), h('span', {}, 'Schedule')),
-      h('p', { class: 'date' }, range(ev.start, ev.end))));
+      h('p', { class: 'date' }, range(ev.start, ev.end))),
+    footer());
 }
 
 const band = (ev, title) => h('div', { class: 'band' }, pattern(ev.city, 'Training'), h('div', { class: 'head' }, logo(), h('h2', {}, title)));
@@ -58,7 +61,7 @@ function schedule(ev, day) {
   const grid = h('div', { class: 'grid', style: `grid-template-columns: 147px repeat(${cols}, 1fr); grid-template-rows: ${heights}` });
   for (const s of day.slots) {
     if (s.isBreak) { grid.append(h('div', { class: 'brk', style: 'display:grid;place-items:center' }, 'Break')); continue; }
-    grid.append(h('div', { class: 'cell time' }, s.time.replace(/\s*[–-]\s*/, ' - ')));
+    grid.append(h('div', { class: 'cell time' }, s.time.replace(/\s*[–-]\s*/, ' – ')));
     s.classes.forEach((c) => {
       const small = cols >= 3 || c.title.length > 16;
       grid.append(h('div', { class: `cell${c.companyOnly ? ' co' : ''}${small ? ' small' : ''}${c.title.length > 24 ? ' xs' : ''}`, style: s.classes.length === 1 ? `grid-column: span ${cols}` : null },
@@ -78,7 +81,8 @@ function closing(ev) {
   return h('section', { class: 'page gold end' },
     pattern(...Array(9).fill(ev.city)),
     h('div', { class: 'content' }, logo(), h('h2', {}, 'Any', h('br'), 'question ?')),
-    h('div', { class: 'book' }, h('p', {}, 'Ready to book your next training ?'), h('a', { href: ev.ticketUrl || TICKETS }, 'Get your training ticket ↗')));
+    h('div', { class: 'book' }, h('p', {}, 'Ready to book your next training ?'), h('a', { href: ev.ticketUrl || TICKETS }, 'Get your training ticket ↗')),
+    footer());
 }
 
 // shrink a line until it fits its width (long city names)
@@ -99,8 +103,11 @@ if (!data?.event) {
   pages.append(h('p', { class: 'empty' }, 'Open this page from the timetable editor (Export PDF).'));
 } else {
   const ev = data.event;
-  document.title = `${ev.city} training schedule · ICCD`;
-  pages.append(cover(ev), info(ev, data.reminders), ...(ev.schedule || []).map((d) => schedule(ev, d)), closing(ev));
+  const days = (ev.schedule || []).filter((d) => d.slots?.length);
+  const soon = h('section', { class: 'page' }, band(ev, 'Schedule'), h('div', { class: 'soon' }, h('p', {}, 'The full timetable will be published one week before the training.')));
+  pages.append(cover(ev), info(ev, data.reminders), ...(days.length ? days.map((d) => schedule(ev, d)) : [soon]), closing(ev));
+  document.body.dataset.file = `ICCD-${ev.city}-training-schedule`.replace(/[^\p{L}\p{N}-]+/gu, '-');
+  document.title = document.body.dataset.file.replace(/-/g, ' ');
   document.fonts.ready.then(fit);
 }
 $('#print').addEventListener('click', () => print());

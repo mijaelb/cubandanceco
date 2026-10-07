@@ -215,3 +215,4 @@ main, .fields, .field, .list, .item, .item > summary, .field-object > .fields, .
 textarea.oneline { min-height: 0; resize: none; overflow: hidden; line-height: 1.45; }
 @media (max-width: 760px) { .layout nav { align-items: center; } .layout nav button { padding: 8px 14px; } }
 @media (max-width: 760px) { .layout { align-content: start; } }
+.tt-flag svg { width: 15px; height: 15px; display: block; }
