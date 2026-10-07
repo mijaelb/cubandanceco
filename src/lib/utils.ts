@@ -48,6 +48,19 @@ export const upcoming = <T extends Record<string, any>>(list: T[]) => {
   return list.filter((e) => (e.end || k(e)) >= today).sort((a, b) => k(a).localeCompare(k(b)));
 };
 
+const CODES: Record<string, string> = { Germany: 'DE', Netherlands: 'NL', Luxembourg: 'LU', Serbia: 'RS', Austria: 'AT', Poland: 'PL', Slovakia: 'SK', Italy: 'IT', France: 'FR', Belgium: 'BE', Spain: 'ES', Portugal: 'PT', Switzerland: 'CH', Norway: 'NO', Cuba: 'CU' };
+export const countryCode = (country = '') => CODES[country.trim()] || '';
+
+/** Unique places from items with either city + country(Code) or a "City, Country" string. */
+export const places = (items: { city: string; country?: string; countryCode?: string }[]) => {
+  const seen = new Map<string, { city: string; code: string }>();
+  for (const it of items) {
+    const [city, country = it.country || it.city] = it.city.split(',').map((s) => s.trim());
+    if (!seen.has(city)) seen.set(city, { city, code: it.countryCode || countryCode(country) });
+  }
+  return [...seen.values()];
+};
+
 export const slug = (s: string) => s.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
 export const paragraphs = (s: string) => s.split(/\n\s*\n/).filter(Boolean);

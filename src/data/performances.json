@@ -166,27 +166,5 @@
       "venue": "Belushi's Berlin Mitte",
       "url": ""
     }
-  ],
-  "festivals": [
-    {
-      "name": "Timba Paradise Festival",
-      "city": "Saarbrücken, Germany",
-      "note": "Every year since 2023"
-    },
-    {
-      "name": "Festival Cultura Cubana",
-      "city": "Montesilvano, Italy",
-      "note": "Every year since 2025"
-    },
-    {
-      "name": "Timbalemania Festival",
-      "city": "Augsburg, Germany",
-      "note": "Raíces Cubanas in 2025"
-    },
-    {
-      "name": "Berlin Pa'Ti Festival",
-      "city": "Berlin, Germany",
-      "note": "Since 2023"
-    }
   ]
 }

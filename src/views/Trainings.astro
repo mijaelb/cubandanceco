@@ -4,7 +4,8 @@ import PageHero from '../components/PageHero.astro';
 import Schedule from '../components/Schedule.astro';
 import site from '../data/site.json';
 import trainings from '../data/trainings.json';
-import { link, upcoming, dateRange, slug } from '../lib/utils';
+import Flag from '../components/Flag.astro';
+import { link, upcoming, dateRange, slug, places } from '../lib/utils';
 import { useT, locale } from '../i18n';
 
 const { lang } = Astro.props;
@@ -15,7 +16,7 @@ const today = new Date().toISOString().slice(0, 10);
 const past = [...trainings.history, ...trainings.events.filter((e) => e.end < today)].sort((a, b) => b.start.localeCompare(a.start));
 const season = (d: string) => { const y = +d.slice(0, 4), m = +d.slice(5, 7); const s = m >= 8 ? y : y - 1; return `${s} – ${s + 1}`; };
 const seasons = Object.entries(Object.groupBy(past, (e) => season(e.start)));
-const cities = [...new Set([...events, ...past].map((e) => e.city))];
+const cities = places([...events, ...past]);
 ---
 <Layout lang={lang} page="trainings" title="Trainings" description={trainings.intro} events={events}>
   <PageHero image="/images/photos/training-hall.webp" eyebrow={`${t('Season')} ${trainings.season}`} title={t('Monthly trainings across Europe')} text={t(trainings.intro)}>
@@ -85,7 +86,7 @@ const cities = [...new Set([...events, ...past].map((e) => e.city))];
       </div>
       <div class="reveal">
         <p class="eyebrow">{t('Where we have danced')}</p>
-        <div class="chips">{cities.map((c) => <span>{c}</span>)}</div>
+        <div class="chips">{cities.map((c) => <span><Flag code={c.code} />{c.city}{c.code && <small>{c.code}</small>}</span>)}</div>
         <p class="muted">{t('Want to host a training in your city? Get in touch.')}</p>
         <div class="actions">
           <a class="btn btn-gold" href={site.links.whatsapp} target="_blank" rel="noopener">{t('Join our WhatsApp group')}</a>

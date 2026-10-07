@@ -6,7 +6,8 @@ import PerformanceList from '../components/PerformanceList.astro';
 import site from '../data/site.json';
 import show from '../data/show.json';
 import perf from '../data/performances.json';
-import { link, upcoming } from '../lib/utils';
+import Flag from '../components/Flag.astro';
+import { link, upcoming, places } from '../lib/utils';
 import { useT } from '../i18n';
 
 const { lang } = Astro.props;
@@ -14,7 +15,7 @@ const t = useT(lang);
 const next = upcoming(perf.upcoming);
 const mail = site.links.bookingEmail || site.links.email;
 const contact = mail ? `mailto:${mail}?subject=${encodeURIComponent(t('Performance booking'))}` : site.links.instagram;
-const places = [...new Set(perf.past.map((p) => p.city.split(',')[0]))];
+const where = places([...perf.upcoming, ...perf.past]);
 ---
 <Layout lang={lang} page="performances" title="Performances" description={perf.intro} image="/images/photos/stage-timba.webp" events={next.map((p) => ({ ...p, name: `${site.name} · ${t(p.title)}` }))}>
   <PageHero image="/images/photos/stage-timba.webp" eyebrow={t('Performances')} title={t('On stage across Europe')} text={t(perf.intro)}>
@@ -28,7 +29,7 @@ const places = [...new Set(perf.past.map((p) => p.city.split(',')[0]))];
         <h2 class="display">{next.length ? t('Upcoming performances') : t('New dates coming soon')}</h2>
         <PerformanceList items={next} lang={lang} />
         <p class="eyebrow">{t('Where we have performed')}</p>
-        <div class="chips chips-dark">{places.map((c) => <span>{c}</span>)}</div>
+        <div class="chips chips-dark">{where.map((c) => <span><Flag code={c.code} />{c.city}{c.code && <small>{c.code}</small>}</span>)}</div>
       </div>
       <a class="feature reveal" href={link(lang, 'raices-cubanas')}>
         <Img src={show.poster} alt={show.title} sizes="(min-width: 900px) 40vw, 100vw" />
@@ -39,15 +40,6 @@ const places = [...new Set(perf.past.map((p) => p.city.split(',')[0]))];
           <span class="link-arrow">{t('About the show')}</span>
         </div>
       </a>
-    </div>
-  </section>
-
-  <section class="section dark">
-    <div class="wrap">
-      <div class="section-head"><div><p class="eyebrow">{t('Festivals')}</p><h2 class="display">{t('Festivals we come back to')}</h2></div></div>
-      <ul class="festivals">
-        {perf.festivals.map((f) => <li class="reveal"><strong class="display">{f.name}</strong><span>{t(f.city)}</span><em>{t(f.note)}</em></li>)}
-      </ul>
     </div>
   </section>
 

@@ -1,0 +1,26 @@
+---
+// Small flags as inline SVG (flag emojis don't render on Windows).
+interface Props { code: string }
+const { code } = Astro.props;
+const h = (...c: string[]) => c.map((f, i) => `<rect y="${(i * 2) / c.length}" width="3" height="${2 / c.length}" fill="${f}"/>`).join('');
+const v = (...c: string[]) => c.map((f, i) => `<rect x="${i}" width="1" height="2" fill="${f}"/>`).join('');
+const FLAGS: Record<string, string> = {
+  DE: h('#000', '#D00', '#FFCE00'),
+  NL: h('#AE1C28', '#FFF', '#21468B'),
+  LU: h('#EF3340', '#FFF', '#00A3E0'),
+  RS: h('#C6363C', '#0C4076', '#FFF'),
+  AT: h('#C8102E', '#FFF', '#C8102E'),
+  PL: h('#FFF', '#DC143C'),
+  SK: h('#FFF', '#0B4EA2', '#EE1C25'),
+  IT: v('#009246', '#FFF', '#CE2B37'),
+  FR: v('#0055A4', '#FFF', '#EF4135'),
+  BE: v('#000', '#FDDA24', '#EF3340'),
+  ES: '<rect width="3" height="2" fill="#C60B1E"/><rect y=".5" width="3" height="1" fill="#FFC400"/>',
+  PT: '<rect width="3" height="2" fill="#F00"/><rect width="1.2" height="2" fill="#060"/>',
+  CH: '<rect width="3" height="2" fill="#D52B1E"/><rect x="1.3" y=".45" width=".4" height="1.1" fill="#FFF"/><rect x=".95" y=".8" width="1.1" height=".4" fill="#FFF"/>',
+  NO: '<rect width="3" height="2" fill="#BA0C2F"/><rect x=".8" width=".5" height="2" fill="#FFF"/><rect y=".75" width="3" height=".5" fill="#FFF"/><rect x=".9" width=".3" height="2" fill="#00205B"/><rect y=".85" width="3" height=".3" fill="#00205B"/>',
+  CU: `${h('#002A8F', '#FFF', '#002A8F', '#FFF', '#002A8F')}<path d="M0 0L1.3 1L0 2Z" fill="#CF142B"/><path d="M.43 .82l.08.24h.25l-.2.15.07.24-.2-.15-.2.15.07-.24-.2-.15h.25z" fill="#FFF"/>`,
+};
+const svg = FLAGS[code];
+---
+{svg && <svg class="flag" viewBox="0 0 3 2" aria-hidden="true" set:html={svg} />}
