@@ -7,4 +7,12 @@ export default defineConfig({
   base: process.env.BASE_PATH || '/',
   trailingSlash: 'ignore',
   build: { format: 'directory' },
+  // Old WordPress addresses (cubandance.co before 2026) still linked from Google and social media
+  redirects: {
+    '/company-members': '/company/',
+    '/musicians': '/company/#musicians',
+    '/upcoming-shows': '/performances/',
+    '/upcoming-training-dates': '/trainings/',
+    '/2023/06/06/hello-world-2': '/es/faq/',
+  },
 });

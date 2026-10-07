@@ -7,12 +7,14 @@ addEventListener('load', () => $$('img[data-src]').forEach((i) => { if (i.datase
 
 // Mobile menu
 const btn = $('[data-menu-btn]'), menu = $('[data-menu]');
-btn?.addEventListener('click', () => {
-  const open = btn.getAttribute('aria-expanded') !== 'true';
+const setMenu = (open) => {
   btn.setAttribute('aria-expanded', String(open));
   menu.hidden = !open;
   document.body.classList.toggle('no-scroll', open);
-});
+};
+btn?.addEventListener('click', () => setMenu(btn.getAttribute('aria-expanded') !== 'true'));
+menu?.addEventListener('click', (e) => e.target.closest('a') && setMenu(false));
+addEventListener('keydown', (e) => e.key === 'Escape' && btn?.getAttribute('aria-expanded') === 'true' && (setMenu(false), btn.focus()));
 
 // Solid header after scrolling
 const header = $('[data-header]');

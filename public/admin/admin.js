@@ -103,7 +103,7 @@ const SECTIONS = [
   {
     id: 'site', title: 'Home & settings', file: 'src/data/site.json',
     schema: {
-      announcement: O('Announcement bar (top of every page)', { text: T('Text', 'Leave empty to hide the bar'), url: T('Link', 'A page like "trainings" or a full https:// link') }),
+      announcement: O('Announcement bar (top of every page)', { text: T('Text', 'Leave empty to hide the bar'), url: T('Link', 'A page like "trainings" or a full https:// link'), until: D('Show until (optional)', 'The bar disappears automatically after this day') }),
       hero: O('Home hero', { eyebrow: T('Small line above the title'), title: T('Title'), text: A('Text'), images: IL('Slideshow images') }),
       intro: O('Who we are', { title: T('Small title'), text: A('Text') }),
       family: O('Family quote', { title: T('Small title'), text: A('Quote'), image: I('Background image') }),

@@ -6,7 +6,7 @@ import '@fontsource-variable/montserrat';
 import '../styles/global.css';
 import site from '../data/site.json';
 import { url, link, srcset } from '../lib/utils';
-import { LANGS, langName, useT } from '../i18n';
+import { LANGS, langName, useT, locale } from '../i18n';
 
 interface Props { lang: string; page: string; title?: string; description?: string; image?: string; events?: any[]; preload?: string }
 const { lang, page, title, description = site.description, image = '/images/og.jpg', events = [], preload } = Astro.props;
@@ -31,7 +31,7 @@ const socials = [
 const canonical = new URL(link(lang, page), Astro.site);
 // Structured data for search engines: the company, plus upcoming training weekends as events
 const abs = (p: string) => new URL(url(p), Astro.site).href;
-const org = { '@type': 'PerformingGroup', name: site.name, url: new URL(link(lang), Astro.site).href, logo: abs('/images/logo.svg'), foundingDate: '2022', sameAs: [site.links.instagram, site.links.facebook, site.links.tiktok].filter(Boolean) };
+const org = { '@type': 'PerformingGroup', name: site.name, url: new URL(link(lang), Astro.site).href, logo: abs('/images/logo-512.png'), foundingDate: '2022', sameAs: [site.links.instagram, site.links.facebook, site.links.tiktok].filter(Boolean) };
 const schema = [org, ...events.map((e) => ({
   '@type': 'Event', name: e.name || `${t('Training weekend')} · ${e.city}`, startDate: e.start || e.date, endDate: e.end || e.start || e.date,
   eventStatus: 'https://schema.org/EventScheduled', eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
@@ -51,9 +51,13 @@ const jsonld = JSON.stringify(schema).replace(/</g, '\\u003c');
   <meta name="description" content={t(description)} />
   <meta name="theme-color" content="#14110d" />
   <link rel="icon" href={url('/images/logo.svg')} type="image/svg+xml" />
+  <link rel="icon" href={url('/images/favicon-48.png')} type="image/png" sizes="48x48" />
   <link rel="canonical" href={canonical} />
   {LANGS.map((l) => <link rel="alternate" hreflang={l} href={new URL(link(l, page), Astro.site)} />)}
   <meta property="og:type" content="website" />
+  <meta property="og:site_name" content={site.name} />
+  <meta property="og:locale" content={locale(lang).replace('-', '_')} />
+  <meta property="og:url" content={canonical} />
   <meta property="og:title" content={fullTitle} />
   <meta property="og:description" content={t(description)} />
   <meta property="og:image" content={new URL(url(image), Astro.site)} />
@@ -68,8 +72,8 @@ const jsonld = JSON.stringify(schema).replace(/</g, '\\u003c');
 <body>
   <a class="skip" href="#main">{t('Skip to content')}</a>
   <header class="site-header" data-header>
-    {site.announcement?.text && (
-      <a class="announce" href={site.announcement.url ? (site.announcement.url.startsWith('http') ? site.announcement.url : link(lang, site.announcement.url)) : link(lang, 'trainings')}>
+    {site.announcement?.text && !(site.announcement.until && site.announcement.until < new Date().toISOString().slice(0, 10)) && (
+      <a class="announce" data-end={site.announcement.until || undefined} href={site.announcement.url ? (site.announcement.url.startsWith('http') ? site.announcement.url : link(lang, site.announcement.url)) : link(lang, 'trainings')}>
         <span>{t(site.announcement.text)}</span><span aria-hidden="true">→</span>
       </a>
     )}

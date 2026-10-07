@@ -187,7 +187,7 @@ h1.hero-title { font-size: clamp(2.8rem, 7.6vw, 7.4rem); max-width: 17ch; color:
 @media (prefers-reduced-motion: reduce) { .marquee-track { animation: none; } }
 
 /* ---------- Training cards (ticket style, after the Instagram training posts) ---------- */
-.tcards { display: grid; gap: 24px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+.tcards { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); }
 .tcard { --notch: var(--gold); background: var(--paper); border-radius: 22px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 24px 48px -30px rgba(60, 40, 0, 0.55); transition: transform 0.35s var(--ease), box-shadow 0.35s; }
 .tcard:hover { transform: translateY(-6px); box-shadow: 0 32px 56px -30px rgba(60, 40, 0, 0.6); }
 .tcard-top { position: relative; background: var(--green); color: var(--gold); padding: 22px 26px 20px; display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; min-height: 128px; border-bottom: 2px dashed rgba(243, 226, 163, 0.45); }
@@ -210,7 +210,7 @@ h1.hero-title { font-size: clamp(2.8rem, 7.6vw, 7.4rem); max-width: 17ch; color:
 .btn-green:hover { background: var(--green-2); }
 
 /* ---------- Who we are ---------- */
-.collage { display: grid; grid-template-columns: repeat(6, 1fr); grid-template-rows: repeat(6, 1fr); aspect-ratio: 1 / 1.05; }
+.collage { display: grid; grid-template-columns: repeat(6, 1fr); grid-template-rows: repeat(6, 1fr); aspect-ratio: 1 / 1.05; width: 100%; max-width: 560px; margin-inline: auto; }
 .collage img { width: 100%; height: 100%; object-fit: cover; border-radius: 16px; border: 6px solid var(--cream); box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.5); }
 .collage img:nth-child(1) { grid-area: 1 / 1 / 5 / 4; }
 .collage img:nth-child(2) { grid-area: 2 / 3 / 5 / 7; z-index: 1; }
@@ -230,7 +230,7 @@ h1.hero-title { font-size: clamp(2.8rem, 7.6vw, 7.4rem); max-width: 17ch; color:
 
 /* ---------- Academy / Company ---------- */
 .paths { display: grid; gap: 20px; }
-@media (min-width: 900px) { .paths { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 700px) { .paths { grid-template-columns: 1fr 1fr; } }
 .path { background: var(--ink); border-radius: 24px; overflow: hidden; color: #f4ecdc; text-decoration: none; display: flex; flex-direction: column; }
 .path img { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; transition: transform 1.2s var(--ease); }
 .path:hover img { transform: scale(1.04); }
@@ -240,6 +240,7 @@ h1.hero-title { font-size: clamp(2.8rem, 7.6vw, 7.4rem); max-width: 17ch; color:
 .path .link-arrow { color: var(--gold); }
 
 /* ---------- Show ---------- */
+.poster { max-width: 460px; width: 100%; margin-inline: auto; }
 .poster img { border-radius: 14px; box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.8); transform: rotate(-2deg); transition: transform 0.6s var(--ease); }
 .poster:hover img { transform: rotate(0) scale(1.02); }
 .parts { list-style: none; padding: 0; margin: 28px 0 8px; display: grid; gap: 18px; }
@@ -268,7 +269,7 @@ h1.hero-title { font-size: clamp(2.8rem, 7.6vw, 7.4rem); max-width: 17ch; color:
 .festivals em { font-style: normal; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold-pale); }
 .next-show { margin: 22px 0 0; padding: 14px 18px; border-left: 3px solid var(--gold); background: rgba(232, 201, 95, 0.08); border-radius: 0 12px 12px 0; }
 .next-show span { display: block; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); }
-.feature { display: block; background: var(--ink); color: #f4ecdc; border-radius: 24px; overflow: hidden; text-decoration: none; }
+.feature { max-width: 520px; width: 100%; margin-inline: auto; display: block; background: var(--ink); color: #f4ecdc; border-radius: 24px; overflow: hidden; text-decoration: none; }
 .feature img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
 .feature div { padding: clamp(22px, 3vw, 34px); }
 .feature h3 { font-size: clamp(2.2rem, 4vw, 3.2rem); color: var(--gold); }
@@ -280,6 +281,7 @@ h1.hero-title { font-size: clamp(2.8rem, 7.6vw, 7.4rem); max-width: 17ch; color:
 /* ---------- People ---------- */
 .people { display: grid; gap: 28px 16px; grid-template-columns: repeat(auto-fill, minmax(min(44%, 160px), 1fr)); }
 .people-lg { grid-template-columns: repeat(auto-fit, minmax(min(44%, 230px), 1fr)); }
+@media (min-width: 700px) { .people-lg { grid-template-columns: repeat(4, 1fr); } }
 .people-team { grid-template-columns: repeat(auto-fit, minmax(min(44%, 170px), 1fr)); }
 .person { margin: 0; text-decoration: none; display: grid; gap: 4px; }
 .person img, .person-ph { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 16px; margin-bottom: 10px; background: var(--cream); transition: transform 0.5s var(--ease), filter 0.5s; filter: saturate(0.85); }
