@@ -59,6 +59,7 @@ const strip = ['stage-ship', 'stage-oshun', 'stage-masks'].map((n) => `/images/p
         <p class="eyebrow">{t('Raíces Cubanas on stage')}</p>
         <h2 class="display">{next.length ? t('Upcoming shows') : t('Next dates to be announced')}</h2>
         <PerformanceList items={next} lang={lang} tag={false} />
+        {past.length > 0 && <p class="eyebrow">{t('Past performances')}</p>}
         <PerformanceList items={past} lang={lang} tag={false} past />
         <a class="link-arrow" href={link(lang, 'performances')}>{t('All our performances')}</a>
       </div>
