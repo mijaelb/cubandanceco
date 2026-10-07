@@ -35,49 +35,14 @@
   "membersIntro": "Dancers from all over Europe who share a love of Afro-Cuban dance. Together we perform traditional Cuban dances outside Cuba and help keep them alive.",
   "members": [
     {
-      "name": "Sofia De Endaya",
-      "country": "Germany",
-      "photo": "/images/people/sofia-de-endaya.webp"
-    },
-    {
       "name": "Juan Carlos Estevez",
       "country": "Germany",
       "photo": "/images/people/juan-carlos-estevez.webp"
     },
     {
-      "name": "Vivi Lorcery Sekercioglu",
-      "country": "France",
-      "photo": "/images/people/vivi-lorcery-sekercioglu.webp"
-    },
-    {
-      "name": "Barbara Bolognese",
-      "country": "Italy",
-      "photo": "/images/people/barbara-bolognese.webp"
-    },
-    {
       "name": "Tess Efongo",
       "country": "Belgium",
       "photo": "/images/people/tess-efongo.webp"
-    },
-    {
-      "name": "Emma Brooks",
-      "country": "Netherlands",
-      "photo": "/images/people/emma-brooks.webp"
-    },
-    {
-      "name": "Charissa Termonen",
-      "country": "Netherlands",
-      "photo": "/images/people/charissa-termonen.webp"
-    },
-    {
-      "name": "Anna Weber",
-      "country": "Germany",
-      "photo": "/images/people/anna-weber.webp"
-    },
-    {
-      "name": "Karolina Rutkowska",
-      "country": "Slovakia",
-      "photo": "/images/people/karolina-rutkowska.webp"
     },
     {
       "name": "Jeronimo Miala",
@@ -90,24 +55,9 @@
       "photo": "/images/people/katie-catling.webp"
     },
     {
-      "name": "Ecaterina Fieraru",
-      "country": "Germany",
-      "photo": "/images/people/ecaterina-fieraru.webp"
-    },
-    {
       "name": "Dieter Gaschik",
       "country": "Germany",
       "photo": "/images/people/dieter-gaschik.webp"
-    },
-    {
-      "name": "Siri Jetter",
-      "country": "Germany",
-      "photo": "/images/people/siri-jetter.webp"
-    },
-    {
-      "name": "Justine Lebon",
-      "country": "France",
-      "photo": "/images/people/justine-lebon.webp"
     },
     {
       "name": "Mijael Bueno",
@@ -115,24 +65,9 @@
       "photo": "/images/people/mijael-bueno.webp"
     },
     {
-      "name": "Paulina Rutkowska",
-      "country": "Poland",
-      "photo": "/images/people/paulina-rutkowska.webp"
-    },
-    {
-      "name": "Vanessa Neira",
-      "country": "France",
-      "photo": "/images/people/vanessa-neira.webp"
-    },
-    {
       "name": "Melanie Hommer",
       "country": "Germany",
       "photo": "/images/people/melanie-hommer.webp"
-    },
-    {
-      "name": "Domenico Saponaro",
-      "country": "Italy",
-      "photo": "/images/people/domenico-saponaro.webp"
     },
     {
       "name": "Alessio Riso",
@@ -140,34 +75,14 @@
       "photo": "/images/people/alessio-riso.webp"
     },
     {
-      "name": "Ludivine Makanda",
-      "country": "France",
-      "photo": "/images/people/ludivine-makanda.webp"
-    },
-    {
       "name": "Giuliana Cassarisi",
       "country": "Luxembourg",
       "photo": "/images/people/giuliana-cassarisi.webp"
     },
     {
-      "name": "Hans Kueffner-McCauley",
-      "country": "Austria",
-      "photo": "/images/people/hans-kueffner-mccauley.webp"
-    },
-    {
-      "name": "Hugo Fonseca",
-      "country": "Portugal",
-      "photo": "/images/people/hugo-fonseca.webp"
-    },
-    {
       "name": "Coya Asopo",
       "country": "France",
       "photo": "/images/people/coya-asopo.webp"
-    },
-    {
-      "name": "Mona Haag",
-      "country": "Germany",
-      "photo": "/images/people/mona-haag.webp"
     },
     {
       "name": "Ayoub Mouslim",
@@ -178,11 +93,6 @@
       "name": "Noëlle Razafimanantsoa",
       "country": "France",
       "photo": "/images/people/noelle-razafimanantsoa.webp"
-    },
-    {
-      "name": "Jamila Bashir",
-      "country": "Italy",
-      "photo": "/images/people/jamila-bashir.webp"
     },
     {
       "name": "Darek Ciazynski",
@@ -198,11 +108,6 @@
       "name": "Laura Torrenova Lopez",
       "country": "Germany",
       "photo": "/images/people/laura-torrenova-lopez.webp"
-    },
-    {
-      "name": "Mona Herter",
-      "country": "Germany",
-      "photo": "/images/people/mona-herter.webp"
     },
     {
       "name": "Louison Troyano",
@@ -268,6 +173,101 @@
       "name": "Laura Varela",
       "country": "Spain",
       "photo": "/images/people/laura-varela.webp"
+    },
+    {
+      "name": "Sofia De Endaya",
+      "country": "Germany",
+      "photo": "/images/people/sofia-de-endaya.webp"
+    },
+    {
+      "name": "Barbara Bolognese",
+      "country": "Italy",
+      "photo": "/images/people/barbara-bolognese.webp"
+    },
+    {
+      "name": "Vivi Lorcery Sekercioglu",
+      "country": "France",
+      "photo": "/images/people/vivi-lorcery-sekercioglu.webp"
+    },
+    {
+      "name": "Emma Brooks",
+      "country": "Netherlands",
+      "photo": "/images/people/emma-brooks.webp"
+    },
+    {
+      "name": "Anna Weber",
+      "country": "Germany",
+      "photo": "/images/people/anna-weber.webp"
+    },
+    {
+      "name": "Charissa Termonen",
+      "country": "Netherlands",
+      "photo": "/images/people/charissa-termonen.webp"
+    },
+    {
+      "name": "Karolina Rutkowska",
+      "country": "Slovakia",
+      "photo": "/images/people/karolina-rutkowska.webp"
+    },
+    {
+      "name": "Ecaterina Fieraru",
+      "country": "Germany",
+      "photo": "/images/people/ecaterina-fieraru.webp"
+    },
+    {
+      "name": "Siri Jetter",
+      "country": "Germany",
+      "photo": "/images/people/siri-jetter.webp"
+    },
+    {
+      "name": "Justine Lebon",
+      "country": "France",
+      "photo": "/images/people/justine-lebon.webp"
+    },
+    {
+      "name": "Paulina Rutkowska",
+      "country": "Poland",
+      "photo": "/images/people/paulina-rutkowska.webp"
+    },
+    {
+      "name": "Vanessa Neira",
+      "country": "France",
+      "photo": "/images/people/vanessa-neira.webp"
+    },
+    {
+      "name": "Domenico Saponaro",
+      "country": "Italy",
+      "photo": "/images/people/domenico-saponaro.webp"
+    },
+    {
+      "name": "Ludivine Makanda",
+      "country": "France",
+      "photo": "/images/people/ludivine-makanda.webp"
+    },
+    {
+      "name": "Hans Kueffner-McCauley",
+      "country": "Austria",
+      "photo": "/images/people/hans-kueffner-mccauley.webp"
+    },
+    {
+      "name": "Hugo Fonseca",
+      "country": "Portugal",
+      "photo": "/images/people/hugo-fonseca.webp"
+    },
+    {
+      "name": "Mona Haag",
+      "country": "Germany",
+      "photo": "/images/people/mona-haag.webp"
+    },
+    {
+      "name": "Jamila Bashir",
+      "country": "Italy",
+      "photo": "/images/people/jamila-bashir.webp"
+    },
+    {
+      "name": "Mona Herter",
+      "country": "Germany",
+      "photo": "/images/people/mona-herter.webp"
     }
   ],
   "musiciansIntro": "Live drums and singing are part of every training and every show. These musicians played at the Raíces Cubanas premiere at the Arca Social Club in Rome on 25 May 2024.",
