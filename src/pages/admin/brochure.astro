@@ -19,7 +19,7 @@ const v = Date.now().toString(36); // new on every build, so browsers load the l
   <link rel="icon" href={url('/images/logo.svg')} type="image/svg+xml" />
   <link rel="stylesheet" href={url('/admin/brochure.css') + '?v=' + v} />
 </head>
-<body data-logo={url('/images/logo.svg')} data-tickets={site.links.tickets} data-handle={site.instagramHandle}>
+<body data-logo={url('/images/logo.svg')} data-tickets={site.links.tickets} data-handle={site.instagramHandle} data-email={site.links.email} data-whatsapp={site.links.whatsapp ? 'yes' : ''}>
   <div class="toolbar">
     <button type="button" id="print">Download PDF</button>
     <button type="button" id="images" class="secondary">Download images</button>

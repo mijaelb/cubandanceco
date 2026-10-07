@@ -1,6 +1,6 @@
 /* Training brochure — 810 × 1440 px pages, same look as the Instagram schedules */
 @page { size: 810px 1440px; margin: 0; }
-:root { --gold: #e8cd68; --ink: #060e0a; --cell: #feefc9; --cell-co: #f8f4ea; --paper: #fdfcfa; --break: #d9d9d9; --tag: #4d4d4d; }
+:root { --gold: #e8cd68; --ink: #060e0a; --cell: #feefc9; --cell-co: #f7f2e6; --paper: #fdfcfa; --break: #ece6d6; --tag: #2b5b3c; --green: #2b5b3c; --m: 56px; }
 * { box-sizing: border-box; }
 html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 body { margin: 0; background: #444; font-family: 'Montserrat Variable', sans-serif; color: var(--ink); }
@@ -21,10 +21,14 @@ body { margin: 0; background: #444; font-family: 'Montserrat Variable', sans-ser
 .logo { width: 112px; height: 112px; display: block; }
 
 /* Cover */
-.cover .content { position: absolute; left: 50px; right: 40px; top: 360px; }
+.cover .content { position: absolute; left: var(--m); right: var(--m); top: 330px; }
 .cover h1 { margin: 34px 0 30px; font: 400 150px/1.02 'Anton', sans-serif; text-transform: uppercase; }
 .cover h1 span { display: block; white-space: nowrap; }
-.cover .date { font-size: 46px; margin: 0; }
+.cover .date { font-size: 44px; margin: 0; }
+.cover .badge { display: inline-block; margin: 26px 0 0; background: var(--ink); color: var(--gold); font: 700 20px/1 'Montserrat Variable', sans-serif; letter-spacing: 0.08em; text-transform: uppercase; padding: 12px 20px; border-radius: 999px; }
+.cover .badge + h1 { margin-top: 22px; }
+.cover .where { margin: 18px 0 0; font-size: 26px; font-weight: 600; }
+.cover .with { margin: 10px 0 0; font-size: 24px; }
 
 /* Header band of the inner pages */
 .band { position: relative; height: 386px; background: var(--gold); overflow: hidden; }
@@ -35,45 +39,60 @@ body { margin: 0; background: #444; font-family: 'Montserrat Variable', sans-ser
 .band h2 { margin: 0; font: 400 66px/1 'Anton', sans-serif; text-transform: uppercase; }
 
 /* General info */
-.info { padding: 70px 60px 0; }
-.info h3 { font: 400 32px/1.1 'Anton', sans-serif; text-transform: uppercase; margin: 0 0 14px; }
+.info { padding: 64px var(--m) 0; }
+.info h3 { font: 400 32px/1.1 'Anton', sans-serif; text-transform: uppercase; margin: 0 0 16px; display: flex; align-items: center; gap: 18px; }
+.info h3::after { content: ''; flex: 1; height: 3px; background: var(--gold); border-radius: 2px; }
 .info p { font-size: 27px; line-height: 1.5; margin: 0; }
 .info .when { margin-top: 14px; font-weight: 600; }
-.info .maps { display: inline-flex; gap: 8px; margin: 18px 0 70px; font-weight: 700; font-size: 27px; color: var(--ink); text-decoration: underline; text-underline-offset: 6px; text-decoration-color: var(--gold); text-decoration-thickness: 4px; }
-.info ul { margin: 0; padding-left: 28px; font-size: 25px; line-height: 1.5; }
+.info .maps { display: inline-block; margin: 16px 0 52px; font-weight: 700; font-size: 27px; color: var(--ink); text-decoration: none; }
+.info .maps span { text-decoration: underline; text-underline-offset: 7px; text-decoration-color: var(--gold); text-decoration-thickness: 4px; }
+.info .maestros { margin: 0 0 52px; }
+.info .gap { margin-top: 52px; }
+.info ul { margin: 0; padding: 0; list-style: none; font-size: 24px; line-height: 1.45; display: grid; gap: 6px; }
+.info li { position: relative; padding-left: 30px; }
+.info li::before { content: ''; position: absolute; left: 4px; top: 0.62em; width: 10px; height: 10px; border-radius: 50%; background: var(--gold); }
 
 /* Timetable */
-.day { padding: 52px 47px 0; }
-.dayhead { background: var(--cell); text-align: center; padding: 14px; margin-bottom: 26px; }
-.dayhead small { display: block; font-size: 22px; }
-.dayhead b { font: 400 30px/1.2 'Anton', sans-serif; text-transform: uppercase; }
-.grid { display: grid; gap: 10px 8px; }
-.cell { background: var(--cell); position: relative; padding: 10px 14px; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
-.cell.time { font-size: 19px; text-align: center; padding: 6px; }
-.cell.co { background: var(--cell-co); padding-top: 18px; }
-.cell b { font-size: 22px; line-height: 1.2; }
-.cell span { font-size: 18px; margin-top: 2px; }
-.cell.small b { font-size: 18px; }
+.day { padding: 44px var(--m) 0; }
+.dayhead { background: var(--cell); border-radius: 10px; display: flex; align-items: baseline; justify-content: center; gap: 16px; padding: 18px 14px; margin-bottom: 22px; }
+.dayhead b { font: 400 40px/1 'Anton', sans-serif; text-transform: uppercase; }
+.dayhead small { font-size: 24px; font-weight: 500; }
+.grid { display: grid; gap: 10px; }
+.row { display: grid; grid-template-columns: 158px 1fr; gap: 8px; }
+.classes { display: flex; gap: 8px; min-width: 0; }
+.cell { flex: 1 1 0; background: var(--cell); border-radius: 8px; position: relative; padding: 10px 16px; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+.cell.time { text-align: center; align-items: center; padding: 6px; gap: 2px; }
+.cell.time b { font-size: 24px; font-weight: 800; letter-spacing: 0.01em; }
+.cell.time span { font-size: 18px; margin: 0; color: #6f6656; }
+.cell.co { background: var(--cell-co); box-shadow: inset 0 0 0 1.5px rgba(43, 91, 60, 0.18); padding-top: 18px; }
+.cell b { font-size: 23px; line-height: 1.15; }
+.cell span { font-size: 18px; margin-top: 4px; color: #2b2b26; }
+.cell.big b { font-size: 26px; }
+.cell.big span { font-size: 20px; }
+.cell.small b { font-size: 19px; }
 .cell.small span { font-size: 16px; }
-.cell.xs b { font-size: 15px; }
+.cell.xs b { font-size: 16px; }
 .cell.xs span { font-size: 14px; }
-.tag { position: absolute; top: -9px; right: -6px; background: var(--tag); color: #fff; border-radius: 999px; font: 700 13px/1 'Montserrat Variable', sans-serif; padding: 4px 13px; }
-.drum { position: absolute; right: 12px; bottom: 10px; width: 26px; height: 26px; color: var(--ink); }
-.brk { grid-column: 1 / -1; background: var(--break); text-align: center; font-weight: 700; font-size: 20px; }
-.legend { position: absolute; left: 0; right: 0; bottom: 48px; display: flex; justify-content: center; gap: 46px; font-size: 20px; align-items: center; }
+.tag { position: absolute; top: -11px; right: 10px; background: var(--tag); color: #f3e2a3; border-radius: 999px; font: 700 13px/1 'Montserrat Variable', sans-serif; letter-spacing: 0.04em; padding: 5px 13px; }
+.drum { position: absolute; right: 12px; bottom: 10px; width: 30px; height: 30px; color: var(--green); }
+.brk { background: var(--break); border-radius: 8px; display: grid; place-items: center; font: 400 22px/1 'Anton', sans-serif; letter-spacing: 0.18em; text-transform: uppercase; color: #6f6656; }
+.legend { position: absolute; left: 0; right: 0; bottom: 56px; color: #3d3a32; display: flex; justify-content: center; gap: 46px; font-size: 20px; align-items: center; }
 .legend > span { display: inline-flex; gap: 12px; align-items: center; }
-.legend .tag { position: static; font-size: 15px; padding: 5px 16px; }
+.legend .tag { position: static; font-size: 15px; padding: 6px 16px; }
 .legend .drum { position: static; }
 
 /* Closing page */
-.end .content { position: absolute; left: 50px; right: 40px; top: 380px; }
+.end .content { position: absolute; left: var(--m); right: var(--m); top: 330px; }
 .end h2 { margin: 30px 0 0; font: 400 150px/1.05 'Anton', sans-serif; text-transform: uppercase; }
-.end .book { position: absolute; left: 50px; bottom: 90px; }
+.end .ask { list-style: none; padding: 0; margin: 40px 0 0; display: grid; gap: 12px; font-size: 27px; }
+.end .ask b { display: inline-block; min-width: 170px; font: 400 28px/1 'Anton', sans-serif; text-transform: uppercase; }
+.end .book { position: absolute; left: var(--m); bottom: 118px; }
 .end .book p { margin: 0 0 10px; font: 400 30px/1.1 'Anton', sans-serif; text-transform: uppercase; }
 .end .book a { font-weight: 700; font-size: 31px; color: var(--ink); text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 3px; }
 
 /* Footer line on cover and closing page */
-.foot { position: absolute; left: 50px; bottom: 34px; margin: 0; font-size: 19px; font-weight: 600; letter-spacing: 0.04em; opacity: 0.75; display: flex; gap: 12px; }
-.end .book { bottom: 110px; }
+.foot { position: absolute; left: var(--m); bottom: 40px; margin: 0; font-size: 19px; font-weight: 600; letter-spacing: 0.04em; opacity: 0.75; display: flex; gap: 12px; }
+
 /* Timetable not ready yet */
 .soon { padding: 120px 70px; text-align: center; font-size: 30px; line-height: 1.5; }
+.page .cell .tag { color: #f3e2a3; font-size: 13px; margin: 0; padding: 5px 13px; line-height: 1; }

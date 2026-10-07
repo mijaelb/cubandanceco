@@ -4,6 +4,8 @@ const $ = (s) => document.querySelector(s);
 const LOGO = document.body.dataset.logo;
 const TICKETS = document.body.dataset.tickets;
 const HANDLE = document.body.dataset.handle || '';
+const EMAIL = document.body.dataset.email || '';
+const WHATSAPP = !!document.body.dataset.whatsapp;
 const footer = () => h('p', { class: 'foot' }, 'cubandance.co', h('span', {}, '·'), HANDLE);
 
 function h(tag, attrs = {}, ...kids) {
@@ -23,16 +25,23 @@ const date = (s) => new Date(s + 'T12:00:00');
 function range(a, b) {
   const x = date(a), y = date(b || a);
   const m = (d) => d.toLocaleString('en-GB', { month: 'long' });
-  if (!b || a === b) return `${x.getDate()} ${m(x)}`;
-  return x.getMonth() === y.getMonth() ? `${x.getDate()} - ${y.getDate()} ${m(x)}` : `${x.getDate()} ${m(x)} - ${y.getDate()} ${m(y)}`;
+  const yr = y.getFullYear();
+  if (!b || a === b) return `${x.getDate()} ${m(x)} ${yr}`;
+  return x.getMonth() === y.getMonth() ? `${x.getDate()}–${y.getDate()} ${m(x)} ${yr}` : `${x.getDate()} ${m(x)} – ${y.getDate()} ${m(y)} ${yr}`;
 }
+// maestros teaching this weekend, in order of first appearance
+const maestros = (ev) => [...new Set((ev.schedule || []).flatMap((d) => d.slots.flatMap((s) => (s.classes || []).flatMap((c) => (c.teacher || '').split(/\s*&\s*/)))).filter(Boolean))];
+const andList = (list) => (list.length > 1 ? `${list.slice(0, -1).join(', ')} & ${list.at(-1)}` : list[0] || '');
 
 function cover(ev) {
   return h('section', { class: 'page gold cover' },
     pattern(...Array(9).fill(ev.city)),
     h('div', { class: 'content' }, logo(),
+      ev.badge && h('p', { class: 'badge' }, ev.badge),
       h('h1', {}, h('span', { 'data-fit': '710' }, ev.city), h('span', {}, 'Training'), h('span', {}, 'Schedule')),
-      h('p', { class: 'date' }, range(ev.start, ev.end))),
+      h('p', { class: 'date' }, range(ev.start, ev.end)),
+      h('p', { class: 'where' }, [ev.venue, ev.countryCode ? `${ev.city} (${ev.countryCode})` : ev.city].filter(Boolean).join(' · ')),
+      maestros(ev).length > 0 && h('p', { class: 'with' }, 'With ', h('b', {}, andList(maestros(ev))))),
     footer());
 }
 
@@ -45,43 +54,47 @@ function info(ev, reminders) {
       h('h3', {}, 'Training location'),
       h('p', {}, ev.venue), h('p', {}, where),
       ev.time && h('p', { class: 'when' }, ev.time),
-      ev.mapUrl ? h('a', { class: 'maps', href: ev.mapUrl }, 'Open in Maps', h('span', {}, '↗')) : h('div', { style: 'height:70px' }),
+      ev.mapUrl ? h('a', { class: 'maps', href: ev.mapUrl }, h('span', {}, 'Open in Maps'), ' ↗') : h('div', { style: 'height:56px' }),
+      maestros(ev).length > 0 && h('h3', {}, 'Maestros'),
+      maestros(ev).length > 0 && h('p', { class: 'maestros' }, maestros(ev).join(' · ')),
       reminders?.length && h('h3', {}, 'Kind reminders'),
       reminders?.length && h('ul', {}, reminders.map((r) => h('li', {}, r)))));
 }
 
-function schedule(ev, day) {
-  const cols = Math.max(1, ...day.slots.map((s) => (s.isBreak ? 1 : s.classes.length)));
-  const BREAK_H = 46;
+function schedule(ev, day, index) {
+  const d = date(ev.start); d.setDate(d.getDate() + index);
+  const longDate = Number.isNaN(d.getTime()) ? day.date : d.toLocaleString('en-GB', { day: 'numeric', month: 'long' });
+  const BREAK_H = 50, GAP = 10;
   const nBreaks = day.slots.filter((s) => s.isBreak).length;
   const nRows = day.slots.length - nBreaks;
-  const free = 1440 - 386 - 52 - 98 - 150 - (day.slots.length - 1) * 10 - nBreaks * BREAK_H;
-  const rowH = Math.min(94, Math.floor(free / Math.max(nRows, 1)));
-  const heights = day.slots.map((s) => `${s.isBreak ? BREAK_H : rowH}px`).join(' ');
-  const grid = h('div', { class: 'grid', style: `grid-template-columns: 147px repeat(${cols}, 1fr); grid-template-rows: ${heights}` });
-  for (const s of day.slots) {
-    if (s.isBreak) { grid.append(h('div', { class: 'brk', style: 'display:grid;place-items:center' }, 'Break')); continue; }
-    grid.append(h('div', { class: 'cell time' }, s.time.replace(/\s*[–-]\s*/, ' – ')));
-    s.classes.forEach((c) => {
-      const small = cols >= 3 || c.title.length > 16;
-      grid.append(h('div', { class: `cell${c.companyOnly ? ' co' : ''}${small ? ' small' : ''}${c.title.length > 24 ? ' xs' : ''}`, style: s.classes.length === 1 ? `grid-column: span ${cols}` : null },
-        h('b', {}, c.title), c.teacher && h('span', {}, c.teacher),
-        c.companyOnly && tag(), c.liveMusic && drum()));
-    });
-    for (let i = s.classes.length; i < cols && s.classes.length > 1; i++) grid.append(h('div'));
-  }
+  const free = 1440 - 386 - 46 - 104 - 130 - (day.slots.length - 1) * GAP - nBreaks * BREAK_H;
+  const rowH = Math.max(64, Math.min(118, Math.floor(free / Math.max(nRows, 1))));
+  const big = rowH >= 100;
+  const rows = day.slots.map((s) => {
+    if (s.isBreak) return h('div', { class: 'brk', style: `height:${BREAK_H}px` }, 'Break');
+    const n = s.classes.length;
+    return h('div', { class: 'row', style: `height:${rowH}px` },
+      h('div', { class: 'cell time' }, ...(() => { const [a, b] = s.time.split(/\s*[–-]\s*/); return [h('b', {}, a), b && h('span', {}, b)]; })()),
+      h('div', { class: 'classes' }, s.classes.map((c) => h('div', {
+        class: ['cell', c.companyOnly && 'co', (n >= 3 || c.title.length > 18) && 'small', c.title.length > 26 && 'xs', big && n < 3 && 'big'].filter(Boolean).join(' ') },
+        h('b', {}, c.title), c.teacher && h('span', {}, c.teacher), c.companyOnly && tag(), c.liveMusic && drum()))));
+  });
   return h('section', { class: 'page' }, band(ev, 'Schedule'),
     h('div', { class: 'day' },
-      h('div', { class: 'dayhead' }, h('small', {}, day.date), h('b', {}, day.day)),
-      grid),
-    h('div', { class: 'legend' }, h('span', {}, drum(), 'Live Music'), h('span', {}, tag(), 'Company only')));
+      h('div', { class: 'dayhead' }, h('b', {}, day.day), h('small', {}, longDate)),
+      h('div', { class: 'grid' }, rows)),
+    h('div', { class: 'legend' }, h('span', {}, drum(), 'Live music'), h('span', {}, tag(), 'Company only')));
 }
 
 function closing(ev) {
   return h('section', { class: 'page gold end' },
     pattern(...Array(9).fill(ev.city)),
-    h('div', { class: 'content' }, logo(), h('h2', {}, 'Any', h('br'), 'question ?')),
-    h('div', { class: 'book' }, h('p', {}, 'Ready to book your next training ?'), h('a', { href: ev.ticketUrl || TICKETS }, 'Get your training ticket ↗')),
+    h('div', { class: 'content' }, logo(), h('h2', {}, 'Any', h('br'), 'questions?'),
+      h('ul', { class: 'ask' },
+        WHATSAPP && h('li', {}, h('b', {}, 'WhatsApp'), 'ICCD group'),
+        HANDLE && h('li', {}, h('b', {}, 'Instagram'), HANDLE),
+        EMAIL && h('li', {}, h('b', {}, 'Email'), EMAIL))),
+    h('div', { class: 'book' }, h('p', {}, 'Ready to book your next training?'), h('a', { href: ev.ticketUrl || TICKETS }, 'Get your training ticket ↗')),
     footer());
 }
 
@@ -105,7 +118,7 @@ if (!data?.event) {
   const ev = data.event;
   const days = (ev.schedule || []).filter((d) => d.slots?.length);
   const soon = h('section', { class: 'page' }, band(ev, 'Schedule'), h('div', { class: 'soon' }, h('p', {}, 'The full timetable will be published one week before the training.')));
-  pages.append(cover(ev), info(ev, data.reminders), ...(days.length ? days.map((d) => schedule(ev, d)) : [soon]), closing(ev));
+  pages.append(cover(ev), info(ev, data.reminders), ...(days.length ? days.map((d) => schedule(ev, d, (ev.schedule || []).indexOf(d))) : [soon]), closing(ev));
   document.body.dataset.file = `ICCD-${ev.city}-training-schedule`.replace(/[^\p{L}\p{N}-]+/gu, '-');
   document.title = document.body.dataset.file.replace(/-/g, ' ');
   document.fonts.ready.then(fit);
