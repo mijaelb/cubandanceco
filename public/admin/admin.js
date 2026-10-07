@@ -65,6 +65,8 @@ const SECTIONS = [
   {
     id: 'people', title: 'Company & musicians', file: 'src/data/people.json',
     schema: {
+      team: L('Organisation team', 'person', { name: T('Name'), role: T('Role'), photo: I('Photo', 'Portrait, ideally 4:5') }, (m) => `${m.name} · ${m.role}`),
+      teamIntro: A('Team introduction'),
       members: L('Company members', 'member', { name: T('Name'), country: T('Country'), photo: I('Photo', 'Portrait, ideally 4:5') }, (m) => `${m.name} · ${m.country}`),
       musicians: L('Musicians', 'musician', { name: T('Name'), role: T('Instruments / role'), country: T('Country'), photo: I('Photo') }, (m) => m.name),
       membersIntro: A('Members introduction'), musiciansIntro: A('Musicians introduction'),

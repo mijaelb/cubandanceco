@@ -1,49 +1,253 @@
 {
+  "teamIntro": "The company is directed by Leonardo Martínez Moya and Giuliana Cassarisi, together with a team of dancers who organise the trainings, shows and travels.",
+  "team": [
+    {
+      "name": "Leonardo Martínez Moya",
+      "role": "Founder & Director",
+      "photo": "/images/people/leonardo-moya.webp"
+    },
+    {
+      "name": "Giuliana Cassarisi",
+      "role": "Director",
+      "photo": "/images/people/giuliana-cassarisi.webp"
+    },
+    {
+      "name": "Noëlle Razafimanantsoa",
+      "role": "Organisation",
+      "photo": "/images/people/noelle-razafimanantsoa.webp"
+    },
+    {
+      "name": "Mijael Bueno",
+      "role": "Organisation",
+      "photo": "/images/people/mijael-bueno.webp"
+    },
+    {
+      "name": "Melanie Hommer",
+      "role": "Organisation",
+      "photo": "/images/people/melanie-hommer.webp"
+    },
+    {
+      "name": "Laura Torrenova Lopez",
+      "role": "Organisation",
+      "photo": "/images/people/laura-torrenova-lopez.webp"
+    }
+  ],
   "membersIntro": "We are a team of dancers from around Europe, united by our passion and love for Afro-Cuban dances. Our goal is to perform the traditional Cuban dances outside of Cuba, thereby preserving Cuba's rich folkloric traditions.",
   "members": [
-    { "name": "Sofia De Endaya", "country": "Germany", "photo": "/images/people/sofia-de-endaya.webp" },
-    { "name": "Juan Carlos Estevez", "country": "Germany", "photo": "/images/people/juan-carlos-estevez.webp" },
-    { "name": "Vivi Lorcery Sekercioglu", "country": "France", "photo": "/images/people/vivi-lorcery-sekercioglu.webp" },
-    { "name": "Barbara Bolognese", "country": "Italy", "photo": "/images/people/barbara-bolognese.webp" },
-    { "name": "Tess Efongo", "country": "Belgium", "photo": "/images/people/tess-efongo.webp" },
-    { "name": "Emma Brooks", "country": "Netherlands", "photo": "/images/people/emma-brooks.webp" },
-    { "name": "Charissa Termonen", "country": "Netherlands", "photo": "/images/people/charissa-termonen.webp" },
-    { "name": "Anna Weber", "country": "Germany", "photo": "/images/people/anna-weber.webp" },
-    { "name": "Karolina Rutkowska", "country": "Slovakia", "photo": "/images/people/karolina-rutkowska.webp" },
-    { "name": "Jeronimo Miala", "country": "Germany", "photo": "/images/people/jeronimo-miala.webp" },
-    { "name": "Katie Catling", "country": "Netherlands", "photo": "/images/people/katie-catling.webp" },
-    { "name": "Ecaterina Fieraru", "country": "Germany", "photo": "/images/people/ecaterina-fieraru.webp" },
-    { "name": "Dieter Gaschik", "country": "Germany", "photo": "/images/people/dieter-gaschik.webp" },
-    { "name": "Siri Jetter", "country": "Germany", "photo": "/images/people/siri-jetter.webp" },
-    { "name": "Justine Lebon", "country": "France", "photo": "/images/people/justine-lebon.webp" },
-    { "name": "Mijael Bueno", "country": "Netherlands", "photo": "/images/people/mijael-bueno.webp" },
-    { "name": "Paulina Rutkowska", "country": "Poland", "photo": "/images/people/paulina-rutkowska.webp" },
-    { "name": "Vanessa Neira", "country": "France", "photo": "/images/people/vanessa-neira.webp" },
-    { "name": "Melanie Hommer", "country": "Germany", "photo": "/images/people/melanie-hommer.webp" },
-    { "name": "Domenico Saponaro", "country": "Italy", "photo": "/images/people/domenico-saponaro.webp" },
-    { "name": "Alessio Riso", "country": "Italy", "photo": "/images/people/alessio-riso.webp" },
-    { "name": "Ludivine Makanda", "country": "France", "photo": "/images/people/ludivine-makanda.webp" },
-    { "name": "Giuliana Cassarisi", "country": "Luxembourg", "photo": "/images/people/giuliana-cassarisi.webp" },
-    { "name": "Hans Kueffner-McCauley", "country": "Austria", "photo": "/images/people/hans-kueffner-mccauley.webp" },
-    { "name": "Hugo Fonseca", "country": "Portugal", "photo": "/images/people/hugo-fonseca.webp" },
-    { "name": "Coya Asopo", "country": "France", "photo": "/images/people/coya-asopo.webp" },
-    { "name": "Mona Haag", "country": "Germany", "photo": "/images/people/mona-haag.webp" },
-    { "name": "Ayoub Mouslim", "country": "France", "photo": "/images/people/ayoub-mouslim.webp" },
-    { "name": "Noëlle Razafimanantsoa", "country": "France", "photo": "/images/people/noelle-razafimanantsoa.webp" },
-    { "name": "Jamila Bashir", "country": "Italy", "photo": "/images/people/jamila-bashir.webp" },
-    { "name": "Darek Ciazynski", "country": "Norway", "photo": "/images/people/darek-ciazynski.webp" },
-    { "name": "Melissa Rolas", "country": "France", "photo": "/images/people/melissa-rolas.webp" },
-    { "name": "Laura Torrenova Lopez", "country": "Germany", "photo": "/images/people/laura-torrenova-lopez.webp" },
-    { "name": "Mona Herter", "country": "Germany", "photo": "/images/people/mona-herter.webp" }
+    {
+      "name": "Sofia De Endaya",
+      "country": "Germany",
+      "photo": "/images/people/sofia-de-endaya.webp"
+    },
+    {
+      "name": "Juan Carlos Estevez",
+      "country": "Germany",
+      "photo": "/images/people/juan-carlos-estevez.webp"
+    },
+    {
+      "name": "Vivi Lorcery Sekercioglu",
+      "country": "France",
+      "photo": "/images/people/vivi-lorcery-sekercioglu.webp"
+    },
+    {
+      "name": "Barbara Bolognese",
+      "country": "Italy",
+      "photo": "/images/people/barbara-bolognese.webp"
+    },
+    {
+      "name": "Tess Efongo",
+      "country": "Belgium",
+      "photo": "/images/people/tess-efongo.webp"
+    },
+    {
+      "name": "Emma Brooks",
+      "country": "Netherlands",
+      "photo": "/images/people/emma-brooks.webp"
+    },
+    {
+      "name": "Charissa Termonen",
+      "country": "Netherlands",
+      "photo": "/images/people/charissa-termonen.webp"
+    },
+    {
+      "name": "Anna Weber",
+      "country": "Germany",
+      "photo": "/images/people/anna-weber.webp"
+    },
+    {
+      "name": "Karolina Rutkowska",
+      "country": "Slovakia",
+      "photo": "/images/people/karolina-rutkowska.webp"
+    },
+    {
+      "name": "Jeronimo Miala",
+      "country": "Germany",
+      "photo": "/images/people/jeronimo-miala.webp"
+    },
+    {
+      "name": "Katie Catling",
+      "country": "Netherlands",
+      "photo": "/images/people/katie-catling.webp"
+    },
+    {
+      "name": "Ecaterina Fieraru",
+      "country": "Germany",
+      "photo": "/images/people/ecaterina-fieraru.webp"
+    },
+    {
+      "name": "Dieter Gaschik",
+      "country": "Germany",
+      "photo": "/images/people/dieter-gaschik.webp"
+    },
+    {
+      "name": "Siri Jetter",
+      "country": "Germany",
+      "photo": "/images/people/siri-jetter.webp"
+    },
+    {
+      "name": "Justine Lebon",
+      "country": "France",
+      "photo": "/images/people/justine-lebon.webp"
+    },
+    {
+      "name": "Mijael Bueno",
+      "country": "Netherlands",
+      "photo": "/images/people/mijael-bueno.webp"
+    },
+    {
+      "name": "Paulina Rutkowska",
+      "country": "Poland",
+      "photo": "/images/people/paulina-rutkowska.webp"
+    },
+    {
+      "name": "Vanessa Neira",
+      "country": "France",
+      "photo": "/images/people/vanessa-neira.webp"
+    },
+    {
+      "name": "Melanie Hommer",
+      "country": "Germany",
+      "photo": "/images/people/melanie-hommer.webp"
+    },
+    {
+      "name": "Domenico Saponaro",
+      "country": "Italy",
+      "photo": "/images/people/domenico-saponaro.webp"
+    },
+    {
+      "name": "Alessio Riso",
+      "country": "Italy",
+      "photo": "/images/people/alessio-riso.webp"
+    },
+    {
+      "name": "Ludivine Makanda",
+      "country": "France",
+      "photo": "/images/people/ludivine-makanda.webp"
+    },
+    {
+      "name": "Giuliana Cassarisi",
+      "country": "Luxembourg",
+      "photo": "/images/people/giuliana-cassarisi.webp"
+    },
+    {
+      "name": "Hans Kueffner-McCauley",
+      "country": "Austria",
+      "photo": "/images/people/hans-kueffner-mccauley.webp"
+    },
+    {
+      "name": "Hugo Fonseca",
+      "country": "Portugal",
+      "photo": "/images/people/hugo-fonseca.webp"
+    },
+    {
+      "name": "Coya Asopo",
+      "country": "France",
+      "photo": "/images/people/coya-asopo.webp"
+    },
+    {
+      "name": "Mona Haag",
+      "country": "Germany",
+      "photo": "/images/people/mona-haag.webp"
+    },
+    {
+      "name": "Ayoub Mouslim",
+      "country": "France",
+      "photo": "/images/people/ayoub-mouslim.webp"
+    },
+    {
+      "name": "Noëlle Razafimanantsoa",
+      "country": "France",
+      "photo": "/images/people/noelle-razafimanantsoa.webp"
+    },
+    {
+      "name": "Jamila Bashir",
+      "country": "Italy",
+      "photo": "/images/people/jamila-bashir.webp"
+    },
+    {
+      "name": "Darek Ciazynski",
+      "country": "Norway",
+      "photo": "/images/people/darek-ciazynski.webp"
+    },
+    {
+      "name": "Melissa Rolas",
+      "country": "France",
+      "photo": "/images/people/melissa-rolas.webp"
+    },
+    {
+      "name": "Laura Torrenova Lopez",
+      "country": "Germany",
+      "photo": "/images/people/laura-torrenova-lopez.webp"
+    },
+    {
+      "name": "Mona Herter",
+      "country": "Germany",
+      "photo": "/images/people/mona-herter.webp"
+    }
   ],
   "musiciansIntro": "Live drums and voices are the heartbeat of every training and every show. These are the musicians who accompanied our first performance at the Arca Social Club in Rome on 25 May 2024.",
   "musicians": [
-    { "name": "Maaike Van Zetten", "role": "Lead singer", "country": "Netherlands", "photo": "/images/people/maaike-van-zetten.webp" },
-    { "name": "Erik Larrea", "role": "Batá, tambor, güiro", "country": "Netherlands", "photo": "/images/people/erik-larrea.webp" },
-    { "name": "Otto de Graaf", "role": "Batá, tambor, güiro", "country": "Netherlands", "photo": "/images/people/otto-de-graaf.webp" },
-    { "name": "Paul François", "role": "Tambor, güiro", "country": "France", "photo": "/images/people/paul-francois.webp" },
-    { "name": "Betty Ebbengou", "role": "Tambor, güiro", "country": "France", "photo": "/images/people/betty-ebbengou.webp" },
-    { "name": "Gerardo de Armas", "role": "Batá, tambor, güiro", "country": "Italy", "photo": "/images/people/gerardo-de-armas.webp" },
-    { "name": "Davide Otranto", "role": "Batá, tambor, güiro", "country": "Italy", "photo": "/images/people/davide-otranto.webp" }
+    {
+      "name": "Maaike Van Zetten",
+      "role": "Lead singer",
+      "country": "Netherlands",
+      "photo": "/images/people/maaike-van-zetten.webp"
+    },
+    {
+      "name": "Erik Larrea",
+      "role": "Batá, tambor, güiro",
+      "country": "Netherlands",
+      "photo": "/images/people/erik-larrea.webp"
+    },
+    {
+      "name": "Otto de Graaf",
+      "role": "Batá, tambor, güiro",
+      "country": "Netherlands",
+      "photo": "/images/people/otto-de-graaf.webp"
+    },
+    {
+      "name": "Paul François",
+      "role": "Tambor, güiro",
+      "country": "France",
+      "photo": "/images/people/paul-francois.webp"
+    },
+    {
+      "name": "Betty Ebbengou",
+      "role": "Tambor, güiro",
+      "country": "France",
+      "photo": "/images/people/betty-ebbengou.webp"
+    },
+    {
+      "name": "Gerardo de Armas",
+      "role": "Batá, tambor, güiro",
+      "country": "Italy",
+      "photo": "/images/people/gerardo-de-armas.webp"
+    },
+    {
+      "name": "Davide Otranto",
+      "role": "Batá, tambor, güiro",
+      "country": "Italy",
+      "photo": "/images/people/davide-otranto.webp"
+    }
   ]
 }
