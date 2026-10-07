@@ -111,3 +111,28 @@ body { margin: 0; background: #444; font-family: 'Montserrat Variable', sans-ser
 /* both times equal: calm medium weight, same colour */
 .page .cell.time b, .page .cell.time b.end { font-size: 22px; font-weight: 600; color: var(--ink); letter-spacing: 0.02em; }
 .page .cell.time .to { height: 14px; margin: 5px 0; background: rgba(6, 14, 10, 0.3); }
+
+/* time: start in the poster face, end as a small spaced label */
+.page .cell.time b { font: 400 36px/1 'Anton', sans-serif; letter-spacing: 0.01em; color: var(--ink); }
+.page .cell.time small { margin-top: 9px; font: 700 13px/1 'Montserrat Variable', sans-serif; letter-spacing: 0.16em; text-transform: uppercase; color: #8a8170; }
+
+/* time: one calm line "13:00 – 14:00" */
+.page .row { grid-template-columns: 176px 1fr; }
+.page .cell.time .range { margin: 0; font: 600 20px/1 'Montserrat Variable', sans-serif; letter-spacing: 0.01em; color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* ---------- Same look as the timetable on the website ---------- */
+.page .cell span { color: #746a5a; }
+.page .cell.co { background: #f6f1e4; box-shadow: none; outline: 2px dashed rgba(20, 17, 13, 0.2); outline-offset: -2px; padding-top: 10px; }
+.page .cell .flags { position: absolute; top: 10px; right: 10px; display: flex; gap: 6px; align-items: center; }
+.page .cell .flags .drum { position: static; width: 26px; height: 26px; }
+.page .cell .flags .tag, .legend .tag { position: static; background: #55524b; color: #fff; font: 700 13px/1 'Montserrat Variable', sans-serif; letter-spacing: 0.05em; padding: 6px 12px; }
+.page .cell:has(.flags) { padding-right: 16px; }
+.page .cell:has(.flags) > b { padding-right: 96px; }
+.page .cell.small:has(.flags) > b, .page .cell.xs:has(.flags) > b { padding-right: 0; margin-top: 30px; }
+.page .brk { background: #e2ddd3; border-radius: 8px; display: grid; grid-template-columns: 176px 1fr 176px; align-items: center; gap: 0; color: var(--ink); letter-spacing: 0; text-transform: none; font: 400 18px/1 'Montserrat Variable', sans-serif; }
+.page .brk::before, .page .brk::after { display: none; }
+.page .brk .brk-time { text-align: center; color: #5c5345; font-weight: 500; }
+.page .brk b { text-align: center; font-weight: 700; font-size: 21px; }
+.page .cell:has(.flags) > b { padding-right: 34px; }
+.page .cell:has(.tag) > b { padding-right: 66px; }
+.page .cell:has(.tag):has(.drum) > b { padding-right: 98px; }

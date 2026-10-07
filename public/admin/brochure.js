@@ -71,13 +71,13 @@ function schedule(ev, day, index) {
   const rowH = Math.max(64, Math.min(118, Math.floor(free / Math.max(nRows, 1))));
   const big = rowH >= 100;
   const rows = day.slots.map((s) => {
-    if (s.isBreak) return h('div', { class: 'brk', style: `height:${BREAK_H}px` }, 'Break');
+    if (s.isBreak) return h('div', { class: 'brk', style: `height:${BREAK_H}px` }, h('span', { class: 'brk-time' }, s.time.replace(/\s*[–-]\s*/, ' – ')), h('b', {}, 'Break'));
     const n = s.classes.length;
     return h('div', { class: 'row', style: `height:${rowH}px` },
-      h('div', { class: 'cell time' }, ...(() => { const [a, b] = s.time.split(/\s*[–-]\s*/); return b ? [h('b', {}, a), h('i', { class: 'to', 'aria-label': 'to' }), h('b', { class: 'end' }, b)] : [h('b', {}, a)]; })()),
+      h('div', { class: 'cell time' }, ...(() => { const [a, b] = s.time.split(/\s*[–-]\s*/); return [h('span', { class: 'range' }, b ? `${a} – ${b}` : a)]; })()),
       h('div', { class: 'classes' }, s.classes.map((c) => h('div', {
         class: ['cell', c.companyOnly && 'co', (n >= 3 || c.title.length > 18) && 'small', c.title.length > 26 && 'xs', big && n < 3 && 'big'].filter(Boolean).join(' ') },
-        h('b', {}, c.title), c.teacher && h('span', {}, c.teacher), c.companyOnly && tag(), c.liveMusic && drum()))));
+        h('b', {}, c.title), c.teacher && h('span', {}, c.teacher), (c.companyOnly || c.liveMusic) && h('div', { class: 'flags' }, c.liveMusic && drum(), c.companyOnly && tag())))));
   });
   return h('section', { class: 'page' }, band(ev, 'Schedule'),
     h('div', { class: 'day' },
