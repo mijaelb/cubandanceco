@@ -97,30 +97,8 @@ body { margin: 0; background: #444; font-family: 'Montserrat Variable', sans-ser
 .soon { padding: 120px 70px; text-align: center; font-size: 30px; line-height: 1.5; }
 .page .cell .tag { color: #f3e2a3; font-size: 13px; margin: 0; padding: 5px 13px; line-height: 1; }
 
-/* ---------- Palette: gold, cream and ink only ---------- */
+/* ---------- Colours: gold, cream and ink only (no green) ---------- */
 :root { --tag: var(--ink); --green: var(--ink); }
-/* times: plain text with a fine gold rule instead of filled blocks */
-.page .cell.time { background: none; border-radius: 0; box-shadow: inset -3px 0 0 var(--gold); padding: 6px 18px 6px 4px; align-items: flex-end; text-align: right; }
-.page .cell.time b { font-size: 25px; }
-.page .cell.time span { font-size: 18px; color: #8a8170; }
-/* company-only: white card with a gold outline + black ICCD pill (same style as the cover badge) */
-.page .cell.co { background: #fff; box-shadow: inset 0 0 0 2px var(--gold); }
 .page .cell .tag, .legend .tag { background: var(--ink); color: var(--gold); font-weight: 800; letter-spacing: 0.08em; }
+.page .cell.co { box-shadow: inset 0 0 0 1.5px rgba(6, 14, 10, 0.12); }
 .drum, .legend .drum { color: var(--ink); }
-/* break: fine gold line across with the word in the middle */
-.page .brk { background: none; border-radius: 0; display: flex; align-items: center; gap: 22px; color: #8a8170; font-size: 21px; }
-.page .brk::before, .page .brk::after { content: ''; flex: 1; height: 2px; background: var(--gold); }
-/* legend shows both card styles */
-.legend .key { display: inline-block; width: 34px; height: 22px; border-radius: 5px; background: var(--cell); }
-.legend .key.co { background: #fff; box-shadow: inset 0 0 0 2px var(--gold); }
-
-/* ---------- Final pass: poster-like, square, quiet timetable under a bold header ---------- */
-.page .dayhead, .page .cell, .page .brk { border-radius: 0; }
-.page .cell.time { box-shadow: none; padding: 6px 14px 6px 0; font-variant-numeric: tabular-nums; }
-.page .cell.co { background: #fff; box-shadow: inset 0 0 0 1.5px rgba(6, 14, 10, 0.28); }
-.legend .key { border-radius: 0; }
-.legend .key.co { background: #fff; box-shadow: inset 0 0 0 1.5px rgba(6, 14, 10, 0.28); }
-.page .brk::before, .page .brk::after { height: 1.5px; background: rgba(6, 14, 10, 0.25); }
-.page .brk { color: #6f6656; }
-/* time slots as filled blocks again (preferred by the company), centred */
-.page .cell.time { background: var(--cell); box-shadow: none; padding: 6px; align-items: center; text-align: center; }
