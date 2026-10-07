@@ -16,7 +16,7 @@ const mail = site.links.bookingEmail || site.links.email;
 const contact = mail ? `mailto:${mail}?subject=${encodeURIComponent(t('Performance booking'))}` : site.links.instagram;
 const places = [...new Set(perf.past.map((p) => p.city.split(',')[0]))];
 ---
-<Layout lang={lang} page="performances" title="Performances" description={perf.intro} image="/images/photos/stage-timba.webp">
+<Layout lang={lang} page="performances" title="Performances" description={perf.intro} image="/images/photos/stage-timba.webp" events={next.map((p) => ({ ...p, name: `${site.name} · ${t(p.title)}` }))}>
   <PageHero image="/images/photos/stage-timba.webp" eyebrow={t('Performances')} title={t('On stage across Europe')} text={t(perf.intro)}>
     <div class="actions"><a class="btn btn-gold" href="#booking">{t('Book a performance')}</a></div>
   </PageHero>
@@ -39,6 +39,15 @@ const places = [...new Set(perf.past.map((p) => p.city.split(',')[0]))];
           <span class="link-arrow">{t('About the show')}</span>
         </div>
       </a>
+    </div>
+  </section>
+
+  <section class="section dark">
+    <div class="wrap">
+      <div class="section-head"><div><p class="eyebrow">{t('Festivals')}</p><h2 class="display">{t('Festivals we come back to')}</h2></div></div>
+      <ul class="festivals">
+        {perf.festivals.map((f) => <li class="reveal"><strong class="display">{f.name}</strong><span>{t(f.city)}</span><em>{t(f.note)}</em></li>)}
+      </ul>
     </div>
   </section>
 

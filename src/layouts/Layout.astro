@@ -33,10 +33,10 @@ const canonical = new URL(link(lang, page), Astro.site);
 const abs = (p: string) => new URL(url(p), Astro.site).href;
 const org = { '@type': 'PerformingGroup', name: site.name, url: new URL(link(lang), Astro.site).href, logo: abs('/images/logo.svg'), foundingDate: '2022', sameAs: [site.links.instagram, site.links.facebook, site.links.tiktok].filter(Boolean) };
 const schema = [org, ...events.map((e) => ({
-  '@type': 'Event', name: `${t('Training weekend')} · ${e.city}`, startDate: e.start, endDate: e.end || e.start,
+  '@type': 'Event', name: e.name || `${t('Training weekend')} · ${e.city}`, startDate: e.start || e.date, endDate: e.end || e.start || e.date,
   eventStatus: 'https://schema.org/EventScheduled', eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
-  location: { '@type': 'Place', name: e.venue, address: e.address }, image: abs(image), organizer: org,
-  offers: { '@type': 'Offer', url: e.ticketUrl || site.links.tickets, availability: 'https://schema.org/InStock' },
+  location: { '@type': 'Place', name: e.venue || e.city, address: e.address || e.city }, image: abs(image), organizer: org,
+  ...(e.name ? {} : { offers: { '@type': 'Offer', url: e.ticketUrl || site.links.tickets, availability: 'https://schema.org/InStock' } }),
 }))].map((x) => ({ '@context': 'https://schema.org', ...x }));
 const jsonld = JSON.stringify(schema).replace(/</g, '\\u003c');
 ---
