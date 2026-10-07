@@ -242,7 +242,14 @@ function input(s, obj, k, id) {
   const set = (v) => { obj[k] = v; changed(); };
   const v = obj[k];
   switch (s.type) {
-    case 'text': case 'url': case 'date':
+    case 'text': {
+      // short text that wraps onto more lines when it gets long (Enter is not allowed)
+      const ta = h('textarea', { id, rows: 1, class: 'oneline', value: v ?? '', onkeydown: (e) => e.key === 'Enter' && e.preventDefault(),
+        oninput: (e) => { e.target.value = e.target.value.replace(/[\r\n]+/g, ' '); set(e.target.value); grow(ta); } });
+      requestAnimationFrame(() => grow(ta));
+      return ta;
+    }
+    case 'url': case 'date':
       return h('input', { id, type: s.type, value: v ?? '', oninput: (e) => set(e.target.value) });
     case 'textarea': {
       const ta = h('textarea', { id, rows: 3, value: v ?? '', oninput: (e) => { set(e.target.value); grow(ta); } });
@@ -330,8 +337,10 @@ function pickLists(events) {
 const keepFocus = { onpointerdown: (e) => e.preventDefault(), onmousedown: (e) => e.preventDefault() };
 
 function titleField(c, lists) {
-  const input = h('input', { class: 'tt-title', value: c.title, placeholder: 'Class', oninput: (e) => { c.title = e.target.value; changed(); } });
-  const set = (v) => { c.title = input.value = v; changed(); };
+  const input = h('textarea', { class: 'tt-title oneline', rows: 1, value: c.title, placeholder: 'Class', onkeydown: (e) => e.key === 'Enter' && e.preventDefault(),
+    oninput: (e) => { c.title = e.target.value; changed(); grow(input); } });
+  requestAnimationFrame(() => grow(input));
+  const set = (v) => { c.title = input.value = v; changed(); grow(input); };
   const picks = h('div', { class: 'tt-picks' },
     h('button', { type: 'button', class: 'ensayo', ...keepFocus, onclick: () => set(/^Ensayo\b/i.test(c.title) ? c.title.replace(/^Ensayo\s*/i, '') : `Ensayo ${c.title}`.trim()) }, 'Ensayo +'),
     lists.titles.map((n) => h('button', { type: 'button', ...keepFocus, onclick: () => set(/^Ensayo\b/i.test(c.title) ? `Ensayo ${n}` : n) }, n)));
@@ -385,7 +394,7 @@ function timetableView() {
       ev.schedule.push({ day: weekday(ev.start, i), date: ddmm(ev.start, i), slots: [] });
       changed(); draw();
     } }, '+ Day');
-    const pdf = ev.schedule.length > 0 && h('button', { type: 'button', class: 'btn-pdf', onclick: () => exportPdf(ev) }, '⤓ Export PDF');
+    const pdf = h('button', { type: 'button', class: 'btn-pdf', title: 'Brochure with cover, info, timetable and closing page', onclick: () => exportPdf(ev) }, '⤓ Export PDF');
 
     const days = ev.schedule.map((day, di) => {
       const addSlot = h('button', { type: 'button', class: 'btn-add', onclick: () => {
@@ -405,10 +414,10 @@ function timetableView() {
 
     wrap.replaceChildren(
       h('div', { class: 'tt-bar' }, pick, copyFrom, addDay, pdf),
-      ev.schedule.length > 0 && h('div', { class: `tt-status ${ev.scheduleDraft ? 'draft' : 'live'}` },
+      ev.schedule.length > 0 ? h('div', { class: `tt-status ${ev.scheduleDraft ? 'draft' : 'live'}` },
         h('span', {}, ev.scheduleDraft ? '✎ Draft · only visible in the editor' : '● Visible on the website'),
         h('button', { type: 'button', class: 'btn-small', onclick: () => { ev.scheduleDraft = !ev.scheduleDraft; changed(); draw(); } },
-          ev.scheduleDraft ? 'Make visible' : 'Back to draft')),
+          ev.scheduleDraft ? 'Make visible' : 'Back to draft')) : '',
       ev.schedule.length ? h('div', { class: 'tt-days' }, days) : h('p', { class: 'tt-empty' }, 'No timetable yet. Add a day, or copy the timetable of another training.'),
       h('p', { class: 'tt-help' }, 'Tap a class or teacher field to pick from the list, or type. 🥁 live music · ICCD company only. Publish saves for the whole team; a draft stays hidden on the website.'),
     );

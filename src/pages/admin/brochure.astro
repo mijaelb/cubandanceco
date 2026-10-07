@@ -6,6 +6,7 @@ import '@fontsource/anton';
 import '@fontsource-variable/montserrat';
 import site from '../../data/site.json';
 import { url } from '../../lib/utils';
+const v = Date.now().toString(36); // new on every build, so browsers load the latest admin
 ---
 <!doctype html>
 <html lang="en">
@@ -16,7 +17,7 @@ import { url } from '../../lib/utils';
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
   <title>Training brochure · ICCD</title>
   <link rel="icon" href={url('/images/logo.svg')} type="image/svg+xml" />
-  <link rel="stylesheet" href={url('/admin/brochure.css')} />
+  <link rel="stylesheet" href={url('/admin/brochure.css') + '?v=' + v} />
 </head>
 <body data-logo={url('/images/logo.svg')} data-tickets={site.links.tickets}>
   <div class="toolbar">
@@ -24,6 +25,6 @@ import { url } from '../../lib/utils';
     <span>In the print window choose <b>“Save as PDF”</b>, paper size is set automatically. Works best in Chrome or Edge on a computer.</span>
   </div>
   <main id="pages"></main>
-  <script src={url('/admin/brochure.js')} type="module" is:inline></script>
+  <script src={url('/admin/brochure.js') + '?v=' + v} type="module" is:inline></script>
 </body>
 </html>

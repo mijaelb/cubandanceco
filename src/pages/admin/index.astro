@@ -5,6 +5,7 @@ import { url } from '../../lib/utils';
 const repo = process.env.GITHUB_REPOSITORY || '';
 const site = url('/');
 const teamApi = 'https://iccd-team-editor.iccd-cubandance.workers.dev';
+const v = Date.now().toString(36); // new on every build, so browsers load the latest admin
 ---
 <!doctype html>
 <html lang="en">
@@ -16,10 +17,10 @@ const teamApi = 'https://iccd-team-editor.iccd-cubandance.workers.dev';
   <meta name="referrer" content="no-referrer" />
   <title>ICCD · Admin</title>
   <link rel="icon" href={url('/images/logo.svg')} type="image/svg+xml" />
-  <link rel="stylesheet" href={url('/admin/admin.css')} />
+  <link rel="stylesheet" href={url('/admin/admin.css') + '?v=' + v} />
 </head>
 <body data-repo={repo} data-site={site} data-team-api={teamApi}>
   <div id="app"><p class="boot">Loading…</p></div>
-  <script src={url('/admin/admin.js')} type="module" is:inline></script>
+  <script src={url('/admin/admin.js') + '?v=' + v} type="module" is:inline></script>
 </body>
 </html>

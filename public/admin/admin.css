@@ -139,8 +139,8 @@ main:has(.tt) { max-width: 1500px; }
 .tt-class.company { background: #f6f1e4; outline: 1.5px dashed rgba(20, 17, 13, 0.22); outline-offset: -1.5px; }
 .tt-class:focus-within { z-index: 10; box-shadow: 0 0 0 2px var(--gold-deep); }
 .tt-f { position: relative; }
-.tt-class input { width: 100%; min-width: 0; border: 0 !important; background: transparent !important; box-shadow: none !important; padding: 3px 4px !important; border-radius: 5px !important; }
-.tt-class input:focus { background: #fff !important; }
+.tt-class input, .tt-class textarea { width: 100%; min-width: 0; border: 0 !important; background: transparent !important; box-shadow: none !important; padding: 3px 4px !important; border-radius: 5px !important; }
+.tt-class input:focus, .tt-class textarea:focus { background: #fff !important; }
 .tt-title { font-weight: 800; font-size: 0.95rem; }
 .tt-teacher { font-size: 0.82rem; color: #4a4237; }
 .tt-picks { display: none; position: absolute; z-index: 30; top: calc(100% + 4px); left: -6px; width: max(100% + 12px, 290px); max-height: 230px; overflow: auto; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.35); padding: 8px; flex-wrap: wrap; gap: 5px; }
@@ -174,3 +174,44 @@ main:has(.tt) { max-width: 1500px; }
 .login .owner { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 14px; }
 .login .owner > summary { cursor: pointer; font-weight: 600; color: var(--muted); }
 .login .owner .login-part { margin-top: 12px; }
+
+/* ---------- Layout fixes: nothing may push past its box ---------- */
+.layout { grid-template-columns: 220px minmax(0, 1fr); }
+main, .fields, .field, .list, .item, .item > summary, .field-object > .fields, .image-input, .image-input > div, .list-row, .list-row > * { min-width: 0; }
+.sum { min-width: 0; }
+.field input, .field textarea, .field select { max-width: 100%; }
+@media (max-width: 760px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  main { padding: 18px 14px 110px; }
+  main h1 { font-size: 1.45rem; }
+  .bar { padding: 8px 12px; gap: 10px; }
+  .brand span { display: none; }
+  .publish { padding: 9px 16px; }
+  .item > summary { padding: 8px 8px 8px 12px; gap: 8px; }
+  .item > .fields { padding: 0 12px 14px; }
+  .field-object > .fields { padding: 12px; }
+  .image-input { gap: 10px; }
+  .thumb { width: 64px; height: 64px; }
+  .tools button { width: 30px; height: 30px; }
+}
+
+/* ---------- Buttons: icons centred, consistent sizes ---------- */
+.tools button, .tt-x, .tt-tools button, .tt-addclass, .tt-flag, .list-row .tools button {
+  display: inline-grid; place-items: center; padding: 0; line-height: 1;
+}
+.tt-x { width: 24px; height: 24px; flex: none; }
+.tt-flag { height: 22px; min-width: 30px; padding: 0 8px; }
+.btn-small, .btn-add, .btn-pdf, .publish { display: inline-flex; align-items: center; justify-content: center; gap: 6px; line-height: 1.2; }
+.btn-pdf { padding: 9px 18px; }
+
+/* ---------- Timetable: time column fits its tools ---------- */
+.tt-slot { grid-template-columns: 84px minmax(0, 1fr); }
+.tt-time { padding: 5px 4px; }
+.tt-tools { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; width: 100%; }
+.tt-tools button { width: 100%; height: 20px; font-size: 0.72rem; }
+.tt-classes { align-content: stretch; }
+@media (max-width: 640px) { .tt-slot { grid-template-columns: 78px minmax(0, 1fr); } }
+
+textarea.oneline { min-height: 0; resize: none; overflow: hidden; line-height: 1.45; }
+@media (max-width: 760px) { .layout nav { align-items: center; } .layout nav button { padding: 8px 14px; } }
+@media (max-width: 760px) { .layout { align-content: start; } }
