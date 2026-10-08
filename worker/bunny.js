@@ -16,7 +16,7 @@ async function bunny(env, path, opts = {}) {
 // Player link that stops working after a few hours (embed view token authentication)
 export async function playUrl(env, guid, hours = 6) {
   const expires = Math.floor(Date.now() / 1000) + hours * 3600;
-  const token = hex(await crypto.subtle.digest('SHA-256', enc.encode(`${env.BUNNY_TOKEN_KEY}${guid}${expires}`)));
+  const token = hex(await crypto.subtle.digest('SHA-256', enc.encode(`${String(env.BUNNY_TOKEN_KEY).trim()}${guid}${expires}`))); // trim: a pasted key often carries a space or line break
   return `https://player.mediadelivery.net/embed/${env.BUNNY_LIBRARY_ID}/${guid}?token=${token}&expires=${expires}`;
 }
 export const thumbUrl = (env, guid, file = 'thumbnail.jpg') => `https://${env.BUNNY_CDN}/${guid}/${file}`;
