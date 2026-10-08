@@ -295,7 +295,7 @@ h1.hero-title { font-size: clamp(2.8rem, 7.6vw, 7.4rem); max-width: 17ch; color:
 .person-ph { display: grid; place-items: center; }
 .person-ph img { width: 46%; aspect-ratio: 1; margin: 0; background: none; }
 .person-ph { background: rgba(20, 17, 13, 0.06); } /* visible on cream and paper */
-.person strong, .person figcaption strong { display: block; font-weight: 700; line-height: 1.3; }
+.person strong, .person figcaption strong { display: block; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
 .person span { display: block; font-size: 0.85rem; color: var(--muted); }
 .dark .person span { color: #b5a993; }
 .guests { margin-top: 64px; }
