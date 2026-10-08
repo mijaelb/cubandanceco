@@ -172,7 +172,7 @@ export function videosView(ctx) {
       // classes are recorded at the most recent weekend that has started
       const today = new Date().toISOString().slice(0, 10);
       const last = trainings.find((t) => t.date <= today) || trainings[0];
-      const it = { id: uid(), type: tab, title: '', dance: '', teacher: '', training: tab === 'class' && last ? last.label : '', date: tab === 'class' && last ? last.date : '', academy: tab === 'class', notes: '', videos: [{ title: '', id: '' }] };
+      const it = { id: uid(), type: tab, title: '', dance: '', teacher: '', training: tab === 'class' && last ? last.label : '', date: tab === 'class' && last ? last.date : '', academy: false, notes: '', videos: [{ title: '', id: '' }] };
       cache.items.push(it); openId = it.id; changed(); drawList();
       list.querySelector('details[open] input')?.focus();
     };
@@ -192,7 +192,8 @@ export function videosView(ctx) {
 }
 
 // ---------- Inbox: the recordings uploaded from the ICCD drive ----------
-const KIND = { todo: 'To sort', members: 'In the members area', kept: 'Kept out', all: 'All' };
+const KIND = { todo: 'To sort', members: 'In the members area', kept: 'Kept out', flagged: 'Flagged to delete', all: 'All' };
+const REASONS = ['Bad sound', 'Bad picture', 'Duplicate', 'Not useful', 'Too short'];
 export function inboxView(ctx) {
   const { h, icon, iconBtn } = ctx;
   const wrap = h('div', { class: 'pv' }, h('p', { class: 'muted' }, 'Loading the recordings…'));
@@ -208,7 +209,7 @@ export function inboxView(ctx) {
     return t ? { label: `${t.city} · ${ctx.range(t.start, t.end)}`, date: t.start } : { label: folder.replace(/^\d{4}-\d{2}\s+\S+\s+-\s+/, ''), date: (recorded || '').slice(0, 10) };
   };
   const usedIn = (guid) => cache.items.filter((it) => it.videos.some((v) => v.src === 'bunny' && v.id === guid));
-  const kindOf = (v) => (usedIn(v.guid).length ? 'members' : v.kept ? 'kept' : 'todo');
+  const kindOf = (v) => (v.flag ? 'flagged' : usedIn(v.guid).length ? 'members' : v.kept ? 'kept' : 'todo');
   const fmt = (s) => { const m = Math.round(s / 60); return m >= 60 ? `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, '0')}m` : `${m} min`; };
   const when = (iso) => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)} ${iso.slice(11, 16)}` : '');
 
@@ -247,7 +248,7 @@ export function inboxView(ctx) {
     const add = (it) => { it.videos.push({ id: v.guid, title: '', src: 'bunny' }); };
     const asClass = () => act(async () => {
       const w = weekendOf(v.training, v.recorded);
-      cache.items.push({ id: crypto.randomUUID().slice(0, 8), type: 'class', title: v.title, dance: '', teacher: '', training: w.label, date: (v.recorded || w.date || '').slice(0, 10), academy: true, notes: '', videos: [] });
+      cache.items.push({ id: crypto.randomUUID().slice(0, 8), type: 'class', title: v.title, dance: '', teacher: '', training: w.label, date: (v.recorded || w.date || '').slice(0, 10), academy: false, notes: '', videos: [] });
       add(cache.items.at(-1)); await saveItems(ctx);
     }, 'Added as a class recording ✓');
     const choreos = cache.items.filter((it) => it.type === 'choreography').sort((a, b) => a.title.localeCompare(b.title));
@@ -273,17 +274,37 @@ export function inboxView(ctx) {
           toChoreo,
           v.kept ? h('button', { type: 'button', class: 'btn-small', onclick: () => act(async () => { await ctx.api('/bunny/keep', { method: 'POST', body: JSON.stringify({ guid: v.guid, kept: false }) }); v.kept = false; }, 'Back in “To sort” ✓') }, 'Put back')
             : !used.length && h('button', { type: 'button', class: 'btn-small', title: 'Keep the video in the archive, not for members', onclick: () => act(async () => { await ctx.api('/bunny/keep', { method: 'POST', body: JSON.stringify({ guid: v.guid, kept: true }) }); v.kept = true; }, 'Kept out ✓') }, 'Keep out'),
-          iconBtn('trash', 'Delete this recording from Bunny', () => {
-            if (!confirm(`Delete "${v.title}" from Bunny Stream? This cannot be undone. (The original stays on the ICCD drive.)`)) return;
-            act(async () => {
-              await ctx.api('/bunny/delete', { method: 'POST', body: JSON.stringify({ guid: v.guid }) });
-              const before = snap(cache.items);
-              cache.items.forEach((it) => { it.videos = it.videos.filter((x) => x.id !== v.guid); });
-              if (snap(cache.items) !== before) await saveItems(ctx);
-              videos = videos.filter((x) => x.guid !== v.guid);
-            }, 'Deleted');
-          }, { class: 'danger' }),
-          note)));
+          v.flag ? [
+            h('button', { type: 'button', class: 'btn-small', onclick: () => act(() => setFlag(v, false), 'Unflagged') }, 'Unflag'),
+            h('button', { type: 'button', class: 'btn-small pv-danger', onclick: () => { if (confirm(`Delete "${v.title}" from Bunny Stream? This cannot be undone. (The original stays on the ICCD drive.)`)) act(() => remove(v), 'Deleted'); } }, icon('trash'), 'Delete now'),
+          ] : h('select', { class: 'pv-flag', 'aria-label': 'Flag to delete', onchange: (e) => { const r = e.target.value; if (r !== '-') act(() => setFlag(v, true, r), 'Flagged to delete'); } },
+            h('option', { value: '-' }, 'Flag to delete…'), h('option', { value: '' }, 'Flag (no reason)'), REASONS.map((r) => h('option', { value: r }, r))),
+          note),
+        v.flag && h('p', { class: 'pv-flagged' }, icon('trash'), ` Flagged to delete${v.flag.reason ? ' · ' + v.flag.reason : ''}${v.flag.at ? ' · ' + new Date(v.flag.at).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '') : ''}`, used.length ? ' · also in the members area, deleting removes it there' : '')));
+  }
+
+  // flags are saved at once in the members service, so the whole team sees them
+  async function setFlag(v, flagged, reason = '') {
+    const r = await ctx.api('/bunny/flag', { method: 'POST', body: JSON.stringify({ guid: v.guid, flagged, reason }) });
+    v.flag = r.flag;
+  }
+  async function remove(v) {
+    await ctx.api('/bunny/delete', { method: 'POST', body: JSON.stringify({ guid: v.guid }) });
+    const before = snap(cache.items);
+    cache.items.forEach((it) => { it.videos = it.videos.filter((x) => x.id !== v.guid); });
+    if (snap(cache.items) !== before) await saveItems(ctx);
+    videos = videos.filter((x) => x.guid !== v.guid);
+  }
+  async function removeAllFlagged() {
+    const list = videos.filter((v) => v.flag);
+    if (!list.length || !confirm(`Delete all ${list.length} flagged recordings from Bunny Stream? This cannot be undone. (The originals stay on the ICCD drive.)`)) return;
+    let n = 0;
+    for (const v of list) {
+      flash.textContent = `Deleting ${++n} of ${list.length}…`;
+      try { await remove(v); } catch (e) { flash.textContent = `⚠ ${v.title}: ${e.message}`; flash.classList.add('error'); return draw(); }
+    }
+    flash.textContent = `Deleted ${list.length} flagged recordings ✓`; flash.classList.remove('error');
+    draw();
   }
 
   const listBox = h('div', {});
@@ -300,13 +321,15 @@ export function inboxView(ctx) {
     const folders = [...new Set(videos.map((v) => v.training))].sort().reverse();
     drawList();
     wrap.replaceChildren(
-      h('p', { class: 'muted' }, 'Watch each recording, give it a clear name, then add it to the members area, keep it out, or delete it. The originals always stay on the ICCD drive.'),
+      h('p', { class: 'muted' }, 'Watch each recording, give it a clear name, then add it to the members area, keep it out, or flag it to delete. Flags are saved at once and seen by the whole team. The originals always stay on the ICCD drive.'),
       flash,
       h('div', { class: 'pv-tabs' }, Object.entries(KIND).map(([k, label]) => h('button', { type: 'button', class: view === k ? 'active' : '', onclick: () => { view = k; draw(); } }, label, h('small', {}, counts[k])))),
       h('div', { class: 'pv-tools' },
         h('select', { 'aria-label': 'Training weekend', onchange: (e) => { training = e.target.value; drawList(); } }, h('option', { value: '' }, 'All training weekends'), folders.map((f) => h('option', { value: f, selected: f === training }, f))),
         h('input', { type: 'search', class: 'pv-search', placeholder: 'Search', value: q, oninput: (e) => { q = e.target.value.toLowerCase(); drawList(); } }),
-        h('button', { type: 'button', class: 'btn-small', onclick: refresh }, 'Refresh')),
+        h('button', { type: 'button', class: 'btn-small', onclick: refresh }, 'Refresh'),
+        view === 'flagged' && counts.flagged > 0 && h('button', { type: 'button', class: 'btn-small pv-danger', onclick: removeAllFlagged }, icon('trash'), `Delete all ${counts.flagged} flagged`)),
+      view === 'flagged' && h('p', { class: 'muted' }, 'Recordings the team flagged. Check them once more: unflag what should stay, delete the rest.'),
       listBox);
   }
   refresh();

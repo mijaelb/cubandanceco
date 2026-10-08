@@ -310,3 +310,9 @@ html:has(.pv-save) { scroll-padding-bottom: 90px; }
 .pv-tools select { width: auto; max-width: 320px; }
 .pv-flash { margin: 0; min-height: 1.4em; font-weight: 700; color: #1f5a2e; }
 .pv-flash.error { color: var(--red); }
+.pv-rec.flagged { border-color: #e6a7a1; background: #fdf6f5; }
+.pv-flagged { margin: 2px 0 0; display: flex; gap: 4px; align-items: center; flex-wrap: wrap; font-size: 0.82rem; font-weight: 700; color: var(--red); }
+.pv-flagged .ic { width: 14px; height: 14px; }
+.pv-rec-actions select.pv-flag { color: var(--red); border-color: #e6c3bf; }
+.btn-small.pv-danger { color: var(--red); border-color: #e6c3bf; }
+.btn-small.pv-danger:hover { background: #fdecea; }

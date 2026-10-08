@@ -21,6 +21,19 @@ export async function playUrl(env, guid, hours = 6) {
 }
 export const thumbUrl = (env, guid, file = 'thumbnail.jpg') => `https://${env.BUNNY_CDN}/${guid}/${file}`;
 
+// Team marks, one KV entry per video (so two people clicking at once never overwrite each other);
+// the details travel as metadata, so one list call returns them all
+async function marks(kv, prefix) {
+  const out = {};
+  let cursor;
+  do {
+    const page = await kv.list({ prefix, cursor });
+    for (const k of page.keys) out[k.name.slice(prefix.length)] = k.metadata || {};
+    cursor = page.list_complete ? null : page.cursor;
+  } while (cursor);
+  return out;
+}
+
 // Team routes (the caller has already checked the team session)
 export async function inbox(req, env, url, reply) {
   if (!env.BUNNY_API_KEY) return reply({ message: 'Bunny Stream is not connected yet.' }, 503);
@@ -30,10 +43,7 @@ export async function inbox(req, env, url, reply) {
   if (url.pathname !== '/bunny/videos' && !GUID.test(guid)) return reply({ message: 'Unknown video' }, 400);
 
   if (url.pathname === '/bunny/videos' && req.method === 'GET') {
-    const [cols, kept] = await Promise.all([
-      bunny(env, '/collections?page=1&itemsPerPage=1000'),
-      kv.get('bunny-kept').then((v) => new Set(JSON.parse(v || '[]'))),
-    ]);
+    const [cols, kept, flags] = await Promise.all([bunny(env, '/collections?page=1&itemsPerPage=1000'), marks(kv, 'kept:'), marks(kv, 'flag:')]);
     const names = Object.fromEntries((cols?.items || []).map((c) => [c.guid, c.name]));
     const videos = [];
     for (let page = 1; page < 50; page++) {
@@ -43,7 +53,7 @@ export async function inbox(req, env, url, reply) {
         videos.push({
           guid: v.guid, title: v.title, length: v.length, status: v.status, progress: v.encodeProgress,
           uploaded: v.dateUploaded, training: names[v.collectionId] || meta.training || '', recorded: meta.recorded || '', cut: meta.cut || '',
-          thumb: thumbUrl(env, v.guid, v.thumbnailFileName || 'thumbnail.jpg'), kept: kept.has(v.guid),
+          thumb: thumbUrl(env, v.guid, v.thumbnailFileName || 'thumbnail.jpg'), kept: !!kept[v.guid], flag: flags[v.guid] || null,
         });
       }
       if (page * 100 >= (d.totalItems || 0)) break;
@@ -64,13 +74,19 @@ export async function inbox(req, env, url, reply) {
     return reply({ ok: true, title });
   }
   if (url.pathname === '/bunny/keep' && req.method === 'POST') {
-    const kept = new Set(JSON.parse((await kv.get('bunny-kept')) || '[]'));
-    body.kept ? kept.add(guid) : kept.delete(guid);
-    await kv.put('bunny-kept', JSON.stringify([...kept]));
+    body.kept ? await kv.put(`kept:${guid}`, '1', { metadata: { at: new Date().toISOString() } }) : await kv.delete(`kept:${guid}`);
     return reply({ ok: true });
   }
+  // Flag for deletion: the team reviews before anything is deleted (saved at once, shared by all)
+  if (url.pathname === '/bunny/flag' && req.method === 'POST') {
+    if (!body.flagged) { await kv.delete(`flag:${guid}`); return reply({ ok: true, flag: null }); }
+    const flag = { reason: String(body.reason || '').trim().slice(0, 120), at: new Date().toISOString() };
+    await kv.put(`flag:${guid}`, '1', { metadata: flag });
+    return reply({ ok: true, flag });
+  }
   if (url.pathname === '/bunny/delete' && req.method === 'POST') {
-    await bunny(env, `/videos/${guid}`, { method: 'DELETE' });
+    await bunny(env, `/videos/${guid}`, { method: 'DELETE' }).catch((e) => { if (!String(e.message).includes('404')) throw e; }); // already gone is fine
+    await Promise.all([kv.delete(`flag:${guid}`), kv.delete(`kept:${guid}`)]);
     return reply({ ok: true });
   }
   return null;
