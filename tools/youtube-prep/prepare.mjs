@@ -2,7 +2,8 @@
 //   1. copy:    each original is copied to the SSD, one at a time and in large blocks: a hard disk
 //      is fast that way, and very slow when two programs read it at once
 //   2. convert: from the SSD copy into 1080p H.264, on the NVIDIA card and Intel Quick Sync at the
-//      same time (keyframe every 2 s); the SSD copy is deleted right after
+//      same time (keyframe every 2 s, at most ~7 Mbit/s: Bunny re-encodes every upload into its own
+//      streaming versions, so more would only slow the upload); the SSD copy is deleted right after
 //   3. trim:    camera set-up moments are found on the small 1080p copy (detect_trim.py) and cut
 //      without converting again
 //   4. upload:  to Bunny Stream (resumable), one folder per training weekend, with the recording
@@ -127,9 +128,9 @@ function ffArgs(engine, c, out) {
   const tail = ['-c:a', 'aac', '-b:a', '160k', '-ac', '2', '-movflags', '+faststart', '-y', out];
   const src = c.staged || c.path;
   if (engine === 'nvenc') return ['-hide_banner', '-loglevel', 'error', '-hwaccel', 'cuda', '-hwaccel_output_format', 'cuda', '-i', src,
-    '-vf', `scale_cuda=${w}:${h}`, '-c:v', 'h264_nvenc', '-preset', 'p5', '-tune', 'hq', '-rc', 'vbr', '-cq', '23', '-b:v', '8M', '-maxrate', '12M', '-bufsize', '16M', '-profile:v', 'high', ...keys, ...tail];
+    '-vf', `scale_cuda=${w}:${h}`, '-c:v', 'h264_nvenc', '-preset', 'p5', '-tune', 'hq', '-rc', 'vbr', '-cq', '24', '-b:v', '6M', '-maxrate', '7M', '-bufsize', '14M', '-profile:v', 'high', ...keys, ...tail];
   if (engine === 'qsv') return ['-hide_banner', '-loglevel', 'error', '-hwaccel', 'qsv', '-hwaccel_output_format', 'qsv', '-i', src,
-    '-vf', `scale_qsv=w=${w}:h=${h}`, '-c:v', 'h264_qsv', '-preset', 'slow', '-global_quality', '21', '-look_ahead', '1', ...keys, ...tail];
+    '-vf', `scale_qsv=w=${w}:h=${h}`, '-c:v', 'h264_qsv', '-preset', 'slow', '-b:v', '6M', '-maxrate', '7M', '-bufsize', '14M', '-look_ahead', '1', ...keys, ...tail];
   return ['-hide_banner', '-loglevel', 'error', '-i', src, '-vf', `scale=${w}:${h}`, '-c:v', 'libx264', '-preset', 'medium', '-crf', '20', ...keys, ...tail]; // processor fallback
 }
 const active = new Map(); // what each worker does now
