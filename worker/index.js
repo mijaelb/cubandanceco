@@ -11,7 +11,7 @@
 
 import { members } from './members.js';
 import { inbox } from './bunny.js';
-import { webhook } from './stripe.js';
+import { webhook, setup as stripeSetup } from './stripe.js';
 
 const ORIGINS = ['https://cubandance.co', 'https://www.cubandance.co', 'http://localhost:4321'];
 const READ = /^src\/(data|i18n)\/[a-z-]+\.json$/;
@@ -51,7 +51,7 @@ export default {
     const reply = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
     // Stripe reports subscription changes here (server to server, checked by its signature)
-    if (url.pathname === '/stripe/webhook' && req.method === 'POST') return env.STRIPE_WEBHOOK_SECRET ? webhook(req, env) : new Response('Not set up', { status: 503 });
+    if (url.pathname === '/stripe/webhook' && req.method === 'POST') return env.STRIPE_SECRET_KEY ? webhook(req, env) : new Response('Not set up', { status: 503 });
     if (!ORIGINS.includes(origin)) return reply({ message: 'Forbidden' }, 403);
 
     const session = async () => `${String(Date.now() + SESSION_HOURS * 3600e3)}`;
@@ -92,6 +92,12 @@ export default {
 
     // Everything else needs a valid session
     if (!(await teamOk())) return reply({ message: 'Please sign in again' }, 401);
+
+    // One-time Stripe setup (prices, webhook, customer portal, testers)
+    if (url.pathname === '/stripe/setup' && req.method === 'POST') {
+      if (!env.STRIPE_SECRET_KEY) return reply({ message: 'Add STRIPE_SECRET_KEY first' }, 503);
+      try { return reply(await stripeSetup(env, await req.json().catch(() => ({})))); } catch (e) { return reply({ message: e.message }, 502); }
+    }
 
     // Recordings uploaded to Bunny Stream (team inbox)
     if (url.pathname.startsWith('/bunny/')) {

@@ -6,7 +6,7 @@
 // Needs: KV binding PRIVATE, secret RESEND_API_KEY, var MAIL_FROM, secret SESSION_SECRET.
 
 import { GUID, playUrl, thumbUrl } from './bunny.js';
-import { subscribe, portal, getSub, canWatchClasses, priceInfo, allSubs } from './stripe.js';
+import { subscribe, portal, getSub, canWatchClasses, priceInfo, allSubs, paywallFor } from './stripe.js';
 
 const DAYS = 7; // how long a member stays signed in on a device
 const CODE_MINUTES = 10;
@@ -190,7 +190,7 @@ export async function members(req, env, url, reply, teamOk) {
     const { items = [] } = await getJSON(kv, 'library', {});
     const mine = person.level === 'company' ? items : items.filter((it) => it.academy);
     const sub = await getSub(kv, person.email);
-    const paid = !env.STRIPE_SECRET_KEY || canWatchClasses(person, sub); // no paywall until Stripe is connected
+    const paid = !(await paywallFor(env, person.email)) || canWatchClasses(person, sub); // no paywall until Stripe is live (test key: testers only)
     const out = [];
     for (const it of mine) {
       if (it.type === 'class' && !paid && !it.free) { // locked: what it is, but nothing to play (free classes stay open)
