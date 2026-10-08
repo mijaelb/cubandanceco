@@ -136,7 +136,7 @@ function cleanLibrary(items) {
     type: it.type === 'class' ? 'class' : 'choreography',
     title: text(it.title, 120), dance: text(it.dance, 80), teacher: text(it.teacher, 120),
     training: text(it.training, 80), date: /^\d{4}-\d{2}-\d{2}$/.test(it.date) ? it.date : '',
-    academy: !!it.academy, notes: text(it.notes, 2000),
+    academy: !!it.academy, notes: text(it.notes, 2000), ...(it.type === 'class' && it.free ? { free: true } : {}),
     // YouTube ids, or Bunny Stream videos (src: 'bunny', id = the video's guid)
     videos: (Array.isArray(it.videos) ? it.videos : []).slice(0, 50)
       .filter((v) => (v.src === 'bunny' ? GUID.test(v.id) : YT.test(v.id)))
@@ -193,7 +193,7 @@ export async function members(req, env, url, reply, teamOk) {
     const paid = !env.STRIPE_SECRET_KEY || canWatchClasses(person, sub); // no paywall until Stripe is connected
     const out = [];
     for (const it of mine) {
-      if (it.type === 'class' && !paid) { // locked: what it is, but nothing to play
+      if (it.type === 'class' && !paid && !it.free) { // locked: what it is, but nothing to play (free classes stay open)
         out.push({ ...it, locked: true, videos: it.videos.map((v) => ({ title: v.title, ...(v.src === 'bunny' ? { thumb: thumbUrl(env, v.id) } : {}) })) });
         continue;
       }

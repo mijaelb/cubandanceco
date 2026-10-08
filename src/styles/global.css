@@ -548,3 +548,4 @@ h1.hero-title { font-size: clamp(2.8rem, 7.6vw, 7.4rem); max-width: 17ch; color:
 .m-tabs a[aria-current] .m-tab-lock { background: var(--gold); }
 .m-tabs a[aria-current] .m-tab-lock svg { stroke: var(--ink); }
 .m-paid { background: #e7f3ea; color: #1f5a2e; border-radius: 14px; padding: 14px 18px; margin: 0 auto 20px; max-width: 1200px; width: calc(100% - 40px); }
+.m-free { position: absolute; left: 10px; top: 10px; background: var(--gold); color: var(--ink); font: 700 0.72rem/1 var(--body); letter-spacing: 0.08em; text-transform: uppercase; padding: 6px 10px; border-radius: 999px; }

@@ -343,3 +343,4 @@ html:has(.pv-save) { scroll-padding-bottom: 90px; }
 .pv-sub.free { color: var(--gold-deep); }
 .pv-sub.warn { color: var(--red); }
 @media (max-width: 760px) { .pv-person { grid-template-columns: minmax(0, 1fr) auto; } .pv-person .pv-sub { grid-column: 1 / -1; } }
+.pv-badge.free { background: var(--gold); color: var(--ink); }

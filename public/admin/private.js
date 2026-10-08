@@ -216,6 +216,8 @@ export function videosView(ctx) {
         field('Date', h('input', { type: 'date', value: it.date, onchange: (e) => { it.date = e.target.value; changed(); } }))),
       h('label', { class: 'pv-check' }, h('input', { type: 'checkbox', checked: it.academy, onchange: (e) => { it.academy = e.target.checked; changed(); redraw(); } }),
         ' Also for Academy dancers', h('small', {}, ' (company members always see everything)')),
+      it.type === 'class' && h('label', { class: 'pv-check' }, h('input', { type: 'checkbox', checked: !!it.free, onchange: (e) => { if (e.target.checked) it.free = true; else delete it.free; changed(); redraw(); } }),
+        ' Free (no subscription needed)', h('small', {}, ' (open to the members it is for, without paying)')),
       field('Notes (optional)', h('textarea', { rows: 3, value: it.notes, placeholder: 'Counts, music, what to practise…', oninput: (e) => { it.notes = e.target.value; changed(); } })),
       h('p', { class: 'pv-label' }, 'Videos', h('small', {}, ' in the order members see them')),
       vids,
@@ -237,6 +239,7 @@ export function videosView(ctx) {
         const edited = () => { changed(); sum.firstChild.textContent = it.title || '(no title)'; sum.lastChild.textContent = meta(); };
         const det = h('details', { class: 'item', open: it.id === openId, ontoggle: (e) => { if (e.target.open) { openId = it.id; if (!det.querySelector('.pv-edit')) det.append(editor(it, () => { drawList(); }, edited)); } } },
           h('summary', {}, sum,
+            it.free && h('span', { class: 'pv-badge free' }, 'Free'),
             h('span', { class: `pv-badge ${it.academy ? 'on' : ''}` }, it.academy ? 'Company + Academy' : 'Company'),
             iconBtn('copy', 'Duplicate', (e) => { e.preventDefault(); const c = structuredClone(it); c.id = uid(); c.title += ' (copy)'; cache.items.splice(i + 1, 0, c); openId = c.id; changed(); drawList(); }),
             iconBtn('trash', 'Remove', (e) => { e.preventDefault(); if (confirm(`Remove "${it.title || 'this item'}" and its videos from the members area?`)) { cache.items.splice(i, 1); changed(); drawList(); } }, { class: 'danger' })));

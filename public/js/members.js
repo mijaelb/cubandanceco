@@ -157,7 +157,8 @@ function card(it) {
   const first = it.videos[0];
   return h('a', { class: 'm-item', href: `#v-${it.id}` },
     h('div', { class: 'm-thumb' }, first?.thumb || first?.id ? h('img', { src: thumb(first), alt: '', loading: 'lazy', width: 480, height: 360 }) : null,
-      it.locked && h('span', { class: 'm-lock', title: W['Class recordings are for subscribers'] }, lockIcon()), h('span', { class: 'm-count' }, count(it.videos.length))),
+      it.locked && h('span', { class: 'm-lock', title: W['Class recordings are for subscribers'] }, lockIcon()),
+      it.free && data.classes && !data.classes.open && h('span', { class: 'm-free' }, W.Free), h('span', { class: 'm-count' }, count(it.videos.length))),
     h('div', { class: 'm-body' },
       h('b', {}, it.title),
       h('span', {}, [it.dance !== it.title && it.dance, it.teacher].filter(Boolean).join(' · ')),
