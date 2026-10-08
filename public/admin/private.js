@@ -23,6 +23,62 @@ async function saveItems(ctx) {
 }
 const thumbOf = (v) => (v.src === 'bunny' ? `https://${cache.cdn}/${v.id}/thumbnail.jpg` : v.id ? `https://i.ytimg.com/vi/${v.id}/default.jpg` : '');
 let focus = null; // { tab, id }: the inbox opens an item in the videos section
+
+// Plays an archive recording in a window (signed link from the members service)
+function previewBunny(ctx, v) {
+  const { h, iconBtn } = ctx;
+  const box = h('div', { class: 'pv-modal', onclick: (e) => e.target === box && box.remove() },
+    h('div', { class: 'pv-modal-in' },
+      h('div', { class: 'pv-modal-head' }, h('b', {}, v.title), iconBtn('close', 'Close', () => box.remove())),
+      h('div', { class: 'pv-player' }, h('p', { class: 'muted' }, 'Loading…'))));
+  document.body.append(box);
+  ctx.api(`/bunny/play?guid=${v.guid}`).then(({ url }) => box.querySelector('.pv-player').replaceChildren(
+    h('iframe', { src: `${url}&autoplay=true&preload=true`, allow: 'autoplay; fullscreen; picture-in-picture', allowfullscreen: true })))
+    .catch((e) => box.querySelector('.pv-player').replaceChildren(h('p', { class: 'error' }, e.message)));
+  addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { box.remove(); removeEventListener('keydown', esc); } });
+}
+
+// The archive recordings on Bunny, loaded once per visit (Refresh in the picker loads them again)
+let archive = null;
+const loadArchive = async (ctx, force) => (archive && !force ? archive : (archive = (await ctx.api('/bunny/videos')).videos));
+const mins = (s) => { const m = Math.round((s || 0) / 60); return m >= 60 ? `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, '0')}m` : `${m} min`; };
+
+// Search the archive and add recordings to a class or choreography
+function libraryPicker(ctx, it, onAdd) {
+  const { h, icon } = ctx;
+  let q = '', only = true;
+  const list = h('div', { class: 'pv-pick-list' }, h('p', { class: 'muted' }, 'Loading the library…'));
+  const place = (it.training || '').split(' · ')[0].toLowerCase();
+  const draw = () => {
+    const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+    const rows = archive
+      .filter((v) => v.status === 4 && !v.flag)
+      .filter((v) => !only || !place || v.training.toLowerCase().includes(place))
+      .filter((v) => words.every((w) => `${v.title} ${v.training}`.toLowerCase().includes(w)))
+      .sort((a, b) => (b.recorded || '').localeCompare(a.recorded || ''))
+      .slice(0, 60);
+    list.replaceChildren(...(rows.length ? rows.map((v) => {
+      const added = it.videos.some((x) => x.src === 'bunny' && x.id === v.guid);
+      const elsewhere = (cache.items || []).filter((x) => x !== it && x.videos.some((y) => y.src === 'bunny' && y.id === v.guid));
+      return h('div', { class: `pv-pick${added ? ' added' : ''}` },
+        h('button', { type: 'button', class: 'pv-pick-thumb', onclick: () => previewBunny(ctx, v), 'aria-label': `Watch ${v.title}` }, h('img', { src: v.thumb, alt: '', loading: 'lazy' }), h('span', { class: 'pv-len' }, mins(v.length))),
+        h('div', { class: 'pv-pick-body' },
+          h('b', {}, v.title),
+          h('small', {}, [v.training, v.recorded && v.recorded.slice(0, 16).replace('T', ' '), elsewhere.length && `also in: ${elsewhere.map((x) => x.title || '(no title)').join(', ')}`].filter(Boolean).join(' · '))),
+        added ? h('span', { class: 'pv-pick-done' }, 'Added ✓')
+          : h('button', { type: 'button', class: 'btn-small', onclick: () => { it.videos.push({ id: v.guid, title: '', src: 'bunny' }); onAdd(); draw(); } }, icon('plus'), 'Add'));
+    }) : [h('p', { class: 'muted' }, only && place ? `Nothing from ${it.training.split(' · ')[0]} found. Untick "Only this training weekend" to search everything.` : 'Nothing found.')]));
+  };
+  const box = h('div', { class: 'pv-picker' },
+    h('div', { class: 'pv-pick-tools' },
+      h('input', { type: 'search', placeholder: 'Search our library: teacher, dance, place…', oninput: (e) => { q = e.target.value; archive && draw(); } }),
+      place && h('label', { class: 'pv-check' }, h('input', { type: 'checkbox', checked: true, onchange: (e) => { only = e.target.checked; archive && draw(); } }), ` Only ${it.training.split(' · ')[0]}`),
+      h('button', { type: 'button', class: 'btn-small', onclick: async () => { list.replaceChildren(h('p', { class: 'muted' }, 'Loading…')); await loadArchive(ctx, true); draw(); } }, 'Refresh')),
+    list);
+  loadArchive(ctx).then(draw).catch((e) => list.replaceChildren(h('p', { class: 'error' }, e.message)));
+  setTimeout(() => box.querySelector('input')?.focus(), 0);
+  return box;
+}
 export const privateDirty = () => !!cache && (snap(cache.members) !== cache.snapM || snap(cache.items) !== cache.snapI);
 
 // Save bar shared by both sections
@@ -104,6 +160,7 @@ export function videosView(ctx) {
   const { h, icon, iconBtn } = ctx;
   const wrap = h('div', { class: 'pv' }, h('p', { class: 'muted' }, 'Loading…'));
   load(ctx).then(() => draw()).catch((e) => wrap.replaceChildren(h('p', { class: 'error' }, e.message)));
+  loadArchive(ctx).then(() => cache && draw()).catch(() => { /* names stay generic */ });
   let tab = focus?.tab || 'choreography', q = '', openId = focus?.id || null;
   focus = null;
   const trainings = [...ctx.trainings.events, ...ctx.trainings.history].sort((a, b) => b.start.localeCompare(a.start))
@@ -118,7 +175,7 @@ export function videosView(ctx) {
       return h('div', { class: 'pv-vid' }, prev,
         h('div', { class: 'pv-vid-fields' },
           h('input', { value: v.title, placeholder: `Video ${i + 1} title, e.g. "Full run" or "Part 2 · arms"`, 'aria-label': 'Video title', oninput: (e) => { v.title = e.target.value; changed(); } }),
-          v.src === 'bunny' ? h('small', { class: 'pv-src' }, 'From the ICCD archive') :
+          v.src === 'bunny' ? h('small', { class: 'pv-src' }, 'From our library', archive?.find((x) => x.guid === v.id) ? ` · ${archive.find((x) => x.guid === v.id).title}` : '') :
           h('input', { value: v.url || (v.id ? `https://youtu.be/${v.id}` : ''), placeholder: 'Paste a YouTube link, or add recordings from the inbox', 'aria-label': 'YouTube link', oninput: (e) => {
             v.url = e.target.value; v.id = ytId(v.url); prev.hidden = !v.id; if (v.id) prev.src = thumbOf(v); bad.hidden = !!v.id || !v.url; changed();
           } }), bad),
@@ -126,7 +183,14 @@ export function videosView(ctx) {
           iconBtn('up', 'Move up', () => { [it.videos[i - 1], it.videos[i]] = [it.videos[i], it.videos[i - 1]]; changed(); drawVids(); }, { disabled: i === 0 }),
           iconBtn('down', 'Move down', () => { [it.videos[i + 1], it.videos[i]] = [it.videos[i], it.videos[i + 1]]; changed(); drawVids(); }, { disabled: i === it.videos.length - 1 }),
           iconBtn('trash', 'Remove this video', () => { it.videos.splice(i, 1); changed(); drawVids(); }, { class: 'danger' })));
-    }), h('button', { type: 'button', class: 'btn-small', onclick: () => { it.videos.push({ title: '', id: '' }); changed(); drawVids(); vids.querySelector('.pv-vid:last-of-type input')?.focus(); } }, icon('plus'), 'Video'));
+    }), h('div', { class: 'pv-add-video' },
+      h('button', { type: 'button', class: 'btn-small', onclick: (e) => {
+        const open = vids.querySelector('.pv-picker');
+        if (open) { open.remove(); e.currentTarget.classList.remove('on'); return; }
+        e.currentTarget.classList.add('on');
+        vids.append(libraryPicker(ctx, it, () => { changed(); const p = vids.querySelector('.pv-picker'); drawVids(); vids.append(p); vids.querySelector('.pv-add-video .btn-small')?.classList.add('on'); }));
+      } }, icon('plus'), 'From our library'),
+      h('button', { type: 'button', class: 'btn-small', onclick: () => { it.videos.push({ title: '', id: '' }); changed(); drawVids(); vids.querySelector('.pv-vid:last-of-type input')?.focus(); } }, icon('plus'), 'YouTube link')));
     drawVids();
     const dances = ctx.lists.titles;
     return h('div', { class: 'pv-edit' },
@@ -181,7 +245,7 @@ export function videosView(ctx) {
       h('button', { type: 'button', class: tab === t ? 'active' : '', onclick: () => { tab = t; openId = null; draw(); } }, label, h('small', {}, n(t)))));
     drawList();
     wrap.replaceChildren(
-      h('p', { class: 'muted' }, 'Upload videos to YouTube as "Unlisted", then paste the links here. A choreography can have several videos (full run, parts, details). Class recordings are grouped by training weekend.'),
+      h('p', { class: 'muted' }, 'Add recordings from our library (the ICCD archive), or paste a YouTube link. A choreography can have several videos (full run, parts, details). Class recordings are grouped by training weekend.'),
       tabs,
       h('div', { class: 'pv-tools' },
         h('input', { type: 'search', class: 'pv-search', placeholder: 'Search', value: q, oninput: (e) => { q = e.target.value.toLowerCase(); drawList(); } }),
@@ -221,17 +285,7 @@ export function inboxView(ctx) {
     } catch (e) { wrap.replaceChildren(h('p', { class: 'error' }, e.message)); }
   }
 
-  function preview(v) {
-    const box = h('div', { class: 'pv-modal', onclick: (e) => e.target === box && box.remove() },
-      h('div', { class: 'pv-modal-in' },
-        h('div', { class: 'pv-modal-head' }, h('b', {}, v.title), iconBtn('close', 'Close', () => box.remove())),
-        h('div', { class: 'pv-player' }, h('p', { class: 'muted' }, 'Loading…'))));
-    document.body.append(box);
-    ctx.api(`/bunny/play?guid=${v.guid}`).then(({ url }) => box.querySelector('.pv-player').replaceChildren(
-      h('iframe', { src: `${url}&autoplay=true&preload=true`, allow: 'autoplay; fullscreen; picture-in-picture', allowfullscreen: true })))
-      .catch((e) => box.querySelector('.pv-player').replaceChildren(h('p', { class: 'error' }, e.message)));
-    addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { box.remove(); removeEventListener('keydown', esc); } });
-  }
+  const preview = (v) => previewBunny(ctx, v);
 
   function card(v) {
     const note = h('small', { class: 'pv-saved' });
