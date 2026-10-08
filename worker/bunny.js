@@ -50,7 +50,13 @@ export async function inbox(req, env, url, reply) {
     }
     return reply({ videos, cdn: env.BUNNY_CDN });
   }
-  if (url.pathname === '/bunny/play' && req.method === 'GET') return reply({ url: await playUrl(env, guid, 2) });
+  if (url.pathname === '/bunny/play' && req.method === 'GET') {
+    const link = await playUrl(env, guid, 2);
+    // check the link with Bunny first, so a wrong key gives a clear message instead of a bare 403
+    const test = await fetch(link, { headers: { Referer: 'https://cubandance.co/' } });
+    if (test.status === 403) return reply({ message: 'Bunny refuses the player link: the token authentication key stored in the team-area service does not match the one in the Bunny library (Security tab).' }, 502);
+    return reply({ url: link });
+  }
   if (url.pathname === '/bunny/rename' && req.method === 'POST') {
     const title = String(body.title || '').trim().slice(0, 200);
     if (!title) return reply({ message: 'The name cannot be empty' }, 400);
