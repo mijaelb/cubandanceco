@@ -190,7 +190,7 @@ export async function members(req, env, url, reply, teamOk) {
     const { items = [] } = await getJSON(kv, 'library', {});
     const mine = person.level === 'company' ? items : items.filter((it) => it.academy);
     const sub = await getSub(kv, person.email);
-    const paid = canWatchClasses(person, sub);
+    const paid = !env.STRIPE_SECRET_KEY || canWatchClasses(person, sub); // no paywall until Stripe is connected
     const out = [];
     for (const it of mine) {
       if (it.type === 'class' && !paid) { // locked: what it is, but nothing to play
