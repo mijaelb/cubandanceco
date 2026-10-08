@@ -101,9 +101,48 @@ async function open() {
   login.replaceChildren(h('div', { class: 'm-who' },
     h('span', {}, `${W.Hi} ${data.name.split(' ')[0]}`),
     h('span', { class: 'm-level' }, data.level === 'company' ? W.Company : W.Academy),
+    data.classes?.open && data.classes.canManage && !data.classes.free && h('button', { type: 'button', class: 'm-link', onclick: () => go('/m/manage') }, W['Manage subscription']),
     h('button', { type: 'button', class: 'm-link', onclick: () => { saved.set(KEY, null); location.hash = ''; location.reload(); } }, W['Sign out'])));
   lib.hidden = false;
   draw();
+  if (location.hash === '#paid') waitForPayment();
+}
+
+// ---------- Subscription for the class recordings ----------
+// a simple line lock (SVG), like the other icons on the site
+function lockIcon() {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('aria-hidden', 'true');
+  for (const d of ['M6 11h12v9H6z', 'M8.5 11V8a3.5 3.5 0 0 1 7 0v3']) { const p = document.createElementNS(ns, 'path'); p.setAttribute('d', d); svg.append(p); }
+  return svg;
+}
+const money = (p) => new Intl.NumberFormat(LANG, { style: 'currency', currency: (p.currency || 'eur').toUpperCase() }).format(p.amount / 100);
+async function go(path) { // to Stripe's own page (payment, or cancel / change card)
+  try { location.href = (await api(path, { body: { lang: LANG }, token: saved.get(KEY) })).url; }
+  catch (err) { alert(err.message); }
+}
+// back from Stripe: the payment is confirmed to us a few seconds later
+async function waitForPayment() {
+  const note = h('div', { class: 'm-paid' }, h('b', {}, W['Thank you!']), ' ', W['Your subscription is being activated…']);
+  lib.prepend(note);
+  for (let i = 0; i < 20 && !data.classes?.open; i++) {
+    await new Promise((r) => setTimeout(r, 3000));
+    try { data = await api('/m/library', { token: saved.get(KEY) }); } catch { /* try again */ }
+  }
+  history.replaceState(null, '', '#classes');
+  await open();
+  if (data.classes?.open) lib.prepend(h('div', { class: 'm-paid' }, h('b', {}, W['Thank you!']), ' ', W['Your subscription is active: all class recordings are open.']));
+}
+function paywall() {
+  const c = data.classes || {};
+  const price = c.price ? money(c.price) : '';
+  return h('div', { class: 'm-paywall' },
+    h('div', {},
+      h('p', { class: 'm-paywall-title' }, W['Class recordings are for subscribers']),
+      h('p', {}, c.status === 'canceled' || c.status === 'unpaid' ? W['Your subscription has ended. Subscribe again to watch the class recordings.'] : W['Watch every class of our training weekends, as often as you like. Choreographies stay free.']),
+      price && h('p', { class: 'm-price' }, h('b', {}, price), ` ${W['per month']} · ${W['cancel any time']}`)),
+    h('button', { type: 'button', class: 'btn btn-gold', onclick: (e) => { e.currentTarget.disabled = true; go('/m/subscribe'); } }, W.Subscribe));
 }
 
 const thumb = (v) => v.thumb || `https://i.ytimg.com/vi/${v.id}/hqdefault.jpg`;
@@ -117,7 +156,8 @@ const count = (n) => `${n} ${n === 1 ? W.video : W.videos}`;
 function card(it) {
   const first = it.videos[0];
   return h('a', { class: 'm-item', href: `#v-${it.id}` },
-    h('div', { class: 'm-thumb' }, first && h('img', { src: thumb(first), alt: '', loading: 'lazy', width: 480, height: 360 }), h('span', { class: 'm-count' }, count(it.videos.length))),
+    h('div', { class: 'm-thumb' }, first?.thumb || first?.id ? h('img', { src: thumb(first), alt: '', loading: 'lazy', width: 480, height: 360 }) : null,
+      it.locked && h('span', { class: 'm-lock', title: W['Class recordings are for subscribers'] }, lockIcon()), h('span', { class: 'm-count' }, count(it.videos.length))),
     h('div', { class: 'm-body' },
       h('b', {}, it.title),
       h('span', {}, [it.dance !== it.title && it.dance, it.teacher].filter(Boolean).join(' · ')),
@@ -143,7 +183,7 @@ function listView(tab) {
     results.replaceChildren(...[...groups].map(([g, list]) => h('section', { class: 'm-group' }, h('h3', { class: 'display' }, g), h('div', { class: 'm-grid' }, list.map(card)))));
   };
   redraw();
-  return [h('div', { class: 'm-tools' }, search, teachers.length > 1 && who), results];
+  return [tab === 'class' && data.classes && !data.classes.open ? paywall() : null, h('div', { class: 'm-tools' }, search, teachers.length > 1 && who), results];
 }
 
 function detailView(it) {
@@ -163,7 +203,7 @@ function detailView(it) {
     h('h2', { class: 'display' }, it.title),
     h('p', { class: 'm-meta' }, [it.dance !== it.title && it.dance, it.teacher, it.training, fmtDate(it.date)].filter(Boolean).join(' · ')),
     it.notes && h('div', { class: 'm-notes' }, h('b', {}, W.Notes), h('p', {}, it.notes)),
-    h('ol', { class: 'm-videos' }, it.videos.map((v, i) => h('li', {},
+    it.locked ? paywall() : h('ol', { class: 'm-videos' }, it.videos.map((v, i) => h('li', {},
       h('p', { class: 'm-vtitle' }, h('span', {}, String(i + 1).padStart(2, '0')), v.title || it.title), player(v)))),
   ];
 }
@@ -174,11 +214,11 @@ function draw() {
   const item = hash.startsWith('v-') && data.items.find((it) => it.id === hash.slice(2));
   const n = (t) => data.items.filter((it) => it.type === t).length;
   // open on the tab that has videos (academy dancers may only have class recordings)
-  const tab = item ? item.type : hash === 'classes' ? 'class' : hash === 'choreographies' ? 'choreography' : n('choreography') || !n('class') ? 'choreography' : 'class';
+  const tab = item ? item.type : hash === 'classes' || hash === 'paid' ? 'class' : hash === 'choreographies' ? 'choreography' : n('choreography') || !n('class') ? 'choreography' : 'class';
   lib.replaceChildren(h('div', { class: 'wrap' },
     h('nav', { class: 'm-tabs', 'aria-label': W.Choreographies },
       h('a', { href: '#choreographies', 'aria-current': tab === 'choreography' ? 'page' : null }, W.Choreographies, h('small', {}, n('choreography'))),
-      h('a', { href: '#classes', 'aria-current': tab === 'class' ? 'page' : null }, W['Class recordings'], h('small', {}, n('class')))),
+      h('a', { href: '#classes', 'aria-current': tab === 'class' ? 'page' : null }, W['Class recordings'], data.classes && !data.classes.open ? h('small', { class: 'm-tab-lock' }, lockIcon()) : h('small', {}, n('class')))),
     item ? detailView(item) : listView(tab)));
   if (item) lib.scrollIntoView({ block: 'start' });
 }

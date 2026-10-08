@@ -536,3 +536,15 @@ h1.hero-title { font-size: clamp(2.8rem, 7.6vw, 7.4rem); max-width: 17ch; color:
 .m-play-icon { position: absolute; left: 50%; top: 50%; width: 76px; height: 76px; margin: -38px 0 0 -38px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 10px rgba(232, 201, 95, 0.25); }
 .m-play-icon::after { content: ''; position: absolute; left: 31px; top: 24px; border-style: solid; border-width: 14px 0 14px 22px; border-color: transparent transparent transparent var(--ink); }
 .m-play:hover .m-play-icon { transform: scale(1.06); }
+.m-paywall { display: flex; flex-wrap: wrap; gap: 18px 28px; align-items: center; justify-content: space-between; background: var(--ink); color: #f4ecdc; border-radius: var(--radius); padding: clamp(20px, 3vw, 30px); margin-bottom: 26px; }
+.m-paywall > div { flex: 1 1 320px; display: grid; gap: 6px; }
+.m-paywall p { margin: 0; }
+.m-paywall-title { font: 400 clamp(1.4rem, 2.6vw, 1.9rem)/1.1 var(--display); text-transform: uppercase; color: #fff; }
+.m-price { color: #c2b7a2; }
+.m-price b { color: var(--gold); font-size: 1.3rem; }
+.m-lock { position: absolute; left: 10px; top: 10px; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: rgba(20, 17, 13, 0.85); }
+.m-lock svg, .m-tab-lock svg { width: 16px; height: 16px; fill: none; stroke: var(--gold); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.m-tab-lock { display: inline-grid; place-items: center; }
+.m-tabs a[aria-current] .m-tab-lock { background: var(--gold); }
+.m-tabs a[aria-current] .m-tab-lock svg { stroke: var(--ink); }
+.m-paid { background: #e7f3ea; color: #1f5a2e; border-radius: 14px; padding: 14px 18px; margin: 0 auto 20px; max-width: 1200px; width: calc(100% - 40px); }

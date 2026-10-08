@@ -11,6 +11,7 @@
 
 import { members } from './members.js';
 import { inbox } from './bunny.js';
+import { webhook } from './stripe.js';
 
 const ORIGINS = ['https://cubandance.co', 'https://www.cubandance.co', 'http://localhost:4321'];
 const READ = /^src\/(data|i18n)\/[a-z-]+\.json$/;
@@ -49,6 +50,8 @@ export default {
     };
     const reply = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
+    // Stripe reports subscription changes here (server to server, checked by its signature)
+    if (url.pathname === '/stripe/webhook' && req.method === 'POST') return env.STRIPE_WEBHOOK_SECRET ? webhook(req, env) : new Response('Not set up', { status: 503 });
     if (!ORIGINS.includes(origin)) return reply({ message: 'Forbidden' }, 403);
 
     const session = async () => `${String(Date.now() + SESSION_HOURS * 3600e3)}`;

@@ -405,5 +405,15 @@
   "Nothing found.": "No se ha encontrado nada.",
   "Notes": "Notas",
   "Other": "Otros",
-  "Something went wrong. Please try again.": "Algo ha fallado. Inténtalo de nuevo."
+  "Something went wrong. Please try again.": "Algo ha fallado. Inténtalo de nuevo.",
+  "Manage subscription": "Gestionar suscripción",
+  "Thank you!": "¡Gracias!",
+  "Your subscription is being activated…": "Estamos activando tu suscripción…",
+  "Your subscription is active: all class recordings are open.": "Tu suscripción está activa: todas las grabaciones de clases están disponibles.",
+  "Class recordings are for subscribers": "Las grabaciones de clases son para suscriptores",
+  "Your subscription has ended. Subscribe again to watch the class recordings.": "Tu suscripción ha terminado. Suscríbete de nuevo para ver las grabaciones de clases.",
+  "Watch every class of our training weekends, as often as you like. Choreographies stay free.": "Mira todas las clases de nuestros fines de semana de entrenamiento, tantas veces como quieras. Las coreografías siguen siendo gratuitas.",
+  "per month": "al mes",
+  "cancel any time": "cancela cuando quieras",
+  "Subscribe": "Suscribirme"
 }

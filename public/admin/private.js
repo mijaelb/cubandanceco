@@ -13,7 +13,7 @@ let cache = null;
 async function load(ctx, force) {
   if (cache && !force) return cache;
   const d = await ctx.api('/m/admin');
-  cache = { members: d.members, items: d.items, rev: d.rev, membersRev: d.membersRev, snapM: snap(d.members), snapI: snap(d.items), cdn: d.cdn };
+  cache = { members: d.members, items: d.items, rev: d.rev, membersRev: d.membersRev, snapM: snap(d.members), snapI: snap(d.items), cdn: d.cdn, subs: d.subs || {} };
   return cache;
 }
 // Saves the library straight away (used by the inbox, where every click is one decision)
@@ -117,14 +117,26 @@ export function accessView(ctx) {
     const names = [...new Set([...(ctx.people.members || []), ...(ctx.people.team || [])].map((p) => p.name))].sort();
     const listEl = h('div', { class: 'pv-people' });
     const levels = h('div', { class: 'pv-levels' });
+    const day = (ms) => new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    const subStatus = (p) => {
+      const s = cache.subs[p.email];
+      if (p.free) return h('span', { class: 'pv-sub free' }, 'Free access');
+      if (!s) return h('span', { class: 'pv-sub' }, 'Not subscribed');
+      if (s.status === 'active' || s.status === 'trialing') return h('span', { class: 'pv-sub on' }, s.cancelAtEnd ? `Ends ${day(s.until)}` : `Subscribed · renews ${day(s.until)}`);
+      if (s.status === 'past_due') return h('span', { class: 'pv-sub warn' }, 'Payment problem (retrying)');
+      return h('span', { class: 'pv-sub' }, 'Subscription ended');
+    };
     const drawList = () => {
-      levels.replaceChildren(...Object.entries(LEVEL).map(([l, text]) => h('span', {}, h('b', {}, cache.members.filter((p) => p.level === l).length), ' ', text)));
+      const paying = cache.members.filter((p) => !p.free && ['active', 'trialing', 'past_due'].includes(cache.subs[p.email]?.status)).length;
+      levels.replaceChildren(...Object.entries(LEVEL).map(([l, text]) => h('span', {}, h('b', {}, cache.members.filter((p) => p.level === l).length), ' ', text)), h('span', {}, h('b', {}, paying), ' subscribed to class recordings'), h('span', {}, h('b', {}, cache.members.filter((p) => p.free).length), ' with free access'));
       const shown = cache.members.map((p, i) => [p, i]).filter(([p]) => !q || `${p.name} ${p.email}`.toLowerCase().includes(q));
       listEl.replaceChildren(...(shown.length ? shown.map(([p, i]) => h('div', { class: 'pv-person' },
         h('input', { value: p.name, placeholder: 'Name', 'aria-label': 'Name', list: 'pv-names', oninput: (e) => { p.name = e.target.value; changed(); } }),
         h('input', { type: 'email', value: p.email, placeholder: 'name@example.com', 'aria-label': 'Email', oninput: (e) => { p.email = e.target.value.trim(); changed(); } }),
         h('select', { 'aria-label': 'Level', onchange: (e) => { p.level = e.target.value; changed(); drawList(); } },
           Object.keys(LEVEL).map((l) => h('option', { value: l, selected: p.level === l }, l === 'company' ? 'Company' : 'Academy'))),
+        h('label', { class: 'pv-free', title: 'Class recordings without paying (teachers, organisers, special cases)' }, h('input', { type: 'checkbox', checked: !!p.free, onchange: (e) => { if (e.target.checked) p.free = true; else delete p.free; changed(); drawList(); } }), ' Free'),
+        subStatus(p),
         iconBtn('trash', `Remove ${p.name || 'this person'}`, () => { if (confirm(`Remove ${p.name || p.email}? They can no longer sign in.`)) { cache.members.splice(i, 1); changed(); drawList(); } }, { class: 'danger' })))
         : [h('p', { class: 'muted' }, q ? 'Nobody found.' : 'Nobody yet. Add the first person above.')]));
     };

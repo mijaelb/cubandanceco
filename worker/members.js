@@ -6,6 +6,7 @@
 // Needs: KV binding PRIVATE, secret RESEND_API_KEY, var MAIL_FROM, secret SESSION_SECRET.
 
 import { GUID, playUrl, thumbUrl } from './bunny.js';
+import { subscribe, portal, getSub, canWatchClasses, priceInfo, allSubs } from './stripe.js';
 
 const DAYS = 7; // how long a member stays signed in on a device
 const CODE_MINUTES = 10;
@@ -125,7 +126,7 @@ function cleanMembers(list) {
     if (!EMAIL.test(email)) throw new Error(`Check the email of ${text(p.name, 60) || 'a member'}`);
     if (seen.has(email)) throw new Error(`${email} is on the list twice`);
     seen.add(email);
-    return { name: text(p.name, 80), email, level: LEVELS.includes(p.level) ? p.level : 'company' };
+    return { name: text(p.name, 80), email, level: LEVELS.includes(p.level) ? p.level : 'company', ...(p.free ? { free: true } : {}) };
   });
 }
 function cleanLibrary(items) {
@@ -188,9 +189,30 @@ export async function members(req, env, url, reply, teamOk) {
     if (!person) return reply({ message: 'Please sign in again.' }, 401);
     const { items = [] } = await getJSON(kv, 'library', {});
     const mine = person.level === 'company' ? items : items.filter((it) => it.academy);
-    // Bunny videos get a player link that expires after a few hours
-    for (const it of mine) for (const v of it.videos) if (v.src === 'bunny') Object.assign(v, { url: await playUrl(env, v.id), thumb: thumbUrl(env, v.id) });
-    return reply({ name: person.name, level: person.level, items: mine });
+    const sub = await getSub(kv, person.email);
+    const paid = canWatchClasses(person, sub);
+    const out = [];
+    for (const it of mine) {
+      if (it.type === 'class' && !paid) { // locked: what it is, but nothing to play
+        out.push({ ...it, locked: true, videos: it.videos.map((v) => ({ title: v.title, ...(v.src === 'bunny' ? { thumb: thumbUrl(env, v.id) } : {}) })) });
+        continue;
+      }
+      // Bunny videos get a player link that expires after a few hours
+      for (const v of it.videos) if (v.src === 'bunny') Object.assign(v, { url: await playUrl(env, v.id), thumb: thumbUrl(env, v.id) });
+      out.push(it);
+    }
+    const price = paid ? null : await priceInfo(env, person.level).catch(() => null);
+    return reply({ name: person.name, level: person.level, items: out, classes: { open: paid, free: !!person.free, status: sub?.status || null, until: sub?.until || null, cancelAtEnd: !!sub?.cancelAtEnd, canManage: !!sub?.customer, price } });
+  }
+
+  // 3b. Subscription for the class recordings (Stripe): start, or manage (cancel, change card)
+  if ((url.pathname === '/m/subscribe' || url.pathname === '/m/manage') && req.method === 'POST') {
+    const person = await readMember(req, env);
+    if (!person) return reply({ message: 'Please sign in again.' }, 401);
+    if (!env.STRIPE_SECRET_KEY) return reply({ message: 'Payments are not set up yet.' }, 503);
+    try {
+      return reply({ url: url.pathname === '/m/subscribe' ? await subscribe(env, person, text(body.lang, 2)) : await portal(env, person, text(body.lang, 2)) });
+    } catch (e) { return reply({ message: e.message }, 502); }
   }
 
   // 4. Team: read and save the member list and the library
@@ -198,7 +220,7 @@ export async function members(req, env, url, reply, teamOk) {
     if (!(await teamOk())) return reply({ message: 'Please sign in again' }, 401);
     if (req.method === 'GET') {
       const lib = await getJSON(kv, 'library', { items: [], rev: 0 });
-      return reply({ members: await getJSON(kv, 'members', []), items: lib.items || [], rev: lib.rev || 0, membersRev: Number(await kv.get('members-rev')) || 0, cdn: env.BUNNY_CDN || '' });
+      return reply({ members: await getJSON(kv, 'members', []), items: lib.items || [], rev: lib.rev || 0, membersRev: Number(await kv.get('members-rev')) || 0, cdn: env.BUNNY_CDN || '', subs: await allSubs(kv) });
     }
     if (req.method === 'PUT') {
       try {
