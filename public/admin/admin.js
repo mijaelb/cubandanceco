@@ -50,6 +50,8 @@ const SECTIONS = [
     },
   },
   { id: 'timetable', title: 'Timetable', help: 'The class timetable of each training weekend, shown on the Trainings page.' },
+  { id: 'access', title: 'Members area · access', help: 'Who can sign in to the private videos page.' },
+  { id: 'videos', title: 'Members area · videos', help: 'Choreographies and class recordings for company and academy dancers.' },
   {
     id: 'show', title: 'Raíces Cubanas', file: 'src/data/show.json',
     schema: {
@@ -128,9 +130,13 @@ const store = (remember) => (remember ? localStorage : sessionStorage);
 // Team mode: organisers sign in with a shared team password through a small gateway
 // (worker/index.js) that holds the GitHub key. They can only edit trainings and timetables.
 const TEAM_API = document.body.dataset.teamApi || '';
-const TEAM_SECTIONS = ['trainings', 'timetable'];
+const TEAM_SECTIONS = ['trainings', 'timetable', 'access', 'videos'];
+// The members area (private.js) is saved in the members service, not on GitHub
+const PRIVATE = ['access', 'videos'];
+let priv = null; // the private.js module, loaded on start
 const state = {
   team: sessionStorage.getItem('iccd-team') || '',
+  priv: sessionStorage.getItem('iccd-priv') || '', // owner session for the members area
   token: sessionStorage.getItem('iccd-token') || localStorage.getItem('iccd-token') || '',
   repo: localStorage.getItem('iccd-repo') || document.body.dataset.repo || '',
   files: {}, // path -> { data, sha, snap }
@@ -636,7 +642,9 @@ function render() {
   statusEl = h('span', { class: 'status', role: 'status' });
   publishBtn = h('button', { class: 'publish', type: 'button', onclick: publish });
   const nav = h('nav', {}, visibleSections().map((s) => h('button', { type: 'button', class: s.id === state.section ? 'active' : '', onclick: () => { state.section = s.id; render(); scrollTo(0, 0); } }, s.title)));
-  const body = sec.id === 'translations' ? translationsView() : sec.id === 'timetable' ? timetableView() : fieldsEditor(state.files[sec.file].data, sec.schema);
+  const body = sec.id === 'translations' ? translationsView() : sec.id === 'timetable' ? timetableView()
+    : PRIVATE.includes(sec.id) ? (sec.id === 'access' ? priv.accessView : priv.videosView)(privateCtx())
+    : fieldsEditor(state.files[sec.file].data, sec.schema);
   if (location.hash.slice(1) !== state.section) history.replaceState(null, '', '#' + state.section);
   app.replaceChildren(
     h('header', { class: 'bar' },
@@ -651,10 +659,12 @@ function render() {
 }
 
 function logout() {
-  if (isDirty() && !confirm('You have unpublished changes. Sign out anyway?')) return;
+  if ((isDirty() || priv?.privateDirty()) && !confirm('You have unsaved changes. Sign out anyway?')) return;
   sessionStorage.removeItem('iccd-token');
   localStorage.removeItem('iccd-token');
   sessionStorage.removeItem('iccd-team');
+  sessionStorage.removeItem('iccd-priv');
+  state.priv = '';
   state.token = '';
   state.team = '';
   state.files = {};
@@ -718,11 +728,33 @@ function loginView(error) {
     teamForm && h('details', { class: 'owner' }, h('summary', {}, 'Full admin (GitHub key)'), ghForm)));
 }
 
+// helpers handed to private.js
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const range = (a, b = a) => { const [y, m, d] = a.split('-').map(Number), [, m2, d2] = b.split('-').map(Number); return m === m2 ? `${d === d2 ? d : `${d}–${d2}`} ${MONTHS[m - 1]} ${y}` : `${d} ${MONTHS[m - 1]} – ${d2} ${MONTHS[m2 - 1]} ${y}`; };
+function privateCtx() {
+  const trainings = state.files['src/data/trainings.json'].data;
+  return {
+    h, icon, iconBtn, SITE, range, trainings, lists: pickLists(trainings.events),
+    people: state.files['src/data/people.json']?.data || {},
+    api: async (path, opts = {}) => {
+      const r = await fetch(TEAM_API + path, { ...opts, headers: { Authorization: `Bearer ${state.team || state.priv}`, ...(opts.body ? { 'Content-Type': 'application/json' } : {}) } });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(r.status === 401 ? 'Your session has ended. Sign out and sign in again.' : d.message || `${r.status}`);
+      return d;
+    },
+  };
+}
+
 async function start() {
   app.replaceChildren(h('p', { class: 'boot' }, 'Loading content…'));
+  priv = await import(new URL('./private.js' + new URL(import.meta.url).search, import.meta.url));
   if (state.team) {
-    await Promise.all(['src/data/trainings.json', 'src/data/teachers.json'].map((p) => loadFile(p)));
+    await Promise.all(['src/data/trainings.json', 'src/data/teachers.json', 'src/data/people.json'].map((p) => loadFile(p)));
     return render();
+  }
+  // the owner's GitHub key also opens the members area (checked by the members service)
+  if (TEAM_API && !state.priv) {
+    try { state.priv = (await team('/login-github', { method: 'POST', body: JSON.stringify({ token: state.token }) })).token; sessionStorage.setItem('iccd-priv', state.priv); } catch { /* members area unavailable */ }
   }
   await Promise.all([...SECTIONS.filter((s) => s.file).map((s) => loadFile(s.file)), loadFile('src/i18n/strings.json', { ui: [], content: [] })]);
   try {
@@ -733,7 +765,7 @@ async function start() {
   render();
 }
 
-addEventListener('beforeunload', (e) => { if (isDirty()) e.preventDefault(); });
+addEventListener('beforeunload', (e) => { if (isDirty() || priv?.privateDirty()) e.preventDefault(); });
 addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 's' && (state.token || state.team)) { e.preventDefault(); publish(); } });
 
 if (state.team || (state.token && state.repo)) start().catch((e) => loginView(e.message));

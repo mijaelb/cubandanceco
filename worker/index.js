@@ -1,11 +1,15 @@
 // ICCD team editor gateway (Cloudflare Worker).
 // Lets organisers without a GitHub account edit the trainings / timetables with a
 // shared team password. The GitHub key lives only here, as an encrypted secret.
+// Also serves the private members area (members.js).
 //
 // Secrets (set with `npx wrangler secret put NAME`, never committed):
 //   TEAM_PASSWORD   the shared password
 //   GITHUB_TOKEN    fine-grained token: this repository only, Contents read & write (+ Actions read)
 //   SESSION_SECRET  random string used to sign 12-hour sessions
+//   RESEND_API_KEY  sends the sign-in codes of the members area
+
+import { members } from './members.js';
 
 const ORIGINS = ['https://cubandance.co', 'https://www.cubandance.co', 'http://localhost:4321'];
 const READ = /^src\/(data|i18n)\/[a-z-]+\.json$/;
@@ -46,6 +50,15 @@ export default {
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
     if (!ORIGINS.includes(origin)) return reply({ message: 'Forbidden' }, 403);
 
+    const session = async () => `${String(Date.now() + SESSION_HOURS * 3600e3)}`;
+    const teamOk = async () => {
+      const [exp = '', sig = ''] = (req.headers.get('Authorization') || '').replace(/^Bearer /, '').split('.');
+      return !!exp && Number(exp) >= Date.now() && (await same(sig, await sign(exp, env.SESSION_SECRET)));
+    };
+
+    // Members area (its own sign-in with email codes)
+    if (url.pathname.startsWith('/m/')) return (await members(req, env, url, reply, teamOk)) || reply({ message: 'Not found' }, 404);
+
     const github = (path, init = {}) => fetch(`https://api.github.com/repos/${env.REPO}${path}`, {
       ...init,
       headers: { Authorization: `Bearer ${env.GITHUB_TOKEN}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'iccd-team-editor', ...(init.body ? { 'Content-Type': 'application/json' } : {}) },
@@ -58,13 +71,23 @@ export default {
         await sleep(1500); // slows down guessing
         return reply({ message: 'Wrong password' }, 401);
       }
-      const exp = String(Date.now() + SESSION_HOURS * 3600e3);
+      const exp = await session();
+      return reply({ token: `${exp}.${await sign(exp, env.SESSION_SECRET)}` });
+    }
+
+    // The site owner, signed in to the admin with a GitHub key that can edit this repository,
+    // gets the same session (to manage the members area)
+    if (url.pathname === '/login-github' && req.method === 'POST') {
+      const { token = '' } = await req.json().catch(() => ({}));
+      const r = await fetch(`https://api.github.com/repos/${env.REPO}`, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'iccd-team-editor' } });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.permissions?.push) return reply({ message: 'Not allowed' }, 401);
+      const exp = await session();
       return reply({ token: `${exp}.${await sign(exp, env.SESSION_SECRET)}` });
     }
 
     // Everything else needs a valid session
-    const [exp = '', sig = ''] = (req.headers.get('Authorization') || '').replace(/^Bearer /, '').split('.');
-    if (!exp || Number(exp) < Date.now() || !(await same(sig, await sign(exp, env.SESSION_SECRET)))) return reply({ message: 'Please sign in again' }, 401);
+    if (!(await teamOk())) return reply({ message: 'Please sign in again' }, 401);
 
     if (url.pathname === '/file' && req.method === 'GET') {
       const path = url.searchParams.get('path') || '';

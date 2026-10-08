@@ -8,8 +8,8 @@ import site from '../data/site.json';
 import { url, link, srcset } from '../lib/utils';
 import { LANGS, langName, useT, locale } from '../i18n';
 
-interface Props { lang: string; page: string; title?: string; description?: string; image?: string; events?: any[]; preload?: string; noindex?: boolean }
-const { lang, page, title, description = site.description, image = '/images/og.jpg', events = [], preload, noindex = false } = Astro.props;
+interface Props { lang: string; page: string; title?: string; description?: string; image?: string; events?: any[]; preload?: string; noindex?: boolean; csp?: { img?: string; connect?: string; frame?: string }; script?: string }
+const { lang, page, title, description = site.description, image = '/images/og.jpg', events = [], preload, noindex = false, csp = {}, script } = Astro.props;
 const t = useT(lang);
 // search title and description written for each page (site.json → seo), else built from the page
 const seo = noindex ? null : (site as any).seo?.[page];
@@ -50,7 +50,7 @@ const jsonld = JSON.stringify(schema).replace(/</g, '\\u003c');
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; media-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests" />
+  <meta http-equiv="Content-Security-Policy" content={`default-src 'self'; img-src 'self' data: ${csp.img || ''}; media-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; connect-src 'self' ${csp.connect || ''}; frame-src ${csp.frame || "'none'"}; object-src 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests`} />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <title>{fullTitle}</title>
   <meta name="description" content={desc} />
@@ -138,5 +138,6 @@ const jsonld = JSON.stringify(schema).replace(/</g, '\\u003c');
   </footer>
 
   <script is:inline src={url('/js/site.js')} type="module"></script>
+  {script && <script is:inline src={url(script)} type="module"></script>}
 </body>
 </html>

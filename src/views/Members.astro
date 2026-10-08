@@ -1,0 +1,35 @@
+---
+// Members area: private videos for company and academy dancers.
+// The page itself is public and empty; /js/members.js signs the member in with an
+// emailed code and loads the videos from the members service (worker/members.js).
+import Layout from '../layouts/Layout.astro';
+import site from '../data/site.json';
+import { useT } from '../i18n';
+interface Props { lang: string }
+const { lang } = Astro.props;
+const t = useT(lang);
+const API = 'https://iccd-team-editor.iccd-cubandance.workers.dev';
+// texts used by the script, in this page's language
+const words = Object.fromEntries([
+  'Email', 'Send me a code', 'Sending…', 'Check your email', 'Code', 'Sign in', 'Checking…',
+  'Use another email', 'Send a new code', 'Hi', 'Company', 'Academy', 'Sign out', 'Choreographies', 'Class recordings',
+  'Search', 'All teachers', 'videos', 'video', 'Back', 'No videos here yet.', 'Nothing found.', 'Notes', 'Other',
+  'Something went wrong. Please try again.', 'If this email is on our list, a code is on its way.',
+].map((w) => [w, t(w)]));
+---
+<Layout lang={lang} page="members" title="Members area" noindex
+  csp={{ img: 'https://i.ytimg.com', connect: API, frame: 'https://www.youtube-nocookie.com' }} script="/js/members.js">
+  <section class="section dark page-top members" data-api={API} data-lang={lang}>
+    <div class="wrap">
+      <p class="eyebrow">{t('Members area')}</p>
+      <h1 class="display">{t('Videos for our dancers')}</h1>
+      <p class="lead">{t('Class recordings and choreographies from our trainings, for company and academy dancers.')}</p>
+      <div id="members-login" class="members-login">
+        <noscript><p>{t('This page needs JavaScript.')}</p></noscript>
+      </div>
+      <p class="members-help" id="members-help">{t('Not on the list yet? Ask the organising team')}: <a href={site.links.whatsapp} target="_blank" rel="noopener">WhatsApp</a> · <a href={`mailto:${site.links.email}`}>{site.links.email}</a></p>
+    </div>
+  </section>
+  <section class="section paper members-library" id="members-library" hidden></section>
+  <script type="application/json" id="members-words" set:html={JSON.stringify(words).replace(/</g, '\\u003c')} />
+</Layout>

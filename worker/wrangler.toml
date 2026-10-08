@@ -5,3 +5,9 @@ workers_dev = true
 
 [vars]
 REPO = "mijaelb/cubandanceco"
+MAIL_FROM = "ICCD <members@cubandance.co>"
+
+# private members area: member list and video library (never in the repository)
+[[kv_namespaces]]
+binding = "PRIVATE"
+id = "9a43fba7f12d445aa896760bfff2dd54"
