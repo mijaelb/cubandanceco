@@ -42,7 +42,7 @@ function emailStep(error, email = '') {
     e.preventDefault();
     btn.disabled = true; btn.textContent = W['Sending…'];
     try {
-      await api('/m/code', { body: { email: input.value } });
+      await api('/m/code', { body: { email: input.value, lang: LANG } });
       sessionStorage.setItem('iccd-member-email', input.value.trim());
       codeStep();
     } catch (err) { emailStep(err.message, input.value); }
@@ -59,7 +59,7 @@ function codeStep(error, note) {
   const btn = h('button', { type: 'submit', class: 'btn btn-gold' }, W['Sign in']);
   const again = h('button', { type: 'button', class: 'm-link', disabled: true, onclick: async () => {
     again.disabled = true;
-    try { await api('/m/code', { body: { email } }); codeStep(null, W['If this email is on our list, a code is on its way.']); } catch (err) { codeStep(err.message); }
+    try { await api('/m/code', { body: { email, lang: LANG } }); codeStep(null, W['If this email is on our list, a code is on its way.']); } catch (err) { codeStep(err.message); }
   } }, W['Send a new code']);
   setTimeout(() => (again.disabled = false), 30000); // no new code for 30 seconds
   login.replaceChildren(h('form', { class: 'm-card', onsubmit: async (e) => {
