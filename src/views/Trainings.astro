@@ -5,15 +5,14 @@ import Schedule from '../components/Schedule.astro';
 import site from '../data/site.json';
 import trainings from '../data/trainings.json';
 import Flag from '../components/Flag.astro';
-import { link, upcoming, dateRange, slug, places } from '../lib/utils';
+import { link, upcoming, dateRange, slug, places, pastTrainings } from '../lib/utils';
 import { useT, locale } from '../i18n';
 
 const { lang } = Astro.props;
 const t = useT(lang);
 const events = upcoming(trainings.events);
-// Past weekends: the archive plus this season's events that already happened, grouped by season (Aug–Jul)
-const today = new Date().toISOString().slice(0, 10);
-const past = [...trainings.history, ...trainings.events.filter((e) => e.end < today)].sort((a, b) => b.start.localeCompare(a.start));
+// Past weekends, grouped by season (Aug–Jul)
+const past = pastTrainings(trainings);
 const season = (d: string) => { const y = +d.slice(0, 4), m = +d.slice(5, 7); const s = m >= 8 ? y : y - 1; return `${s} – ${s + 1}`; };
 const seasons = Object.entries(Object.groupBy(past, (e) => season(e.start)));
 const cities = places([...events, ...past]);

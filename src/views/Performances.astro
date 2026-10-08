@@ -16,6 +16,9 @@ const next = upcoming(perf.upcoming);
 const mail = site.links.bookingEmail || site.links.email;
 const contact = mail ? `mailto:${mail}?subject=${encodeURIComponent(t('Performance booking'))}` : site.links.instagram;
 const where = places([...perf.upcoming, ...perf.past]);
+// facts for organisers, counted from the list of performances
+const countries = new Set(where.map((c) => c.code).filter(Boolean)).size;
+const since = Math.min(...perf.past.map((p) => +p.date.slice(0, 4)));
 ---
 <Layout lang={lang} page="performances" title="Performances" description={perf.intro} image="/images/photos/stage-timba.webp" events={next.map((p) => ({ ...p, name: `${site.name} · ${t(p.title)}` }))}>
   <PageHero image="/images/photos/stage-timba.webp" eyebrow={t('Performances')} title={t('On stage across Europe')} text={t(perf.intro)}>
@@ -56,6 +59,11 @@ const where = places([...perf.upcoming, ...perf.past]);
         <p class="eyebrow">{t('Bookings')}</p>
         <h2 class="display">{t('Book a performance')}</h2>
         <p>{t(perf.bookingText)}</p>
+        <dl class="facts">
+          <div><dt class="display">{perf.past.length}</dt><dd>{t('Performances since')} {since}</dd></div>
+          <div><dt class="display">{countries}</dt><dd>{t('Countries')}</dd></div>
+          <div><dt class="display">20–30</dt><dd>{t('Dancers, with live drums and singing')}</dd></div>
+        </dl>
         <div class="actions">
           <a class="btn btn-gold" href={contact}>{t('Contact us')}</a>
           {site.links.instagram && <a class="btn btn-line" href={site.links.instagram} target="_blank" rel="noopener">Instagram</a>}

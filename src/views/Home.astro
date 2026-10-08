@@ -11,7 +11,7 @@ import about from '../data/about.json';
 import gallery from '../data/gallery.json';
 import insta from '../lib/instagram.json';
 import perf from '../data/performances.json';
-import { url, link, upcoming, dateRange, photoAlt } from '../lib/utils';
+import { url, link, upcoming, dateRange, photoAlt, pastTrainings } from '../lib/utils';
 import { useT, locale } from '../i18n';
 
 const { lang } = Astro.props;
@@ -79,7 +79,8 @@ const marquee = [...site.styles, ...site.styles];
       </div>
     </div>
     <div class="wrap stats reveal">
-      {site.stats.map((s) => <div><span class="display">{s.value}</span><span>{t(s.label)}</span></div>)}
+      {/* the number of training weekends is counted from the archive, like on the Trainings page */}
+      {site.stats.map((s) => <div><span class="display">{s.label === 'Training weekends' ? pastTrainings(trainings).length : s.value}</span><span>{t(s.label)}</span></div>)}
     </div>
   </section>
 
@@ -205,8 +206,9 @@ const marquee = [...site.styles, ...site.styles];
       <div class="actions">
         <a class="btn btn-dark" href={site.links.tickets} target="_blank" rel="noopener">{t('Book a training')}</a>
         <a class="btn btn-line" href={site.links.whatsapp} target="_blank" rel="noopener">WhatsApp</a>
-        <a class="btn btn-line" href={site.links.instagram} target="_blank" rel="noopener">{site.instagramHandle}</a>
+        <a class="btn btn-line" href={site.links.instagram} target="_blank" rel="noopener">Instagram</a>
       </div>
+      <p class="cta-organisers">{t('Organising a festival or an event?')} <a href={`${link(lang, 'performances')}#booking`}>{t('Book a performance')} →</a></p>
     </div>
   </section>
 </Layout>

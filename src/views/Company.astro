@@ -50,7 +50,7 @@ const countries = new Set(people.members.map((m) => m.country)).size;
       <div class="people">
         {people.members.map((m) => (
           <figure class="person reveal">
-            <Img src={m.photo} alt={m.name} sizes="(min-width: 1100px) 16vw, (min-width: 600px) 25vw, 50vw" />
+            {m.photo ? <Img src={m.photo} alt={m.name} sizes="(min-width: 1100px) 16vw, (min-width: 600px) 25vw, 50vw" /> : <div class="person-ph"><img src={url('/images/logo.svg')} alt="" width="96" height="96" /></div>}
             <figcaption><strong>{m.name}</strong><span>{t(m.country)}</span></figcaption>
           </figure>
         ))}

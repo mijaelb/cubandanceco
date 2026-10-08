@@ -45,6 +45,12 @@ export const link = (lang: string, page = '') => url(`${lang === 'en' ? '' : '/'
 /** Caption of a photo from the gallery, used as its alt text elsewhere on the site. */
 export const photoAlt = (src: string) => gallery.photos.find((p) => p.src === src)?.alt || '';
 
+/** Training weekends that already happened: the archive plus this season's past events, newest first. */
+export const pastTrainings = (data: { history: any[]; events: any[] }) => {
+  const today = new Date().toISOString().slice(0, 10);
+  return [...data.history, ...data.events.filter((e) => e.end < today)].sort((a, b) => b.start.localeCompare(a.start));
+};
+
 /** Items (trainings `start`/`end`, shows `date`) that are today or later, soonest first. */
 export const upcoming = <T extends Record<string, any>>(list: T[]) => {
   const today = new Date().toISOString().slice(0, 10);
