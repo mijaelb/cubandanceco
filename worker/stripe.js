@@ -61,7 +61,8 @@ export const canWatchClasses = (person, sub) => !!person.free || (!!sub && ALLOW
 
 async function saveSubscription(env, s, email) {
   const kv = env.PRIVATE;
-  email ||= await kv.get(`cust:${s.customer}`);
+  if (s.metadata?.kind === 'donation') return; // monthly donations are not class subscriptions
+  email ||= s.metadata?.email || await kv.get(`cust:${s.customer}`);
   if (!email) return;
   const sub = { customer: s.customer, id: s.id, status: s.status, until: (s.current_period_end || s.items?.data?.[0]?.current_period_end || 0) * 1000, cancelAtEnd: !!s.cancel_at_period_end };
   await kv.put(subKey(email), JSON.stringify(sub), { metadata: { status: sub.status, until: sub.until, cancelAtEnd: sub.cancelAtEnd } });
@@ -72,6 +73,7 @@ export async function subscribe(env, person, lang) {
   const kv = env.PRIVATE;
   const price = await priceFor(env, person.level);
   const sub = await getSub(kv, person.email);
+  if (sub && ALLOWED.includes(sub.status)) return portal(env, person, lang); // already subscribed: no second subscription
   const page = `https://cubandance.co${lang && lang !== 'en' ? '/' + lang : ''}/members/`;
   const session = await stripe(env, '/checkout/sessions', {
     mode: 'subscription',
@@ -100,24 +102,26 @@ export async function webhook(req, env) {
   const raw = await req.text();
   const parts = Object.fromEntries((req.headers.get('Stripe-Signature') || '').split(',').map((p) => p.split('=')).map(([k, ...v]) => [k, v.join('=')]));
   const all = (req.headers.get('Stripe-Signature') || '').split(',').filter((p) => p.startsWith('v1=')).map((p) => p.slice(3));
-  const secret = String(env.STRIPE_WEBHOOK_SECRET || (await env.PRIVATE.get(`stripe-whsec:${testMode(env) ? 'test' : 'live'}`)) || '').trim();
+  const secret = String((await env.PRIVATE.get(`stripe-whsec:${testMode(env) ? 'test' : 'live'}`)) || env.STRIPE_WEBHOOK_SECRET || '').trim();
   if (!secret) return new Response('Not set up', { status: 503 });
   const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   const expected = hex(await crypto.subtle.sign('HMAC', key, enc.encode(`${parts.t}.${raw}`)));
   const fresh = Math.abs(Date.now() / 1000 - Number(parts.t)) < 300;
-  if (!fresh || !all.includes(expected)) return new Response('Bad signature', { status: 400 });
+  const same = (a, b) => a.length === b.length && [...a].reduce((d, c, i) => d | (c.charCodeAt(0) ^ b.charCodeAt(i)), 0) === 0; // constant time
+  if (!fresh || !all.some((v) => same(v, expected))) return new Response('Bad signature', { status: 400 });
 
   const event = JSON.parse(raw);
   const o = event.data.object;
   const kv = env.PRIVATE;
-  if (event.type === 'checkout.session.completed' && o.mode === 'subscription') {
-    const email = o.metadata?.email || o.client_reference_id;
-    await kv.put(`cust:${o.customer}`, email);
-    await saveSubscription(env, await stripe(env, `/subscriptions/${o.subscription}`), email);
+  // only our class-recordings checkouts carry a member email (donation links do not)
+  if (event.type === 'checkout.session.completed' && o.mode === 'subscription' && o.metadata?.email) {
+    await kv.put(`cust:${o.customer}`, o.metadata.email);
+    await saveSubscription(env, await stripe(env, `/subscriptions/${o.subscription}`), o.metadata.email);
   }
-  if (['customer.subscription.created', 'customer.subscription.updated', 'customer.subscription.deleted'].includes(event.type)) {
-    if (o.metadata?.email) await kv.put(`cust:${o.customer}`, o.metadata.email);
-    await saveSubscription(env, o, o.metadata?.email);
+  if (['customer.subscription.created', 'customer.subscription.updated', 'customer.subscription.deleted'].includes(event.type) && o.metadata?.kind !== 'donation') {
+    // messages can arrive out of order: store what Stripe says now, not the message's copy
+    const current = await stripe(env, `/subscriptions/${o.id}`).catch(() => o);
+    await saveSubscription(env, current, current.metadata?.email);
   }
   return new Response('ok');
 }
@@ -145,7 +149,8 @@ export async function setup(env, { testers = [] } = {}) {
   await kv.put(`stripe-whsec:${mode}`, hook.secret);
   done.push('webhook: payments and cancellations reach the members area');
   // the page where members cancel or change their card
-  const portal = await stripe(env, '/billing_portal/configurations', {
+  const known = await kv.get(`stripe-portal:${mode}`);
+  const portal = await stripe(env, known ? `/billing_portal/configurations/${known}` : '/billing_portal/configurations', {
     business_profile: { headline: 'International Company of Cuban Dances · class recordings' },
     default_return_url: 'https://cubandance.co/members/#classes',
     features: { payment_method_update: { enabled: 'true' }, invoice_history: { enabled: 'true' }, subscription_cancel: { enabled: 'true', mode: 'at_period_end' }, customer_update: { enabled: 'false' } },
