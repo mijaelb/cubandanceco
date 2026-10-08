@@ -106,7 +106,7 @@ async function open() {
   draw();
 }
 
-const thumb = (id) => `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+const thumb = (v) => v.thumb || `https://i.ytimg.com/vi/${v.id}/hqdefault.jpg`;
 const match = (it) => {
   const q = view.q.toLowerCase();
   return (!view.teacher || it.teacher.split(/\s*&\s*/).includes(view.teacher)) &&
@@ -117,7 +117,7 @@ const count = (n) => `${n} ${n === 1 ? W.video : W.videos}`;
 function card(it) {
   const first = it.videos[0];
   return h('a', { class: 'm-item', href: `#v-${it.id}` },
-    h('div', { class: 'm-thumb' }, first && h('img', { src: thumb(first.id), alt: '', loading: 'lazy', width: 480, height: 360 }), h('span', { class: 'm-count' }, count(it.videos.length))),
+    h('div', { class: 'm-thumb' }, first && h('img', { src: thumb(first), alt: '', loading: 'lazy', width: 480, height: 360 }), h('span', { class: 'm-count' }, count(it.videos.length))),
     h('div', { class: 'm-body' },
       h('b', {}, it.title),
       h('span', {}, [it.dance !== it.title && it.dance, it.teacher].filter(Boolean).join(' · ')),
@@ -150,11 +150,11 @@ function detailView(it) {
   const player = (v) => {
     const box = h('div', { class: 'm-player' });
     const start = () => box.replaceChildren(h('iframe', {
-      src: `https://www.youtube-nocookie.com/embed/${v.id}?autoplay=1&rel=0&modestbranding=1&playsinline=1`,
+      src: v.src === 'bunny' ? `${v.url}&autoplay=true&preload=true` : `https://www.youtube-nocookie.com/embed/${v.id}?autoplay=1&rel=0&modestbranding=1&playsinline=1`,
       title: v.title || it.title, allow: 'autoplay; encrypted-media; picture-in-picture; fullscreen', allowfullscreen: true, referrerpolicy: 'strict-origin-when-cross-origin',
     }));
     box.append(h('button', { type: 'button', class: 'm-play', onclick: start, 'aria-label': v.title || it.title },
-      h('img', { src: thumb(v.id), alt: '', loading: 'lazy' }), h('span', { class: 'm-play-icon', 'aria-hidden': 'true' })));
+      h('img', { src: thumb(v), alt: '', loading: 'lazy' }), h('span', { class: 'm-play-icon', 'aria-hidden': 'true' })));
     return box;
   };
   return [

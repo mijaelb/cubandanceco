@@ -10,6 +10,7 @@
 //   RESEND_API_KEY  sends the sign-in codes of the members area
 
 import { members } from './members.js';
+import { inbox } from './bunny.js';
 
 const ORIGINS = ['https://cubandance.co', 'https://www.cubandance.co', 'http://localhost:4321'];
 const READ = /^src\/(data|i18n)\/[a-z-]+\.json$/;
@@ -88,6 +89,11 @@ export default {
 
     // Everything else needs a valid session
     if (!(await teamOk())) return reply({ message: 'Please sign in again' }, 401);
+
+    // Recordings uploaded to Bunny Stream (team inbox)
+    if (url.pathname.startsWith('/bunny/')) {
+      try { return (await inbox(req, env, url, reply)) || reply({ message: 'Not found' }, 404); } catch (e) { return reply({ message: e.message }, 502); }
+    }
 
     if (url.pathname === '/file' && req.method === 'GET') {
       const path = url.searchParams.get('path') || '';

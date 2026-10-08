@@ -5,6 +5,8 @@
 //
 // Needs: KV binding PRIVATE, secret RESEND_API_KEY, var MAIL_FROM, secret SESSION_SECRET.
 
+import { GUID, playUrl, thumbUrl } from './bunny.js';
+
 const DAYS = 7; // how long a member stays signed in on a device
 const CODE_MINUTES = 10;
 const LEVELS = ['company', 'academy'];
@@ -134,7 +136,10 @@ function cleanLibrary(items) {
     title: text(it.title, 120), dance: text(it.dance, 80), teacher: text(it.teacher, 120),
     training: text(it.training, 80), date: /^\d{4}-\d{2}-\d{2}$/.test(it.date) ? it.date : '',
     academy: !!it.academy, notes: text(it.notes, 2000),
-    videos: (Array.isArray(it.videos) ? it.videos : []).slice(0, 50).filter((v) => YT.test(v.id)).map((v) => ({ id: v.id, title: text(v.title, 120) })),
+    // YouTube ids, or Bunny Stream videos (src: 'bunny', id = the video's guid)
+    videos: (Array.isArray(it.videos) ? it.videos : []).slice(0, 50)
+      .filter((v) => (v.src === 'bunny' ? GUID.test(v.id) : YT.test(v.id)))
+      .map((v) => ({ id: v.id, title: text(v.title, 120), ...(v.src === 'bunny' ? { src: 'bunny' } : {}) })),
   }));
 }
 
@@ -182,7 +187,10 @@ export async function members(req, env, url, reply, teamOk) {
     const person = await readMember(req, env);
     if (!person) return reply({ message: 'Please sign in again.' }, 401);
     const { items = [] } = await getJSON(kv, 'library', {});
-    return reply({ name: person.name, level: person.level, items: person.level === 'company' ? items : items.filter((it) => it.academy) });
+    const mine = person.level === 'company' ? items : items.filter((it) => it.academy);
+    // Bunny videos get a player link that expires after a few hours
+    for (const it of mine) for (const v of it.videos) if (v.src === 'bunny') Object.assign(v, { url: await playUrl(env, v.id), thumb: thumbUrl(env, v.id) });
+    return reply({ name: person.name, level: person.level, items: mine });
   }
 
   // 4. Team: read and save the member list and the library
@@ -190,7 +198,7 @@ export async function members(req, env, url, reply, teamOk) {
     if (!(await teamOk())) return reply({ message: 'Please sign in again' }, 401);
     if (req.method === 'GET') {
       const lib = await getJSON(kv, 'library', { items: [], rev: 0 });
-      return reply({ members: await getJSON(kv, 'members', []), items: lib.items || [], rev: lib.rev || 0, membersRev: Number(await kv.get('members-rev')) || 0 });
+      return reply({ members: await getJSON(kv, 'members', []), items: lib.items || [], rev: lib.rev || 0, membersRev: Number(await kv.get('members-rev')) || 0, cdn: env.BUNNY_CDN || '' });
     }
     if (req.method === 'PUT') {
       try {

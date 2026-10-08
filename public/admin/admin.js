@@ -50,8 +50,9 @@ const SECTIONS = [
     },
   },
   { id: 'timetable', title: 'Timetable', help: 'The class timetable of each training weekend, shown on the Trainings page.' },
-  { id: 'access', title: 'Members area · access', help: 'Who can sign in to the private videos page.' },
+  { id: 'inbox', title: 'Members area · inbox', help: 'Recordings uploaded from the ICCD drive, waiting to be sorted.' },
   { id: 'videos', title: 'Members area · videos', help: 'Choreographies and class recordings for company and academy dancers.' },
+  { id: 'access', title: 'Members area · access', help: 'Who can sign in to the private videos page.' },
   {
     id: 'show', title: 'Raíces Cubanas', file: 'src/data/show.json',
     schema: {
@@ -130,9 +131,9 @@ const store = (remember) => (remember ? localStorage : sessionStorage);
 // Team mode: organisers sign in with a shared team password through a small gateway
 // (worker/index.js) that holds the GitHub key. They can only edit trainings and timetables.
 const TEAM_API = document.body.dataset.teamApi || '';
-const TEAM_SECTIONS = ['trainings', 'timetable', 'access', 'videos'];
+const TEAM_SECTIONS = ['trainings', 'timetable', 'inbox', 'videos', 'access'];
 // The members area (private.js) is saved in the members service, not on GitHub
-const PRIVATE = ['access', 'videos'];
+const PRIVATE = ['inbox', 'access', 'videos'];
 let priv = null; // the private.js module, loaded on start
 const state = {
   team: sessionStorage.getItem('iccd-team') || '',
@@ -643,7 +644,7 @@ function render() {
   publishBtn = h('button', { class: 'publish', type: 'button', onclick: publish });
   const nav = h('nav', {}, visibleSections().map((s) => h('button', { type: 'button', class: s.id === state.section ? 'active' : '', onclick: () => { state.section = s.id; render(); scrollTo(0, 0); } }, s.title)));
   const body = sec.id === 'translations' ? translationsView() : sec.id === 'timetable' ? timetableView()
-    : PRIVATE.includes(sec.id) ? (sec.id === 'access' ? priv.accessView : priv.videosView)(privateCtx())
+    : PRIVATE.includes(sec.id) ? { inbox: priv.inboxView, access: priv.accessView, videos: priv.videosView }[sec.id](privateCtx())
     : fieldsEditor(state.files[sec.file].data, sec.schema);
   if (location.hash.slice(1) !== state.section) history.replaceState(null, '', '#' + state.section);
   app.replaceChildren(
@@ -735,6 +736,7 @@ function privateCtx() {
   const trainings = state.files['src/data/trainings.json'].data;
   return {
     h, icon, iconBtn, SITE, range, trainings, lists: pickLists(trainings.events),
+    go: (id) => { state.section = id; render(); scrollTo(0, 0); },
     people: state.files['src/data/people.json']?.data || {},
     api: async (path, opts = {}) => {
       const r = await fetch(TEAM_API + path, { ...opts, headers: { Authorization: `Bearer ${state.team || state.priv}`, ...(opts.body ? { 'Content-Type': 'application/json' } : {}) } });

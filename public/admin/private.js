@@ -13,9 +13,16 @@ let cache = null;
 async function load(ctx, force) {
   if (cache && !force) return cache;
   const d = await ctx.api('/m/admin');
-  cache = { members: d.members, items: d.items, rev: d.rev, membersRev: d.membersRev, snapM: snap(d.members), snapI: snap(d.items) };
+  cache = { members: d.members, items: d.items, rev: d.rev, membersRev: d.membersRev, snapM: snap(d.members), snapI: snap(d.items), cdn: d.cdn };
   return cache;
 }
+// Saves the library straight away (used by the inbox, where every click is one decision)
+async function saveItems(ctx) {
+  const r = await ctx.api('/m/admin', { method: 'PUT', body: JSON.stringify({ items: cache.items, rev: cache.rev }) });
+  cache.rev = r.rev; cache.snapI = snap(cache.items);
+}
+const thumbOf = (v) => (v.src === 'bunny' ? `https://${cache.cdn}/${v.id}/thumbnail.jpg` : v.id ? `https://i.ytimg.com/vi/${v.id}/default.jpg` : '');
+let focus = null; // { tab, id }: the inbox opens an item in the videos section
 export const privateDirty = () => !!cache && (snap(cache.members) !== cache.snapM || snap(cache.items) !== cache.snapI);
 
 // Save bar shared by both sections
@@ -97,7 +104,8 @@ export function videosView(ctx) {
   const { h, icon, iconBtn } = ctx;
   const wrap = h('div', { class: 'pv' }, h('p', { class: 'muted' }, 'Loading…'));
   load(ctx).then(() => draw()).catch((e) => wrap.replaceChildren(h('p', { class: 'error' }, e.message)));
-  let tab = 'choreography', q = '', openId = null;
+  let tab = focus?.tab || 'choreography', q = '', openId = focus?.id || null;
+  focus = null;
   const trainings = [...ctx.trainings.events, ...ctx.trainings.history].sort((a, b) => b.start.localeCompare(a.start))
     .map((e) => ({ label: `${e.city} · ${ctx.range(e.start, e.end)}`, date: e.start }));
 
@@ -105,13 +113,14 @@ export function videosView(ctx) {
     const field = (label, input, hint) => h('label', { class: 'pv-field' }, h('span', {}, label), input, hint && h('small', {}, hint));
     const vids = h('div', { class: 'pv-vids' });
     const drawVids = () => vids.replaceChildren(...it.videos.map((v, i) => {
-      const prev = h('img', { class: 'pv-thumb', alt: '', src: v.id ? `https://i.ytimg.com/vi/${v.id}/default.jpg` : '' , hidden: !v.id });
+      const prev = h('img', { class: 'pv-thumb', alt: '', src: thumbOf(v), hidden: !v.id });
       const bad = h('small', { class: 'error', hidden: !!v.id || !v.url }, 'Not a YouTube link');
       return h('div', { class: 'pv-vid' }, prev,
         h('div', { class: 'pv-vid-fields' },
           h('input', { value: v.title, placeholder: `Video ${i + 1} title, e.g. "Full run" or "Part 2 · arms"`, 'aria-label': 'Video title', oninput: (e) => { v.title = e.target.value; changed(); } }),
-          h('input', { value: v.url || (v.id ? `https://youtu.be/${v.id}` : ''), placeholder: 'Paste the YouTube link (unlisted)', 'aria-label': 'YouTube link', oninput: (e) => {
-            v.url = e.target.value; v.id = ytId(v.url); prev.hidden = !v.id; if (v.id) prev.src = `https://i.ytimg.com/vi/${v.id}/default.jpg`; bad.hidden = !!v.id || !v.url; changed();
+          v.src === 'bunny' ? h('small', { class: 'pv-src' }, 'From the ICCD archive') :
+          h('input', { value: v.url || (v.id ? `https://youtu.be/${v.id}` : ''), placeholder: 'Paste a YouTube link, or add recordings from the inbox', 'aria-label': 'YouTube link', oninput: (e) => {
+            v.url = e.target.value; v.id = ytId(v.url); prev.hidden = !v.id; if (v.id) prev.src = thumbOf(v); bad.hidden = !!v.id || !v.url; changed();
           } }), bad),
         h('div', { class: 'pv-vid-tools' },
           iconBtn('up', 'Move up', () => { [it.videos[i - 1], it.videos[i]] = [it.videos[i], it.videos[i - 1]]; changed(); drawVids(); }, { disabled: i === 0 }),
@@ -179,5 +188,127 @@ export function videosView(ctx) {
         h('button', { type: 'button', class: 'btn-small', onclick: addItem }, icon('plus'), tab === 'class' ? 'Class recording' : 'Choreography')),
       list, bar.el);
   }
+  return wrap;
+}
+
+// ---------- Inbox: the recordings uploaded from the ICCD drive ----------
+const KIND = { todo: 'To sort', members: 'In the members area', kept: 'Kept out', all: 'All' };
+export function inboxView(ctx) {
+  const { h, icon, iconBtn } = ctx;
+  const wrap = h('div', { class: 'pv' }, h('p', { class: 'muted' }, 'Loading the recordings…'));
+  let videos = [], view = 'todo', q = '', training = '';
+  const flash = h('p', { class: 'pv-flash', role: 'status' }); // the last action, stays visible when the list changes
+  const trainings = [...ctx.trainings.events, ...ctx.trainings.history];
+  // "2025-09 September - Milan" -> the training weekend it belongs to, as the videos section names it
+  const weekendOf = (folder, recorded) => {
+    const month = (recorded || folder).slice(0, 7);
+    const place = folder.replace(/^\d{4}-\d{2}\s+\S+\s+-\s+/, '').replace(/\(.*\)/, '').trim().toLowerCase();
+    const t = trainings.find((e) => e.start.slice(0, 7) === month && (place.includes(e.city.toLowerCase()) || e.city.toLowerCase().includes(place)))
+      || trainings.find((e) => e.start.slice(0, 7) === month);
+    return t ? { label: `${t.city} · ${ctx.range(t.start, t.end)}`, date: t.start } : { label: folder.replace(/^\d{4}-\d{2}\s+\S+\s+-\s+/, ''), date: (recorded || '').slice(0, 10) };
+  };
+  const usedIn = (guid) => cache.items.filter((it) => it.videos.some((v) => v.src === 'bunny' && v.id === guid));
+  const kindOf = (v) => (usedIn(v.guid).length ? 'members' : v.kept ? 'kept' : 'todo');
+  const fmt = (s) => { const m = Math.round(s / 60); return m >= 60 ? `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, '0')}m` : `${m} min`; };
+  const when = (iso) => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)} ${iso.slice(11, 16)}` : '');
+
+  async function refresh() {
+    try {
+      await load(ctx, true);
+      videos = (await ctx.api('/bunny/videos')).videos;
+      draw();
+    } catch (e) { wrap.replaceChildren(h('p', { class: 'error' }, e.message)); }
+  }
+
+  function preview(v) {
+    const box = h('div', { class: 'pv-modal', onclick: (e) => e.target === box && box.remove() },
+      h('div', { class: 'pv-modal-in' },
+        h('div', { class: 'pv-modal-head' }, h('b', {}, v.title), iconBtn('close', 'Close', () => box.remove())),
+        h('div', { class: 'pv-player' }, h('p', { class: 'muted' }, 'Loading…'))));
+    document.body.append(box);
+    ctx.api(`/bunny/play?guid=${v.guid}`).then(({ url }) => box.querySelector('.pv-player').replaceChildren(
+      h('iframe', { src: `${url}&autoplay=true&preload=true`, allow: 'autoplay; fullscreen; picture-in-picture', allowfullscreen: true })))
+      .catch((e) => box.querySelector('.pv-player').replaceChildren(h('p', { class: 'error' }, e.message)));
+    addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { box.remove(); removeEventListener('keydown', esc); } });
+  }
+
+  function card(v) {
+    const note = h('small', { class: 'pv-saved' });
+    const act = async (fn, okText, redraw = true) => {
+      note.textContent = '…'; note.classList.remove('error');
+      try { await fn(); note.textContent = okText; flash.textContent = `${okText.replace(/ ✓$/, '')}: ${v.title} ✓`; flash.classList.remove('error'); if (redraw) draw(); }
+      catch (e) { note.textContent = '⚠ ' + e.message; note.classList.add('error'); flash.textContent = `⚠ ${v.title}: ${e.message}`; flash.classList.add('error'); }
+    };
+    const title = h('input', { value: v.title, 'aria-label': 'Name', onkeydown: (e) => e.key === 'Enter' && e.target.blur(), onchange: (e) => act(async () => {
+      const r = await ctx.api('/bunny/rename', { method: 'POST', body: JSON.stringify({ guid: v.guid, title: e.target.value }) });
+      v.title = r.title;
+    }, 'Name saved ✓', false) });
+    const ready = v.status === 4;
+    const add = (it) => { it.videos.push({ id: v.guid, title: '', src: 'bunny' }); };
+    const asClass = () => act(async () => {
+      const w = weekendOf(v.training, v.recorded);
+      cache.items.push({ id: crypto.randomUUID().slice(0, 8), type: 'class', title: v.title, dance: '', teacher: '', training: w.label, date: (v.recorded || w.date || '').slice(0, 10), academy: true, notes: '', videos: [] });
+      add(cache.items.at(-1)); await saveItems(ctx);
+    }, 'Added as a class recording ✓');
+    const choreos = cache.items.filter((it) => it.type === 'choreography').sort((a, b) => a.title.localeCompare(b.title));
+    const toChoreo = h('select', { 'aria-label': 'Add to a choreography', onchange: (e) => {
+      const val = e.target.value; e.target.value = '';
+      if (!val) return;
+      act(async () => {
+        if (val === 'new') cache.items.push({ id: crypto.randomUUID().slice(0, 8), type: 'choreography', title: v.title, dance: '', teacher: '', training: weekendOf(v.training, v.recorded).label, date: '', academy: false, notes: '', videos: [] });
+        add(val === 'new' ? cache.items.at(-1) : cache.items.find((it) => it.id === val)); await saveItems(ctx);
+      }, 'Added to the choreography ✓');
+    } }, h('option', { value: '' }, 'Add to a choreography…'), h('option', { value: 'new' }, '+ New choreography'), choreos.map((c) => h('option', { value: c.id }, c.title || '(no title)')));
+    const used = usedIn(v.guid);
+    return h('article', { class: `pv-rec ${kindOf(v)}` },
+      h('button', { type: 'button', class: 'pv-rec-thumb', disabled: !ready, onclick: () => preview(v), 'aria-label': `Watch ${v.title}` },
+        ready ? h('img', { src: v.thumb, alt: '', loading: 'lazy' }) : h('span', { class: 'pv-proc' }, v.status === 5 || v.status === 6 ? 'Upload failed' : `Processing ${v.progress || 0}%`),
+        h('span', { class: 'pv-len' }, fmt(v.length || 0)), ready && h('span', { class: 'pv-playicon', 'aria-hidden': 'true' }, '▶')),
+      h('div', { class: 'pv-rec-body' },
+        title,
+        h('p', { class: 'pv-rec-meta' }, [when(v.recorded), v.cut && v.cut !== 'nothing' && `set-up cut: ${v.cut}`].filter(Boolean).join(' · ')),
+        used.length ? h('p', { class: 'pv-rec-used' }, 'In the members area: ', used.map((it, i) => [i ? ', ' : '', h('button', { type: 'button', class: 'm-linkish', onclick: () => { focus = { tab: it.type, id: it.id }; ctx.go('videos'); } }, `${it.type === 'class' ? 'Class' : 'Choreography'} · ${it.title || '(no title)'}`)])) : null,
+        h('div', { class: 'pv-rec-actions' },
+          h('button', { type: 'button', class: 'btn-small', onclick: asClass }, icon('plus'), 'Class recording'),
+          toChoreo,
+          v.kept ? h('button', { type: 'button', class: 'btn-small', onclick: () => act(async () => { await ctx.api('/bunny/keep', { method: 'POST', body: JSON.stringify({ guid: v.guid, kept: false }) }); v.kept = false; }, 'Back in “To sort” ✓') }, 'Put back')
+            : !used.length && h('button', { type: 'button', class: 'btn-small', title: 'Keep the video in the archive, not for members', onclick: () => act(async () => { await ctx.api('/bunny/keep', { method: 'POST', body: JSON.stringify({ guid: v.guid, kept: true }) }); v.kept = true; }, 'Kept out ✓') }, 'Keep out'),
+          iconBtn('trash', 'Delete this recording from Bunny', () => {
+            if (!confirm(`Delete "${v.title}" from Bunny Stream? This cannot be undone. (The original stays on the ICCD drive.)`)) return;
+            act(async () => {
+              await ctx.api('/bunny/delete', { method: 'POST', body: JSON.stringify({ guid: v.guid }) });
+              const before = snap(cache.items);
+              cache.items.forEach((it) => { it.videos = it.videos.filter((x) => x.id !== v.guid); });
+              if (snap(cache.items) !== before) await saveItems(ctx);
+              videos = videos.filter((x) => x.guid !== v.guid);
+            }, 'Deleted');
+          }, { class: 'danger' }),
+          note)));
+  }
+
+  const listBox = h('div', {});
+  function drawList() {
+    const shown = videos.filter((v) => (view === 'all' || kindOf(v) === view) && (!training || v.training === training) && (!q || `${v.title} ${v.training}`.toLowerCase().includes(q)));
+    const groups = new Map();
+    shown.sort((a, b) => b.training.localeCompare(a.training) || (a.recorded || '').localeCompare(b.recorded || '')).forEach((v) => groups.set(v.training, [...(groups.get(v.training) || []), v]));
+    listBox.replaceChildren(shown.length
+      ? h('div', { class: 'pv-inbox' }, [...groups].map(([g, list]) => h('section', {}, h('h3', {}, g || 'Other', h('small', {}, ` ${list.length}`)), list.map(card))))
+      : h('p', { class: 'tt-empty' }, videos.length ? 'Nothing here.' : 'No recordings uploaded yet. They appear here as soon as the upload from the ICCD drive has finished.'));
+  }
+  function draw() {
+    const counts = Object.fromEntries(Object.keys(KIND).map((k) => [k, videos.filter((v) => k === 'all' || kindOf(v) === k).length]));
+    const folders = [...new Set(videos.map((v) => v.training))].sort().reverse();
+    drawList();
+    wrap.replaceChildren(
+      h('p', { class: 'muted' }, 'Watch each recording, give it a clear name, then add it to the members area, keep it out, or delete it. The originals always stay on the ICCD drive.'),
+      flash,
+      h('div', { class: 'pv-tabs' }, Object.entries(KIND).map(([k, label]) => h('button', { type: 'button', class: view === k ? 'active' : '', onclick: () => { view = k; draw(); } }, label, h('small', {}, counts[k])))),
+      h('div', { class: 'pv-tools' },
+        h('select', { 'aria-label': 'Training weekend', onchange: (e) => { training = e.target.value; drawList(); } }, h('option', { value: '' }, 'All training weekends'), folders.map((f) => h('option', { value: f, selected: f === training }, f))),
+        h('input', { type: 'search', class: 'pv-search', placeholder: 'Search', value: q, oninput: (e) => { q = e.target.value.toLowerCase(); drawList(); } }),
+        h('button', { type: 'button', class: 'btn-small', onclick: refresh }, 'Refresh')),
+      listBox);
+  }
+  refresh();
   return wrap;
 }

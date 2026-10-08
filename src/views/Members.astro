@@ -18,7 +18,7 @@ const words = Object.fromEntries([
 ].map((w) => [w, t(w)]));
 ---
 <Layout lang={lang} page="members" title="Members area" noindex
-  csp={{ img: 'https://i.ytimg.com', connect: API, frame: 'https://www.youtube-nocookie.com' }} script="/js/members.js">
+  csp={{ img: 'https://i.ytimg.com https://*.b-cdn.net', connect: API, frame: 'https://www.youtube-nocookie.com https://player.mediadelivery.net https://iframe.mediadelivery.net' }} script="/js/members.js">
   <section class="section dark page-top members" data-api={API} data-lang={lang}>
     <div class="wrap">
       <p class="eyebrow">{t('Members area')}</p>
