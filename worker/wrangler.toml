@@ -11,3 +11,7 @@ MAIL_FROM = "ICCD <members@cubandance.co>"
 [[kv_namespaces]]
 binding = "PRIVATE"
 id = "9a43fba7f12d445aa896760bfff2dd54"
+
+# scheduled newsletter emails go out within 10 minutes of their time
+[triggers]
+crons = ["*/10 * * * *"]

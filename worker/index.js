@@ -13,7 +13,7 @@ import { members } from './members.js';
 import { inbox } from './bunny.js';
 import { webhook, setup as stripeSetup, donationProgress } from './stripe.js';
 import { createRequest, readRequest, signRequest, fullRecord } from './sign.js';
-import { newsPublic, newsAdmin, oneClick, previewPage } from './news.js';
+import { newsPublic, newsAdmin, oneClick, previewPage, runScheduled } from './news.js';
 import { probe as weezeventProbe, season as weezeventSeason, addMember as weezeventAddMember } from './weezevent.js';
 
 const ORIGINS = ['https://cubandance.co', 'https://www.cubandance.co', 'http://localhost:4321'];
@@ -106,7 +106,7 @@ export default {
     }
 
     // Newsletter: sign up, confirm, unsubscribe (from the website and the email links)
-    if (url.pathname.startsWith('/news/') && ['/news/subscribe', '/news/confirm', '/news/unsubscribe'].includes(url.pathname)) {
+    if (url.pathname.startsWith('/news/') && ['/news/subscribe', '/news/confirm', '/news/unsubscribe', '/news/join'].includes(url.pathname)) {
       const r = await newsPublic(req, env, url, reply);
       if (r) return r;
     }
@@ -133,7 +133,7 @@ export default {
     }
 
     // Mailing list: subscribers, removing someone, sending to an audience
-    if (url.pathname === '/news/admin' || url.pathname === '/news/send' || url.pathname === '/news/preview') {
+    if (['/news/admin', '/news/send', '/news/preview', '/news/schedule'].includes(url.pathname)) {
       try { return (await newsAdmin(req, env, url, reply)) || reply({ message: 'Not found' }, 404); } catch (e) { return reply({ message: e.message }, 502); }
     }
 
@@ -185,5 +185,10 @@ export default {
     }
 
     return reply({ message: 'Not found' }, 404);
+  },
+
+  // every 10 minutes: send the emails scheduled in the team panel
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(runScheduled(env));
   },
 };

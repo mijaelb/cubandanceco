@@ -139,14 +139,16 @@ async function buildMessage(env, p, o) {
   const unsub = p.kind === 'news' ? `${page(l)}?u=${await token('u', p.email, env)}` : '';
   const reason = p.kind === 'news' ? esc(w.foot) : p.kind === 'participants' ? PARTICIPANTS_FOOT : MEMBERS_FOOT;
   const foot = `<p style="margin:0;">${reason}${unsub ? `<br><a href="${unsub}" style="color:#8a8070;">${esc(w.unsub)}</a>` : ''}</p>`;
-  const btn = o.button && url(o.button.url) ? `<p style="margin:28px 0 4px;">${pill(url(o.button.url), o.button.label || 'Open')}</p>` : '';
+  // the invitation button is personal: one click subscribes this person (their yes, by email)
+  const btnUrl = o.button?.join ? `${page(l)}?j=${await token('j', p.email, env)}` : url(o.button?.url);
+  const btn = o.button && btnUrl ? `<p style="margin:28px 0 4px;">${pill(btnUrl, o.button.label || 'Open')}</p>` : '';
   const extra = cardHtml(o.card) + remindersHtml(o.reminders);
   const text1 = format(body), marker = '<p style="margin:0 0 16px;">{card}</p>';
   const main = text1.includes(marker) ? text1.replace(marker, extra ? `<div style="margin:0 0 28px;">${extra}</div>` : '') : text1.replace(/\{card\}/g, '') + extra;
   const html = campaignShell({ preview: esc(plain(body.replace(/\{card\}/g, '')).slice(0, 140)), body: main + btn, foot });
   const card = o.card?.title ? `\n\n${o.card.title}\n${[o.card.when, o.card.venue, o.card.address, o.card.note].filter(Boolean).join('\n')}${url(o.card.mapUrl) ? `\nMap: ${o.card.mapUrl}` : ''}${url(o.card.timetableUrl) ? `\nTimetable: ${o.card.timetableUrl}` : ''}${url(o.card.ticketUrl) ? `\nBook: ${o.card.ticketUrl}` : ''}` : '';
   const rem = o.reminders?.length ? `\n\nKind reminders:\n${o.reminders.map((r) => `- ${r}`).join('\n')}` : '';
-  const btnText = o.button && url(o.button.url) ? `\n\n${o.button.label || 'Open'}: ${o.button.url}` : '';
+  const btnText = o.button && btnUrl ? `\n\n${o.button.label || 'Open'}: ${btnUrl}` : '';
   return {
     from: from(env), to: [p.email], reply_to: 'info@cubandance.co', subject: (o.test ? '[Test] ' : '') + personal(o.subject),
     html, text: `${body.includes('{card}') ? plain(body).replace('{card}', `${card}${rem}`.trim()) : `${plain(body)}${card}${rem}`}${btnText}\n\n--\nInternational Company of Cuban Dances · cubandance.co${unsub ? `\n${w.unsub}: ${unsub}` : ''}`,
@@ -158,10 +160,10 @@ function extras(b) {
   const c = b.card && typeof b.card === 'object' ? b.card : null;
   const card = c && text(c.title, 120) ? { label: text(c.label, 40), title: text(c.title, 120), when: text(c.when, 160), venue: text(c.venue, 160), address: text(c.address, 200), note: text(c.note, 200), mapUrl: url(c.mapUrl), timetableUrl: url(c.timetableUrl), ticketUrl: url(c.ticketUrl) } : null;
   const reminders = Array.isArray(b.reminders) ? b.reminders.map((r) => text(r, 140)).filter(Boolean).slice(0, 12) : [];
-  const button = b.button && url(b.button.url) ? { label: text(b.button.label, 40) || 'Open', url: url(b.button.url) } : null;
+  const button = b.button?.join ? { join: true, label: text(b.button.label, 40) || 'Yes, keep me posted' } : b.button && url(b.button.url) ? { label: text(b.button.label, 40) || 'Open', url: url(b.button.url) } : null;
   return { card, reminders, button };
 }
-const kindOf = (aud) => (String(aud).startsWith('tickets:') ? 'participants' : String(aud).startsWith('members') ? 'members' : 'news');
+const kindOf = (aud) => (String(aud).startsWith('tickets:') || String(aud).startsWith('segment:') ? 'participants' : String(aud).startsWith('members') ? 'members' : 'news');
 
 const plain = (body) => body.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '$1 ($2)');
 
@@ -201,7 +203,7 @@ async function allSubscribers(kv) {
   } while (cursor);
   return out;
 }
-async function audience(env, name, l) {
+async function audience(env, name, l, invite) {
   const kv = env.PRIVATE;
   const subs = await allSubscribers(kv);
   const off = new Set(subs.filter((s) => s.status === 'unsubscribed').map((s) => s.email));
@@ -225,7 +227,8 @@ async function audience(env, name, l) {
     list = [...wanted].map((email) => ({ email, name: names.get(email) || '', kind: 'participants' }));
   } else throw new Error('Unknown audience');
   const seen = new Set();
-  return list.filter((p) => !off.has(p.email) && (!l || l === 'all' || p.lang === l) && !seen.has(p.email) && seen.add(p.email));
+  const on = invite ? new Set(subs.filter((s) => s.status === 'active').map((s) => s.email)) : new Set();
+  return list.filter((p) => !off.has(p.email) && !on.has(p.email) && (!l || l === 'all' || p.lang === l) && !seen.has(p.email) && seen.add(p.email));
 }
 
 // ---------- routes ----------
@@ -253,6 +256,14 @@ export async function newsPublic(req, env, url, reply) {
     if (rec.status !== 'active') await save(kv, { ...rec, status: 'active', confirmed: Date.now() });
     return reply({ ok: true, lang: rec.lang });
   }
+  if (url.pathname === '/news/join' && req.method === 'POST') {
+    // the "Yes, keep me posted" button of an invitation: the click is the person's consent
+    const email = await readToken('j', body.token, env);
+    if (!email) return reply({ message: 'This link is not valid.' }, 400);
+    const rec = JSON.parse((await kv.get(await key(email))) || 'null');
+    if (rec?.status !== 'active') await save(kv, { email, lang: lang(text(body.lang, 2)), status: 'active', created: rec?.created || Date.now(), confirmed: Date.now(), source: 'invitation' });
+    return reply({ ok: true });
+  }
   if (url.pathname === '/news/unsubscribe' && req.method === 'POST') {
     const email = await readToken('u', body.token, env);
     if (!email) return reply({ message: 'This link is not valid.' }, 400);
@@ -273,6 +284,48 @@ export async function oneClick(req, env, url) {
   return new Response('Unsubscribed');
 }
 
+// One campaign: checks, audience, personal emails, Resend, the record in "Sent".
+// `scheduled` skips the count check (the audience may have grown since it was planned).
+async function sendCampaign(env, b, scheduled) {
+  const kv = env.PRIVATE;
+  const subject = text(b.subject, 150), body = String(b.body || '').replace(/\r\n/g, '\n').trim().slice(0, 20000);
+  if (!subject || !body) return { status: 400, body: { message: 'Write a subject and a message.' } };
+  let people;
+  if (b.test) {
+    const to = norm(b.test);
+    if (!EMAIL.test(to)) return { status: 400, body: { message: 'Check the test email address.' } };
+    people = [{ email: to, lang: 'en', kind: kindOf(b.audience), name: text(b.testName, 40) }];
+  } else {
+    try { people = await audience(env, text(b.audience, 2000), text(b.lang, 3), !!b.button?.join); } catch (e) { return { status: 400, body: { message: e.message } }; }
+    if (!people.length) return { status: 400, body: { message: 'Nobody to send to in this audience.' } };
+    if (people.length > 2000) return { status: 400, body: { message: 'More than 2,000 people: ask for a bigger sending plan first.' } };
+    if (!scheduled && Number(b.expect) !== people.length) return { status: 409, body: { message: `The audience changed: it now has ${people.length} people. Check and send again.`, count: people.length } };
+  }
+  const opts = { subject, body, test: !!b.test, ...extras(b) };
+  const messages = await Promise.all(people.map((p) => buildMessage(env, p, opts)));
+  const result = await resend(env, messages);
+  if (!b.test) {
+    const at = Date.now();
+    const record = { at, subject, audience: text(b.audience, 60), label: text(b.label, 80), lang: text(b.lang, 3) || 'all', ...(scheduled ? { scheduled: true } : {}), ...result };
+    await kv.put(`campaign:${at}`, JSON.stringify({ ...record, body }), { metadata: record });
+  }
+  return result.failed && !result.sent ? { status: 502, body: { message: 'Resend refused the emails. Check the sending plan and the domain.' } } : { status: 200, body: result };
+}
+
+// The timer (every 10 minutes): send the scheduled emails that are due
+export async function runScheduled(env) {
+  const kv = env.PRIVATE;
+  const due = (await kv.list({ prefix: 'scheduled:' })).keys.filter((k) => (k.metadata?.at || 0) <= Date.now());
+  for (const k of due) {
+    const item = await kv.get(k.name, 'json');
+    await kv.delete(k.name); // first, so a slow send is never sent twice
+    if (item?.payload) {
+      const r = await sendCampaign(env, item.payload, true).catch((e) => ({ status: 500, body: { message: e.message } }));
+      if (r.status !== 200) await kv.put(`campaign:${Date.now()}`, JSON.stringify({ subject: item.subject, error: r.body.message }), { metadata: { at: Date.now(), subject: item.subject, label: item.label, sent: 0, failed: 0, error: r.body.message, scheduled: true } });
+    }
+  }
+}
+
 // Team: the list, removing someone, sending
 export async function newsAdmin(req, env, url, reply) {
   const kv = env.PRIVATE;
@@ -280,8 +333,9 @@ export async function newsAdmin(req, env, url, reply) {
     const subscribers = (await allSubscribers(kv)).sort((a, b) => (b.at || 0) - (a.at || 0));
     const camp = await kv.list({ prefix: 'campaign:' });
     const campaigns = camp.keys.map((k) => k.metadata).filter(Boolean).sort((a, b) => b.at - a.at).slice(0, 30);
+    const scheduled = (await kv.list({ prefix: 'scheduled:' })).keys.map((k) => k.metadata).filter(Boolean).sort((a, b) => a.at - b.at);
     const members = JSON.parse((await kv.get('members')) || '[]');
-    return reply({ subscribers, campaigns, members: { all: members.length, company: members.filter((m) => m.level === 'company').length, academy: members.filter((m) => m.level === 'academy').length } });
+    return reply({ subscribers, campaigns, scheduled, members: { all: members.length, company: members.filter((m) => m.level === 'company').length, academy: members.filter((m) => m.level === 'academy').length } });
   }
   if (url.pathname === '/news/admin' && req.method === 'DELETE') {
     const email = norm((await req.json().catch(() => ({}))).email);
@@ -289,29 +343,26 @@ export async function newsAdmin(req, env, url, reply) {
     return reply({ ok: true });
   }
   if (url.pathname === '/news/send' && req.method === 'POST') {
+    const r = await sendCampaign(env, await req.json().catch(() => ({})));
+    return reply(r.body, r.status);
+  }
+  // Scheduled emails: kept with everything needed, sent by the timer (see runScheduled)
+  if (url.pathname === '/news/schedule' && req.method === 'POST') {
     const b = await req.json().catch(() => ({}));
-    const subject = text(b.subject, 150), body = String(b.body || '').replace(/\r\n/g, '\n').trim().slice(0, 20000);
-    if (!subject || !body) return reply({ message: 'Write a subject and a message.' }, 400);
-    let people;
-    if (b.test) {
-      const to = norm(b.test);
-      if (!EMAIL.test(to)) return reply({ message: 'Check the test email address.' }, 400);
-      people = [{ email: to, lang: 'en', kind: kindOf(b.audience), name: text(b.testName, 40) }];
-    } else {
-      try { people = await audience(env, text(b.audience, 2000), text(b.lang, 3)); } catch (e) { return reply({ message: e.message }, 400); }
-      if (!people.length) return reply({ message: 'Nobody to send to in this audience.' }, 400);
-      if (people.length > 2000) return reply({ message: 'More than 2,000 people: ask for a bigger sending plan first.' }, 400);
-      if (Number(b.expect) !== people.length) return reply({ message: `The audience changed: it now has ${people.length} people. Check and send again.`, count: people.length }, 409);
-    }
-    const opts = { subject, body, test: !!b.test, ...extras(b) };
-    const messages = await Promise.all(people.map((p) => buildMessage(env, p, opts)));
-    const result = await resend(env, messages);
-    if (!b.test) {
-      const at = Date.now();
-      const record = { at, subject, audience: text(b.audience, 60), label: text(b.label, 80), lang: text(b.lang, 3) || 'all', ...result };
-      await kv.put(`campaign:${at}`, JSON.stringify({ ...record, body }), { metadata: record });
-    }
-    return reply(result.failed && !result.sent ? { message: 'Resend refused the emails. Check the sending plan and the domain.' } : result, result.failed && !result.sent ? 502 : 200);
+    const at = Date.parse(b.at);
+    if (!at || at < Date.now() + 4 * 60e3 || at > Date.now() + 366 * 864e5) return reply({ message: 'Choose a time at least 5 minutes from now, and within a year.' }, 400);
+    if (!text(b.subject, 150) || !String(b.body || '').trim()) return reply({ message: 'Write a subject and a message.' }, 400);
+    try { if (!(await audience(env, text(b.audience, 2000), text(b.lang, 3), !!b.button?.join)).length) return reply({ message: 'Nobody to send to in this audience.' }, 400); } catch (e) { return reply({ message: e.message }, 400); }
+    const id = `${at}-${crypto.randomUUID().slice(0, 8)}`;
+    const { test, expect, ...payload } = b;
+    const meta = { id, at, subject: text(b.subject, 150), label: text(b.label, 80) || text(b.audience, 60), lang: text(b.lang, 3) || 'all' };
+    await kv.put(`scheduled:${id}`, JSON.stringify({ ...meta, payload }), { metadata: meta });
+    return reply({ ok: true, ...meta });
+  }
+  if (url.pathname === '/news/schedule' && req.method === 'DELETE') {
+    const id = text((await req.json().catch(() => ({}))).id, 80);
+    await kv.delete(`scheduled:${id}`);
+    return reply({ ok: true });
   }
   if (url.pathname === '/news/preview' && req.method === 'POST') {
     const b = await req.json().catch(() => ({}));

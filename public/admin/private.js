@@ -417,6 +417,9 @@ const AUDIENCE = { newsletter: 'Newsletter subscribers', members: 'Members area:
 const TICKETS = 'https://my.weezevent.com/iccd-training-2026-2027';
 const TEMPLATES = {
   participants: [
+    { id: 'invite', label: 'Invite to our newsletter', button: 'join',
+      subject: () => 'Shall we keep you posted?',
+      body: () => `Hi {name},\n\nYou have danced with us or come to one of our shows, and we would love to keep in touch. Our newsletter brings our training dates, shows and news, about once a month.\n\nIf you would like it, just click the button below. If not, you don't need to do anything: we will not add you without your yes.\n\nWarm regards,\n**The ICCD team**` },
     { id: 'reminder', label: 'Training reminder (a few days before)', card: 'this', reminders: true,
       subject: (t) => `See you in ${t.city} this weekend!`,
       body: (t) => `Hi {name},\n\nWe're looking forward to dancing with you in ${t.city} on ${t.dates}! Here is everything you need for the weekend.\n\nThe full timetable is on our website. Please arrive 10 minutes early so we can start on time with the musicians.\n\n{card}\n\nSee you on the dance floor,\n**The ICCD team**` },
@@ -428,6 +431,9 @@ const TEMPLATES = {
       body: (t) => `Hi {name},\n\nThank you for joining us in ${t.city}. It was a joy to share the weekend with you, the maestros and the musicians.\n\nPhotos and videos will follow on our Instagram. We would love to see you again at our next training.\n\n{card}\n\nWith love,\n**The ICCD team**` },
   ],
   members: [
+    { id: 'invite', label: 'Invite to our newsletter', button: 'join',
+      subject: () => 'Shall we keep you posted?',
+      body: () => `Hi {name},\n\nAs a member of the company you already hear from us about the members area. Would you also like our newsletter? It brings our training dates, shows and news, about once a month.\n\nIf you would like it, just click the button below. If not, you don't need to do anything: we will not add you without your yes.\n\nWarm regards,\n**The ICCD team**` },
     { id: 'videos', label: 'New videos in the members area', button: 'members',
       subject: () => 'New videos in the members area',
       body: () => `Hi {name},\n\nNew class recordings and choreographies are waiting for you in the members area.\n\nSign in with your email address and you'll receive a code to open the videos.\n\nEnjoy practising!\n**The ICCD team**` },
@@ -444,8 +450,8 @@ const TEMPLATES = {
       body: () => `Hello,\n\n[Write your news here.]\n\nWarm regards,\n**The ICCD team**` },
   ],
 };
-const BUTTONS = { members: { label: 'Open the members area', url: 'https://cubandance.co/members/' }, tickets: { label: 'Book your training', url: TICKETS }, support: { label: 'Support us', url: 'https://cubandance.co/support/' } };
-const kindOf = (aud) => (aud.startsWith('tickets:') ? 'participants' : aud.startsWith('members') ? 'members' : 'news');
+const BUTTONS = { join: { label: 'Yes, keep me posted', join: true }, members: { label: 'Open the members area', url: 'https://cubandance.co/members/' }, tickets: { label: 'Book your training', url: TICKETS }, support: { label: 'Support us', url: 'https://cubandance.co/support/' } };
+const kindOf = (aud) => (aud.startsWith('tickets:') || aud.startsWith('segment:') ? 'participants' : aud.startsWith('members') ? 'members' : 'news');
 const remember = { get: (k, d) => { try { return localStorage.getItem(k) || d; } catch { return d; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch { /* private mode */ } } };
 
 export function mailingView(ctx) {
@@ -453,20 +459,24 @@ export function mailingView(ctx) {
   const wrap = h('div', { class: 'pv' }, h('p', { class: 'muted' }, 'Loading…'));
   let data = null, q = '', pendingLabel = '', lastNote = ['', false]; // the last message stays after the list is drawn again
   let groups = [];
-  const reload = () => Promise.all([ctx.api('/news/admin'), loadSeason(ctx).catch(() => null)])
+  const reload = () => Promise.all([ctx.api('/news/admin'), loadSeason(ctx).catch(() => null), load(ctx).catch(() => null)])
     .then(([d, s]) => { data = d; groups = s?.connected ? groupsFor(s, ctx.trainings, s.current).filter((g) => g.people.length) : []; draw(); })
     .catch((e) => wrap.replaceChildren(h('p', { class: 'error' }, e.message)));
   reload();
   const day = (ms) => (ms ? new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '');
   // who an audience reaches, as far as the panel can tell (the service counts again before sending)
   const off = () => new Set(data.subscribers.filter((s) => s.status === 'unsubscribed').map((s) => s.email));
-  const count = (aud, lang) => {
+  // members' emails per audience (the panel's copy of the member list)
+  const membersEmails = (aud) => (cache?.members || []).filter((m) => aud === 'members' || m.level === aud.split(':')[1]).map((m) => m.email.toLowerCase());
+  const count = (aud, lang, invite) => {
     if (aud === 'newsletter') return data.subscribers.filter((s) => s.status === 'active' && (lang === 'all' || s.lang === lang)).length;
+    const skip = invite ? new Set([...off(), ...data.subscribers.filter((s) => s.status === 'active').map((s) => s.email)]) : off();
     if (aud.startsWith('tickets:')) {
       const ids = new Set(aud.slice(8).split(','));
-      return uniqueEmails(season.people.filter((p) => (ids.has('all') ? p.event === season.current : ids.has(p.ticket)))).filter((e) => !off().has(e)).length;
+      return uniqueEmails(season.people.filter((p) => (ids.has('all') ? p.event === season.current : ids.has(p.ticket)))).filter((e) => !skip.has(e)).length;
     }
-    if (aud.startsWith('segment:')) return peopleIndex(season).filter((x) => SEGMENTS[aud.slice(8)].test(x)).map((x) => x.email).filter((e) => !off().has(e)).length;
+    if (aud.startsWith('segment:')) return peopleIndex(season).filter((x) => SEGMENTS[aud.slice(8)].test(x)).map((x) => x.email).filter((e) => !skip.has(e)).length;
+    if (invite) return membersEmails(aud).filter((e) => !skip.has(e)).length;
     return { members: data.members.all, 'members:company': data.members.company, 'members:academy': data.members.academy }[aud];
   };
   const label = (value) => AUDIENCE[value] || (value === 'tickets:all' ? 'Participants · this whole season' : value.startsWith('segment:') ? SEGMENTS[value.slice(8)].label : `Participants · ${groups.find((g) => `tickets:${g.tickets.join(',')}` === value)?.label || pendingLabel || 'a training'}`);
@@ -525,6 +535,7 @@ export function mailingView(ctx) {
       cardSel.value = t.card && idx >= 0 ? String(idx) : '';
       remindersBox.checked = !!t.reminders;
       buttonSel.value = t.button || '';
+      updateReach();
       grow(body);
     };
     const grow = (ta) => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 4 + 'px'; };
@@ -554,14 +565,19 @@ export function mailingView(ctx) {
     const confirmBox = h('div', { class: 'pv-confirm', hidden: true });
     const sendBtn = h('button', { type: 'button', class: 'btn-small pv-send' }, 'Send…');
     const testBtn = h('button', { type: 'button', class: 'btn-small' }, 'Send me a test');
+    const scheduleBtn = h('button', { type: 'button', class: 'btn-small' }, 'Schedule…');
+    const scheduleBox = h('div', { class: 'pv-confirm', hidden: true });
+    const pad = (n) => String(n).padStart(2, '0');
+    const localInput = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
     const updateReach = () => {
       lang.disabled = audience.value !== 'newsletter';
       if (lang.disabled) lang.value = 'all';
-      const c = count(audience.value, lang.value);
+      const c = count(audience.value, lang.value, buttonSel.value === 'join');
       reach.textContent = `Goes to ${c} ${c === 1 ? 'person' : 'people'}. People who unsubscribed are always left out.`;
       return c;
     };
     audience.onchange = () => { confirmBox.hidden = true; previewBox.hidden = true; updateReach(); fillTemplates(); };
+    buttonSel.onchange = () => { confirmBox.hidden = true; updateReach(); };
     lang.onchange = () => { confirmBox.hidden = true; updateReach(); };
     const say = (t, bad) => { lastNote = [t, !!bad]; note.textContent = t; note.classList.toggle('bad', !!bad); };
     const ready = () => { if (!subject.value.trim() || !body.value.trim()) { say('Write a subject and a message first.', true); return false; } return true; };
@@ -584,6 +600,27 @@ export function mailingView(ctx) {
         await reload();
       } catch (e) { say(e.message, true); sendBtn.disabled = false; }
     }
+    scheduleBtn.onclick = () => {
+      if (!ready()) return;
+      const c = updateReach();
+      if (!c) { say('Nobody to send to in this audience.', true); return; }
+      const t = new Date(); t.setDate(t.getDate() + 1); t.setHours(10, 0, 0, 0);
+      const when = h('input', { type: 'datetime-local', value: localInput(t), min: localInput(new Date(Date.now() + 10 * 60e3)), 'aria-label': 'Date and time' });
+      scheduleBox.replaceChildren(
+        h('p', {}, h('b', {}, `Schedule "${subject.value.trim()}" for ${label(audience.value)}`), ` (about ${c} ${c === 1 ? 'person' : 'people'} today; the list is checked again when it goes out). It is sent within 10 minutes of the time you choose.`),
+        h('div', { class: 'pv-confirm-buttons' }, when,
+          h('button', { type: 'button', class: 'btn-small pv-send', onclick: async (e) => {
+            e.target.disabled = true;
+            try {
+              await ctx.api('/news/schedule', { method: 'POST', body: JSON.stringify({ subject: subject.value, body: body.value, audience: audience.value, label: label(audience.value), lang: lang.value, at: new Date(when.value).toISOString(), ...extras() }) });
+              say(`Scheduled for ${new Date(when.value).toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })} ✓`);
+              subject.value = body.value = '';
+              await reload();
+            } catch (err) { say(err.message, true); e.target.disabled = false; }
+          } }, 'Schedule it'),
+          h('button', { type: 'button', class: 'btn-small', onclick: () => { scheduleBox.hidden = true; } }, 'Cancel')));
+      scheduleBox.hidden = false; confirmBox.hidden = true;
+    };
     sendBtn.onclick = () => {
       if (!ready()) return;
       expect = updateReach();
@@ -630,12 +667,17 @@ export function mailingView(ctx) {
         template, subject, body,
         h('p', { class: 'pv-reach' }, '{name} becomes each person\'s first name. {card} marks where the training details go (otherwise they come after your message). A blank line starts a new paragraph, **two stars** make words bold.'),
         h('div', { class: 'pv-compose-row' }, cardSel, buttonSel, h('label', { class: 'pv-check-inline' }, remindersBox, ' Add the kind reminders')),
-        h('div', { class: 'pv-compose-row' }, h('label', { class: 'pv-test' }, 'Test to ', testTo), previewBtn, testBtn, sendBtn),
-        confirmBox, note, previewBox),
+        h('div', { class: 'pv-compose-row' }, h('label', { class: 'pv-test' }, 'Test to ', testTo), previewBtn, testBtn, scheduleBtn, sendBtn),
+        confirmBox, scheduleBox, note, previewBox),
+      data.scheduled?.length > 0 && h('section', {},
+        h('h3', {}, 'Scheduled'),
+        h('div', { class: 'pv-sent' }, data.scheduled.map((c) => h('div', { class: 'pv-sent-row' },
+          h('span', {}, h('b', {}, new Date(c.at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))), h('b', {}, c.subject), h('span', {}, c.label),
+          h('button', { type: 'button', class: 'btn-small', onclick: async () => { if (!confirm(`Cancel "${c.subject}"? It will not be sent.`)) return; try { await ctx.api('/news/schedule', { method: 'DELETE', body: JSON.stringify({ id: c.id }) }); say('Cancelled ✓'); await reload(); } catch (e) { say(e.message, true); } } }, 'Cancel'))))),
       h('section', {},
         h('h3', {}, 'Sent'),
         data.campaigns.length ? h('div', { class: 'pv-sent' }, data.campaigns.map((c) => h('div', { class: 'pv-sent-row' },
-          h('span', { class: 'muted' }, day(c.at)), h('b', {}, c.subject), h('span', {}, `${c.label || AUDIENCE[c.audience] || 'Participants'}${c.lang && c.lang !== 'all' ? ` · ${LANG_NAMES[c.lang]}` : ''}`), h('span', {}, `${c.sent} sent${c.failed ? `, ${c.failed} failed` : ''}`))))
+          h('span', { class: 'muted' }, day(c.at)), h('b', {}, c.subject, c.scheduled ? h('small', { class: 'muted' }, ' · scheduled') : '', c.error ? h('small', { class: 'pv-note bad' }, ` · not sent: ${c.error}`) : ''), h('span', {}, `${c.label || AUDIENCE[c.audience] || 'Participants'}${c.lang && c.lang !== 'all' ? ` · ${LANG_NAMES[c.lang]}` : ''}`), h('span', {}, `${c.sent} sent${c.failed ? `, ${c.failed} failed` : ''}`))))
           : h('p', { class: 'muted' }, 'Nothing sent yet.')),
       h('section', {},
         h('div', { class: 'pv-subs-head' }, h('h3', {}, 'Subscribers'), h('button', { type: 'button', class: 'btn-small', onclick: exportCsv }, 'Export the subscribed list (CSV)')),
