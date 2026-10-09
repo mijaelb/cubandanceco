@@ -5,10 +5,13 @@
 import '@fontsource/anton';
 import '@fontsource-variable/montserrat';
 import site from '../../data/site.json';
-import { url } from '../../lib/utils';
+import { url, donateLive } from '../../lib/utils';
 import QRCode from 'qrcode';
 // QR code for the WhatsApp group, made at build time (the link is hard to type from an image)
 const qr = site.links.whatsapp ? await QRCode.toString(site.links.whatsapp, { type: 'svg', margin: 0, errorCorrectionLevel: 'M', color: { dark: '#060e0a', light: '#0000' } }) : '';
+// QR code for the donation page, on a last "Support us" page while the Stripe donation links are live
+const SUPPORT = 'https://cubandance.co/support/';
+const qrSupport = donateLive() ? await QRCode.toString(SUPPORT, { type: 'svg', margin: 0, errorCorrectionLevel: 'M', color: { dark: '#060e0a', light: '#0000' } }) : '';
 const v = Date.now().toString(36); // new on every build, so browsers load the latest admin
 ---
 <!doctype html>
@@ -22,7 +25,7 @@ const v = Date.now().toString(36); // new on every build, so browsers load the l
   <link rel="icon" href={url('/images/logo.svg')} type="image/svg+xml" />
   <link rel="stylesheet" href={url('/admin/brochure.css') + '?v=' + v} />
 </head>
-<body data-logo={url('/images/logo.svg')} data-tickets={site.links.tickets} data-handle={site.instagramHandle} data-email={site.links.email} data-whatsapp={site.links.whatsapp} data-instagram={site.links.instagram}>
+<body data-logo={url('/images/logo.svg')} data-tickets={site.links.tickets} data-handle={site.instagramHandle} data-email={site.links.email} data-whatsapp={site.links.whatsapp} data-instagram={site.links.instagram} data-support={qrSupport ? SUPPORT : undefined}>
   <div class="toolbar">
     <div class="tb-title"><b id="tb-name">Training brochure</b><span id="tb-info">PDF with working links, or one image per page for Instagram and WhatsApp</span></div>
     <div class="tb-buttons">
@@ -32,6 +35,7 @@ const v = Date.now().toString(36); // new on every build, so browsers load the l
   </div>
   <main id="pages"></main>
   <template id="qr" set:html={qr} />
+  <template id="qr-support" set:html={qrSupport} />
   <script src={url('/admin/brochure.js') + '?v=' + v} type="module" is:inline></script>
   <script>
     // Exports the pages exactly as shown: a PDF made of page pictures (links stay tappable),

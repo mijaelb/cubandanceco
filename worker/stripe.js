@@ -129,6 +129,27 @@ export async function webhook(req, env) {
   return new Response('ok');
 }
 
+// Fundraising campaign: what came in through the donation links (one-time gifts and first monthly
+// payments) between two days. Member subscriptions are not counted (they have no payment link).
+// Kept for 10 minutes, so a busy page costs Stripe one call at most every 10 minutes.
+export async function donationProgress(env, from, to) {
+  const kv = env.PRIVATE, key = `donated:${from}:${to}`;
+  const cached = await kv.get(key, 'json');
+  if (cached) return cached;
+  const gte = Math.floor(Date.parse(`${from}T00:00:00Z`) / 1000);
+  const lte = to ? Math.floor(Date.parse(`${to}T23:59:59Z`) / 1000) : 0;
+  let cents = 0, gifts = 0, after = '';
+  for (let page = 0; page < 20; page++) {
+    const list = await stripe(env, `/checkout/sessions?status=complete&limit=100&created[gte]=${gte}${lte ? `&created[lte]=${lte}` : ''}${after ? `&starting_after=${after}` : ''}`);
+    for (const s of list.data) if (s.payment_link && s.payment_status === 'paid') { cents += s.amount_total || 0; gifts++; }
+    if (!list.has_more || !list.data.length) break;
+    after = list.data.at(-1).id;
+  }
+  const out = { raised: cents / 100, gifts, at: Date.now() };
+  await kv.put(key, JSON.stringify(out), { expirationTtl: 600 });
+  return out;
+}
+
 // For the admin: subscription state of everyone, in one list call
 export async function allSubs(kv) {
   const out = {};

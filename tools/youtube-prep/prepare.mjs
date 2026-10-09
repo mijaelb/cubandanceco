@@ -11,7 +11,9 @@
 //      go into "Batch NN" folders of 15 for a manual YouTube upload instead.
 // The original files are only read, never changed. Progress page: http://localhost:7777
 //
-// Usage:  node tools/youtube-prep/prepare.mjs [source folder] [output folder]
+// Usage:  node tools/youtube-prep/prepare.mjs [source folder] [output folder] [training name]
+//   training name: when the source folder is a single weekend, e.g. "2026-05 May - Sicily"
+//   (otherwise each first-level folder of the source is one weekend)
 // Closing it is safe; running it again continues where it stopped.
 import { readdirSync, statSync, existsSync, mkdirSync, readFileSync, writeFileSync, renameSync, rmSync, openSync, readSync, closeSync } from 'node:fs';
 import { copyFile } from 'node:fs/promises';
@@ -23,6 +25,8 @@ import { fileURLToPath } from 'node:url';
 
 const SRC = process.argv[2] || 'G:/ICCD Media';
 const OUT = process.argv[3] || 'F:/ICCD YouTube';
+const TRAINING = process.argv[4] || '';
+const relOf = (p) => (TRAINING ? TRAINING + '/' : '') + relative(SRC, p).split('\\').join('/');
 const HERE = dirname(fileURLToPath(import.meta.url));
 const MIN_SECONDS = 60; // shorter clips are skipped (false starts, tests)
 const BATCH = 15; // files per YouTube Studio upload (only without Bunny)
@@ -49,7 +53,10 @@ function save() {
 
 // ---------- names ----------
 // Sony cameras write C1234M01.XML next to C1234.MP4 with the local recording time (the MP4 has UTC)
+// DJI cameras put the local time in the file name: DJI_20260511151112_0001_D.MP4
 function localTime(path) {
+  const dji = basename(path).match(/^DJI_(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})_/);
+  if (dji) return `${dji[1]}-${dji[2]}-${dji[3]}T${dji[4]}:${dji[5]}:${dji[6]}`;
   try { return readFileSync(path.replace(/\.[^.]+$/, 'M01.XML'), 'utf8').match(/CreationDate value="([^"]+)"/)?.[1] || ''; } catch { return ''; }
 }
 function nameFor(c) {
@@ -66,12 +73,12 @@ async function scan() {
   const walk = (d) => { for (const n of readdirSync(d)) { if (n.startsWith('.')) continue; const p = join(d, n); const s = statSync(p); if (s.isDirectory()) walk(p); else if (/\.(mp4|mov|m4v|mts)$/i.test(n)) files.push({ path: p, size: s.size }); } };
   walk(SRC);
   let i = 0;
-  const todo = files.filter((f) => !state.clips[relative(SRC, f.path).split('\\').join('/')]);
+  const todo = files.filter((f) => !state.clips[relOf(f.path)]);
   console.log(`${files.length} recordings found, ${todo.length} new to measure`);
   await Promise.all(Array.from({ length: 4 }, async () => {
     while (i < todo.length) {
       const f = todo[i++];
-      const rel = relative(SRC, f.path).split('\\').join('/');
+      const rel = relOf(f.path);
       try {
         const j = JSON.parse(await run('ffprobe', ['-v', 'error', '-print_format', 'json', '-show_entries', 'format=duration:format_tags=creation_time:stream=codec_type,codec_name,width,height', f.path]));
         const v = j.streams.find((s) => s.codec_type === 'video') || {};

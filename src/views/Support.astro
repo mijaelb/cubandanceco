@@ -1,6 +1,8 @@
 ---
 // Donations through Stripe payment links (site.json → donate). While the links are
 // Stripe test links the page is a preview: not in the menu, the sitemap or search results.
+// A fundraising campaign (donate.campaign) shows a progress bar, filled by /js/support.js from the
+// totals the members service reads from Stripe. Partners (site.json → partners) get their logos here.
 import Layout from '../layouts/Layout.astro';
 import PageHero from '../components/PageHero.astro';
 import site from '../data/site.json';
@@ -13,18 +15,34 @@ const d = (site as any).donate || {};
 const live = donateLive();
 const euro = (n: number) => new Intl.NumberFormat(locale(lang), { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 const monthly = (d.monthly || []).filter((m: any) => m.url && Number(m.amount));
+const API = 'https://iccd-team-editor.iccd-cubandance.workers.dev';
+const c = d.campaign || {};
+const goal = Number(c.goal) || 0, extra = Number(c.extra) || 0;
+const today = new Date().toISOString().slice(0, 10);
+const campaign = live && c.title && goal > 0 && c.start && !(c.end && c.end < today);
+const partners = ((site as any).partners || []).filter((p: any) => p.name);
 const ways = [
   ['Live music', 'Drummers and singers at every training weekend and every show. Afro-Cuban dance does not exist without them.'],
   ['The maestros', 'Bringing our teachers, former dancers of the Conjunto Folklórico Nacional de Cuba, to a different European city every month.'],
   ['Costumes and stage', 'Costumes, props and travel for Raíces Cubanas and our other shows.'],
 ];
 ---
-<Layout lang={lang} page="support" title="Support us" noindex={!live} image="/images/photos/rome-musicians.webp">
+<Layout lang={lang} page="support" title="Support us" noindex={!live} image="/images/photos/rome-musicians.webp" csp={campaign ? { connect: API } : {}} script={campaign ? '/js/support.js' : undefined}>
   <PageHero image="/images/photos/rome-musicians.webp" position="62% 0%" mobilePosition="37% 0%" long eyebrow={t('Support us')} title={t('Keep spreading love for music, dance and culture')} text={t('We are a non-profit association. Every donation goes into training weekends, live music and shows that keep Afro-Cuban folklore alive in Europe.')} />
 
   <section class="section cream" id="donate">
     <div class="wrap">
       {!live && <p class="give-preview">{t('Preview: these buttons use Stripe test mode. No real payments are taken.')}</p>}
+      {campaign && (
+        <div class="campaign" data-campaign data-api={API} data-lang={locale(lang)} data-from={c.start} data-to={c.end || ''} data-goal={goal} data-extra={extra}
+          data-gift={t('gift')} data-gifts={t('gifts')} data-days={t('days left')} data-last={t('Last day')}>
+          <p class="eyebrow">{t('Campaign')}</p>
+          <h2 class="display">{t(c.title)}</h2>
+          {c.text && <p class="campaign-text">{t(c.text)}</p>}
+          <div class="campaign-bar" role="progressbar" aria-label={t(c.title)} aria-valuemin="0" aria-valuemax={goal} aria-valuenow={extra}><span style={`width:${Math.min(100, (extra / goal) * 100)}%`}></span></div>
+          <p class="campaign-numbers"><strong data-raised>{euro(extra)}</strong><span>{t('raised of')} {euro(goal)}</span><span class="campaign-meta" data-meta></span></p>
+        </div>
+      )}
       <div class="section-head"><div><p class="eyebrow">{t('Donate')}</p><h2 class="display">{t('Give once or every month')}</h2></div><p class="muted narrow">{t('A monthly gift, however small, lets us plan the season ahead.')}</p></div>
       <div class="give">
         {monthly.length > 0 && (
@@ -57,6 +75,23 @@ const ways = [
         {ways.map(([title, text], i) => <li class="reveal"><span class="display">0{i + 1}</span><h3>{t(title)}</h3><p>{t(text)}</p></li>)}
       </ol>
       <p class="give-org muted">{t('The International Company of Cuban Dances is a project of Generación Abbilona, a non-profit cultural association registered in Luxembourg.')}</p>
+    </div>
+  </section>
+
+  <section class="section dark" id="partners">
+    <div class="wrap">
+      <div class="section-head"><div><p class="eyebrow">{t('Partners')}</p><h2 class="display">{t('Businesses and towns can support us too')}</h2></div><p class="muted narrow">{t('Sponsor a training weekend or a show, or help us in kind with venues, accommodation, travel or printing.')}</p></div>
+      {partners.length > 0 && (
+        <ul class="partners" aria-label={t('Our partners')}>
+          {partners.map((p: any) => (
+            <li>{p.url ? <a href={p.url} target="_blank" rel="noopener">{p.logo ? <img src={p.logo} alt={p.name} loading="lazy" /> : <span>{p.name}</span>}</a> : p.logo ? <img src={p.logo} alt={p.name} loading="lazy" /> : <span>{p.name}</span>}</li>
+          ))}
+        </ul>
+      )}
+      <div class="actions">
+        <a class="btn btn-gold" href="/print/iccd-sponsorship.pdf" target="_blank" rel="noopener">{t('Our partnership offer (PDF)')}</a>
+        <a class="btn btn-line" href={`mailto:${site.links.email}`}>{t('Write to us')}</a>
+      </div>
     </div>
   </section>
 

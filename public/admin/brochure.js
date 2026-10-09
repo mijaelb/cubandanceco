@@ -7,6 +7,7 @@ const HANDLE = document.body.dataset.handle || '';
 const EMAIL = document.body.dataset.email || '';
 const WHATSAPP = document.body.dataset.whatsapp || '';
 const INSTAGRAM = document.body.dataset.instagram || '';
+const SUPPORT = document.body.dataset.support || '';
 // links work in the PDF; the images have the QR code for the WhatsApp group
 const footer = () => h('p', { class: 'foot' }, h('a', { href: 'https://cubandance.co' }, 'cubandance.co'), h('span', {}, '·'), INSTAGRAM ? h('a', { href: INSTAGRAM }, HANDLE) : HANDLE);
 
@@ -135,6 +136,22 @@ function closing(ev) {
     footer());
 }
 
+// last page: donations (only while the Stripe donation links are live, see brochure.astro)
+function support() {
+  const svg = $('#qr-support')?.content.querySelector('svg');
+  if (!SUPPORT || !svg) return null;
+  return h('section', { class: 'page support' },
+    pattern(...Array(9).fill('Support us')),
+    h('div', { class: 'content' }, logo(),
+      h('p', { class: 'eyebrow' }, 'Support us'),
+      h('h2', {}, 'Keep spreading love for music, dance and culture'),
+      h('p', { class: 'text' }, 'We are a non-profit association. Every donation goes into training weekends, live music and shows that keep Afro-Cuban folklore alive in Europe.')),
+    h('a', { class: 'give', href: SUPPORT },
+      h('div', { class: 'qr-box' }, svg.cloneNode(true)),
+      h('div', {}, h('b', {}, 'Scan to donate'), h('span', {}, 'From €5, once or every month.'), h('span', { class: 'url' }, 'cubandance.co/support'))),
+    footer());
+}
+
 // shrink a line until it fits its width (long city names)
 function fit() {
   document.querySelectorAll('[data-fit]').forEach((el) => {
@@ -163,7 +180,7 @@ if (!data?.event) {
   const ev = data.event;
   const days = (ev.schedule || []).filter((d) => d.slots?.length);
   const soon = h('section', { class: 'page' }, band(ev, 'Schedule'), h('div', { class: 'soon' }, h('p', {}, 'The full timetable will be published one week before the training.')));
-  pages.append(cover(ev), info(ev, data.reminders), ...(days.length ? days.map((d) => schedule(ev, d, (ev.schedule || []).indexOf(d))) : [soon]), closing(ev));
+  pages.append(cover(ev), info(ev, data.reminders), ...(days.length ? days.map((d) => schedule(ev, d, (ev.schedule || []).indexOf(d))) : [soon]), closing(ev), support());
   document.body.dataset.file = `ICCD-${ev.city}-training-schedule`.replace(/[^\p{L}\p{N}-]+/gu, '-');
   document.title = document.body.dataset.file.replace(/-/g, ' ');
   document.fonts.ready.then(fit);

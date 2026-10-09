@@ -125,6 +125,15 @@
         "amount": 20,
         "url": "https://buy.stripe.com/5kQdRaddGf3124C61E9Zm02"
       }
-    ]
-  }
+    ],
+    "campaign": {
+      "title": "",
+      "text": "",
+      "goal": "",
+      "start": "",
+      "end": "",
+      "extra": ""
+    }
+  },
+  "partners": []
 }

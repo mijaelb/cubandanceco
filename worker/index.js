@@ -11,7 +11,7 @@
 
 import { members } from './members.js';
 import { inbox } from './bunny.js';
-import { webhook, setup as stripeSetup } from './stripe.js';
+import { webhook, setup as stripeSetup, donationProgress } from './stripe.js';
 
 const ORIGINS = ['https://cubandance.co', 'https://www.cubandance.co', 'http://localhost:4321'];
 const READ = /^src\/(data|i18n)\/[a-z-]+\.json$/;
@@ -88,6 +88,13 @@ export default {
       if (!r.ok || !d.permissions?.push) return reply({ message: 'Not allowed' }, 401);
       const exp = await session();
       return reply({ token: `${exp}.${await sign(exp, env.SESSION_SECRET)}` });
+    }
+
+    // Support page: progress of the fundraising campaign (public, totals only)
+    if (url.pathname === '/donate/progress' && req.method === 'GET') {
+      const day = /^20\d\d-\d\d-\d\d$/, from = url.searchParams.get('from') || '', to = url.searchParams.get('to') || '';
+      if (!env.STRIPE_SECRET_KEY || !day.test(from) || (to && !day.test(to)) || from < '2026-01-01') return reply({ message: 'Unknown campaign' }, 400);
+      try { return reply(await donationProgress(env, from, to)); } catch { return reply({ message: 'Not available right now' }, 502); }
     }
 
     // Everything else needs a valid session
