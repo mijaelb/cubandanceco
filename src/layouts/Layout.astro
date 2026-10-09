@@ -101,6 +101,7 @@ const jsonld = JSON.stringify(schema).replace(/</g, '\\u003c');
         <summary aria-label={`${t('Language')}: ${lang.toUpperCase()}`}>{lang.toUpperCase()}</summary>
         <div>{LANGS.map((l) => <a href={link(l, page)} lang={l} aria-current={l === lang ? 'true' : undefined}>{langName(l)}</a>)}</div>
       </details>
+      {SUPPORT.length > 0 && <a class="btn btn-line btn-sm header-cta header-give" href={link(lang, 'support')}>{t('Donate')}</a>}
       <a class="btn btn-gold btn-sm header-cta" href={l.tickets} target="_blank" rel="noopener">{t('Book a training')}</a>
       <button class="menu-btn" aria-label={t('Menu')} aria-expanded="false" data-menu-btn><span></span><span></span></button>
     </div>
@@ -110,7 +111,10 @@ const jsonld = JSON.stringify(schema).replace(/</g, '\\u003c');
       <a href={link(lang)}>{t('Home')}</a>
       {[...NAV, ...SUPPORT].map(([p, label]) => <a href={link(lang, p)}>{label}</a>)}
     </nav>
-    <a class="btn btn-gold" href={l.tickets} target="_blank" rel="noopener">{t('Book a training')}</a>
+    <div class="menu-actions">
+      <a class="btn btn-gold" href={l.tickets} target="_blank" rel="noopener">{t('Book a training')}</a>
+      {SUPPORT.length > 0 && <a class="btn btn-line header-give" href={link(lang, 'support')}>{t('Donate')}</a>}
+    </div>
   </div>
 
   <main id="main"><slot /></main>

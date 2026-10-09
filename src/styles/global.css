@@ -140,10 +140,16 @@ body:has(main > .hero:first-child, main > .page-hero:first-child) .site-header:n
 .menu nav { display: grid; gap: 4px; }
 .menu nav a { font: 400 clamp(2.2rem, 9vw, 3.4rem)/1.25 var(--display); text-transform: uppercase; text-decoration: none; }
 .menu nav a:hover { color: var(--gold); }
-.menu .btn { align-self: flex-start; }
+.menu-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.header-give { border-color: var(--gold); }
+.header-give:hover { background: var(--gold); color: var(--ink); border-color: var(--gold); }
 @media (min-width: 1280px) {
   .nav, .header-cta { display: flex; }
   .menu-btn, .menu { display: none !important; }
+  /* full menu plus two buttons: a little tighter, and wider than the page on big screens */
+  .site-header .wrap { width: min(100% - 2 * clamp(20px, 2.5vw, 48px), 1480px); }
+  .header-inner { gap: 16px; }
+  .nav { gap: clamp(14px, 1.3vw, 24px); }
 }
 @media (max-width: 420px) { .brand span { display: none; } }
 .header-cta { white-space: nowrap; }

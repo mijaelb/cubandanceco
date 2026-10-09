@@ -6,7 +6,9 @@ export default defineConfig({
   site: process.env.SITE_URL || 'https://cubandance.co',
   base: process.env.BASE_PATH || '/',
   trailingSlash: 'ignore',
-  build: { format: 'directory' },
+  // Styles go inside each page: every deploy renames the stylesheet and removes the old one,
+  // so a page restored from the browser cache after a deploy would otherwise load unstyled.
+  build: { format: 'directory', inlineStylesheets: 'always' },
   // Old WordPress addresses (cubandance.co before 2026) still linked from Google and social media
   redirects: {
     '/company-members': '/company/',
