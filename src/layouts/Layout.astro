@@ -9,6 +9,8 @@ import { url, link, srcset } from '../lib/utils';
 import { LANGS, langName, useT, locale } from '../i18n';
 
 interface Props { lang: string; page: string; title?: string; description?: string; image?: string; events?: any[]; preload?: string; noindex?: boolean; csp?: { img?: string; connect?: string; frame?: string }; script?: string }
+// changes on every build, so browsers fetch new scripts straight after an update
+const v = Date.now().toString(36);
 const { lang, page, title, description = site.description, image = '/images/og.jpg', events = [], preload, noindex = false, csp = {}, script } = Astro.props;
 const t = useT(lang);
 // search title and description written for each page (site.json → seo), else built from the page
@@ -137,7 +139,7 @@ const jsonld = JSON.stringify(schema).replace(/</g, '\\u003c');
     </div>
   </footer>
 
-  <script is:inline src={url('/js/site.js')} type="module"></script>
-  {script && <script is:inline src={url(script)} type="module"></script>}
+  <script is:inline src={`${url('/js/site.js')}?v=${v}`} type="module"></script>
+  {script && <script is:inline src={`${url(script)}?v=${v}`} type="module"></script>}
 </body>
 </html>
