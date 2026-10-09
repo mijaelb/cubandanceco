@@ -404,3 +404,126 @@ export function inboxView(ctx) {
   refresh();
   return wrap;
 }
+
+// ---------- Mailing list ----------
+// Newsletter subscribers from the website (they confirmed by email) and emails to an audience:
+// the newsletter, or the members-area dancers. Sent by the members service (worker/news.js).
+const LANG_NAMES = { en: 'English', es: 'Spanish', fr: 'French', it: 'Italian', de: 'German', nl: 'Dutch' };
+const STATUS = { active: 'Subscribed', pending: 'Waiting for confirmation', unsubscribed: 'Unsubscribed' };
+const AUDIENCE = { newsletter: 'Newsletter subscribers', members: 'Members area: everyone', 'members:company': 'Members area: Company', 'members:academy': 'Members area: Academy' };
+
+export function mailingView(ctx) {
+  const { h } = ctx;
+  const wrap = h('div', { class: 'pv' }, h('p', { class: 'muted' }, 'Loading…'));
+  let data = null, q = '';
+  const reload = () => ctx.api('/news/admin').then((d) => { data = d; draw(); }).catch((e) => wrap.replaceChildren(h('p', { class: 'error' }, e.message)));
+  reload();
+  const day = (ms) => (ms ? new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '');
+  // who an audience reaches, as far as the panel can tell (the service counts again before sending)
+  const count = (aud, lang) => (aud === 'newsletter'
+    ? data.subscribers.filter((s) => s.status === 'active' && (lang === 'all' || s.lang === lang)).length
+    : { members: data.members.all, 'members:company': data.members.company, 'members:academy': data.members.academy }[aud]);
+
+  function draw() {
+    const subs = data.subscribers;
+    const n = (s) => subs.filter((x) => x.status === s).length;
+    const byLang = Object.entries(subs.filter((s) => s.status === 'active').reduce((m, s) => ({ ...m, [s.lang]: (m[s.lang] || 0) + 1 }), {}));
+
+    // ----- write and send -----
+    const audience = h('select', { 'aria-label': 'Audience' }, Object.entries(AUDIENCE).map(([v, t]) => h('option', { value: v }, t)));
+    const lang = h('select', { 'aria-label': 'Language' }, h('option', { value: 'all' }, 'All languages'), Object.entries(LANG_NAMES).map(([v, t]) => h('option', { value: v }, `${t} readers only`)));
+    const subject = h('input', { placeholder: 'Subject, for example: Brussels training: the timetable is out', 'aria-label': 'Subject', maxlength: 150 });
+    const body = h('textarea', { rows: 10, 'aria-label': 'Message', placeholder: 'Write your message.\n\nA blank line starts a new paragraph. **Two stars** make words bold. Links: [the timetable](https://cubandance.co/trainings/) or just paste the address.' });
+    const testTo = h('input', { type: 'email', value: 'info@cubandance.co', 'aria-label': 'Send the test to' });
+    const reach = h('p', { class: 'pv-reach' });
+    const note = h('p', { class: 'pv-note', role: 'status' });
+    const confirmBox = h('div', { class: 'pv-confirm', hidden: true });
+    const sendBtn = h('button', { type: 'button', class: 'btn-small pv-send' }, 'Send…');
+    const testBtn = h('button', { type: 'button', class: 'btn-small' }, 'Send me a test');
+    const updateReach = () => {
+      lang.disabled = audience.value !== 'newsletter';
+      if (lang.disabled) lang.value = 'all';
+      const c = count(audience.value, lang.value);
+      reach.textContent = `Goes to ${c} ${c === 1 ? 'person' : 'people'}. People who unsubscribed are always left out.`;
+      return c;
+    };
+    audience.onchange = lang.onchange = () => { confirmBox.hidden = true; updateReach(); };
+    const say = (t, bad) => { note.textContent = t; note.classList.toggle('bad', !!bad); };
+    const ready = () => { if (!subject.value.trim() || !body.value.trim()) { say('Write a subject and a message first.', true); return false; } return true; };
+    testBtn.onclick = async () => {
+      if (!ready()) return;
+      testBtn.disabled = true; say('Sending the test…');
+      try { await ctx.api('/news/send', { method: 'POST', body: JSON.stringify({ subject: subject.value, body: body.value, test: testTo.value }) }); say(`Test sent to ${testTo.value}. Check how it looks before sending to everyone.`); }
+      catch (e) { say(e.message, true); }
+      testBtn.disabled = false;
+    };
+    let expect = 0;
+    async function send() {
+      confirmBox.hidden = true; sendBtn.disabled = true; say('Sending…');
+      try {
+        const r = await ctx.api('/news/send', { method: 'POST', body: JSON.stringify({ subject: subject.value, body: body.value, audience: audience.value, lang: lang.value, expect }) });
+        say(`Sent to ${r.sent} ${r.sent === 1 ? 'person' : 'people'}${r.failed ? `, ${r.failed} could not be sent` : ''} ✓`);
+        subject.value = body.value = '';
+        sendBtn.disabled = false;
+        await reload();
+      } catch (e) { say(e.message, true); sendBtn.disabled = false; }
+    }
+    sendBtn.onclick = () => {
+      if (!ready()) return;
+      expect = updateReach();
+      if (!expect) { say('Nobody to send to in this audience.', true); return; }
+      const who = `${AUDIENCE[audience.value]}${lang.value !== 'all' ? `, ${LANG_NAMES[lang.value]} readers` : ''}`;
+      confirmBox.replaceChildren(
+        h('p', {}, h('b', {}, `Send "${subject.value.trim()}" to ${expect} ${expect === 1 ? 'person' : 'people'} (${who}) now?`), ' This cannot be undone.'),
+        h('div', { class: 'pv-confirm-buttons' },
+          h('button', { type: 'button', class: 'btn-small pv-send', onclick: send }, 'Yes, send now'),
+          h('button', { type: 'button', class: 'btn-small', onclick: () => { confirmBox.hidden = true; } }, 'Cancel')));
+      confirmBox.hidden = false;
+    };
+
+    // ----- subscribers -----
+    const listEl = h('div', { class: 'pv-subs' });
+    const drawList = () => {
+      const shown = subs.filter((s) => !q || s.email.includes(q));
+      listEl.replaceChildren(...(shown.length ? shown.map((s) => h('div', { class: 'pv-sub-row' },
+        h('span', { class: 'pv-sub-mail' }, s.email),
+        h('span', {}, LANG_NAMES[s.lang] || s.lang),
+        h('span', { class: `pv-sub ${s.status === 'active' ? 'on' : s.status === 'pending' ? 'warn' : ''}` }, STATUS[s.status] || s.status),
+        h('span', { class: 'muted' }, day(s.at)),
+        ctx.iconBtn('trash', `Erase ${s.email}`, async () => {
+          if (!confirm(`Erase ${s.email} completely? They will no longer be on the list, and no record of them is kept.`)) return;
+          try { await ctx.api('/news/admin', { method: 'DELETE', body: JSON.stringify({ email: s.email }) }); await reload(); } catch (e) { alert(e.message); }
+        }, { class: 'danger' })))
+        : [h('p', { class: 'muted' }, q ? 'Nobody found.' : 'Nobody has signed up yet. The form is in the footer of every page and on cubandance.co/newsletter.')]));
+    };
+    const exportCsv = () => {
+      const rows = [['email', 'language', 'date'], ...subs.filter((s) => s.status === 'active').map((s) => [s.email, s.lang, new Date(s.at || 0).toISOString().slice(0, 10)])];
+      const a = h('a', { href: URL.createObjectURL(new Blob([rows.map((r) => r.join(',')).join('\n')], { type: 'text/csv' })), download: 'iccd-newsletter.csv' });
+      document.body.append(a); a.click(); a.remove();
+    };
+    drawList();
+
+    wrap.replaceChildren(
+      h('div', { class: 'pv-levels' },
+        h('span', {}, h('b', {}, n('active')), ' subscribed'), h('span', {}, h('b', {}, n('pending')), ' waiting for confirmation'), h('span', {}, h('b', {}, n('unsubscribed')), ' unsubscribed'),
+        h('span', {}, h('b', {}, data.members.all), ' in the members area'),
+        byLang.length > 0 && h('span', {}, byLang.map(([l, c]) => `${LANG_NAMES[l] || l} ${c}`).join(' · '))),
+      h('section', { class: 'pv-compose' },
+        h('h3', {}, 'Write an email'),
+        h('div', { class: 'pv-compose-row' }, audience, lang), reach,
+        subject, body,
+        h('div', { class: 'pv-compose-row' }, h('label', { class: 'pv-test' }, 'Test to ', testTo), testBtn, sendBtn),
+        confirmBox, note),
+      h('section', {},
+        h('h3', {}, 'Sent'),
+        data.campaigns.length ? h('div', { class: 'pv-sent' }, data.campaigns.map((c) => h('div', { class: 'pv-sent-row' },
+          h('span', { class: 'muted' }, day(c.at)), h('b', {}, c.subject), h('span', {}, `${AUDIENCE[c.audience] || c.audience}${c.lang && c.lang !== 'all' ? ` · ${LANG_NAMES[c.lang]}` : ''}`), h('span', {}, `${c.sent} sent${c.failed ? `, ${c.failed} failed` : ''}`))))
+          : h('p', { class: 'muted' }, 'Nothing sent yet.')),
+      h('section', {},
+        h('div', { class: 'pv-subs-head' }, h('h3', {}, 'Subscribers'), h('button', { type: 'button', class: 'btn-small', onclick: exportCsv }, 'Export the subscribed list (CSV)')),
+        h('input', { type: 'search', class: 'pv-search', placeholder: 'Search by email', oninput: (e) => { q = e.target.value.toLowerCase(); drawList(); } }),
+        listEl));
+    updateReach();
+  }
+  return wrap;
+}

@@ -1,0 +1,32 @@
+---
+// Newsletter page: sign up, and where the links in the emails land
+// (?c=… confirms a subscription, ?u=… unsubscribes; /js/newsletter.js does both).
+import Layout from '../layouts/Layout.astro';
+import { useT } from '../i18n';
+
+const { lang } = Astro.props;
+const t = useT(lang);
+const API = 'https://iccd-team-editor.iccd-cubandance.workers.dev';
+---
+<Layout lang={lang} page="newsletter" title="Newsletter" noindex script="/js/newsletter.js">
+  <section class="section paper page-top newsletter-page" data-api={API}
+    data-confirmed={t('You are subscribed. Thank you!')} data-confirmed-text={t('From now on you will receive our news, about once a month.')}
+    data-left={t('You are unsubscribed')} data-left-text={t('You will not receive our newsletter any more. You can sign up again at any time.')}
+    data-bad-link={t('This link is not valid any more. Please sign up again.')} data-error={t('Something went wrong. Please try again.')}>
+    <div class="wrap narrow-wrap">
+      <p class="eyebrow">{t('Newsletter')}</p>
+      <h1 class="display">{t('Stay in the loop')}</h1>
+      <p class="lead">{t('Training dates, shows and news, about once a month.')}</p>
+      <div class="newsletter-state" data-state hidden><h2 class="display" data-state-title></h2><p data-state-text></p></div>
+      <form class="news-form" data-news data-api={API} data-lang={lang} data-source="page" data-ok={t('Almost done: check your inbox and confirm your email.')} data-bad={t('Please check your email address.')} data-error={t('Something went wrong. Please try again.')} novalidate style="margin-top:28px">
+        <div class="news-row">
+          <input type="email" name="email" autocomplete="email" required placeholder={t('Your email')} aria-label={t('Your email')} />
+          <button type="submit" class="btn btn-dark">{t('Subscribe')}</button>
+        </div>
+        <input class="news-hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
+        <p class="news-note">{t('We only use your email for this newsletter. Unsubscribe any time.')}</p>
+        <p class="news-msg" data-news-msg role="status" hidden></p>
+      </form>
+    </div>
+  </section>
+</Layout>

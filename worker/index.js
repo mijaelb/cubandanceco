@@ -13,6 +13,8 @@ import { members } from './members.js';
 import { inbox } from './bunny.js';
 import { webhook, setup as stripeSetup, donationProgress } from './stripe.js';
 import { createRequest, readRequest, signRequest, fullRecord } from './sign.js';
+import { newsPublic, newsAdmin, oneClick } from './news.js';
+import { probe as weezeventProbe } from './weezevent.js';
 
 const ORIGINS = ['https://cubandance.co', 'https://www.cubandance.co', 'http://localhost:4321'];
 const READ = /^src\/(data|i18n)\/[a-z-]+\.json$/;
@@ -46,13 +48,15 @@ export default {
     const cors = {
       'Access-Control-Allow-Origin': ORIGINS.includes(origin) ? origin : ORIGINS[0],
       'Access-Control-Allow-Headers': 'Authorization, Content-Type',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
       Vary: 'Origin',
     };
     const reply = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
     // Stripe reports subscription changes here (server to server, checked by its signature)
     if (url.pathname === '/stripe/webhook' && req.method === 'POST') return env.STRIPE_SECRET_KEY ? webhook(req, env) : new Response('Not set up', { status: 503 });
+    // Mail apps' one-click unsubscribe comes from the mail provider, without an Origin
+    if (url.pathname === '/news/one-click' && req.method === 'POST') return oneClick(req, env, url);
     if (!ORIGINS.includes(origin)) return reply({ message: 'Forbidden' }, 403);
 
     const session = async () => `${String(Date.now() + SESSION_HOURS * 3600e3)}`;
@@ -98,6 +102,12 @@ export default {
       try { return reply(await donationProgress(env, from, to)); } catch { return reply({ message: 'Not available right now' }, 502); }
     }
 
+    // Newsletter: sign up, confirm, unsubscribe (from the website and the email links)
+    if (url.pathname.startsWith('/news/') && ['/news/subscribe', '/news/confirm', '/news/unsubscribe'].includes(url.pathname)) {
+      const r = await newsPublic(req, env, url, reply);
+      if (r) return r;
+    }
+
     // Online signatures: the signer reads and signs with the link (cubandance.co/sign/#<id>)
     const signPath = url.pathname.match(/^\/sign\/([A-Za-z0-9_-]{24})$/);
     if (signPath && req.method === 'GET') { const r = await readRequest(env, signPath[1]); return r ? reply(r) : reply({ message: 'This link is not valid.' }, 404); }
@@ -105,6 +115,16 @@ export default {
 
     // Everything else needs a valid session
     if (!(await teamOk())) return reply({ message: 'Please sign in again' }, 401);
+
+    // Weezevent: first look at what the API returns (event names, field names only)
+    if (url.pathname === '/weezevent/probe' && req.method === 'GET') {
+      try { return reply(await weezeventProbe(env)); } catch (e) { return reply({ message: e.message }, 502); }
+    }
+
+    // Mailing list: subscribers, removing someone, sending to an audience
+    if (url.pathname === '/news/admin' || url.pathname === '/news/send') {
+      try { return (await newsAdmin(req, env, url, reply)) || reply({ message: 'Not found' }, 404); } catch (e) { return reply({ message: e.message }, 502); }
+    }
 
     // Online signatures: create a request, read the signed record (for the PDF)
     if (url.pathname === '/sign' && req.method === 'POST') {

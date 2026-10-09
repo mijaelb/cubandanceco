@@ -623,3 +623,27 @@ h1.hero-title { font-size: clamp(2.8rem, 7.6vw, 7.4rem); max-width: 17ch; color:
 .sign-done { margin-top: 28px; padding: clamp(20px, 4vw, 36px); background: var(--cream); border-radius: var(--radius); }
 .sign-done h2 { margin: 0 0 8px; }
 .sign-hash { font-size: 0.78rem; margin-top: 24px; word-break: break-all; }
+
+/* ---------- Newsletter (footer form and /newsletter/) ---------- */
+.footer-news { display: grid; gap: 22px 48px; align-items: end; padding-bottom: 56px; margin-bottom: 56px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+@media (min-width: 860px) { .footer-news { grid-template-columns: 1fr 1.1fr; } }
+.footer-news > * { min-width: 0; }
+.footer-news .muted { margin: 0; }
+.footer-news-title { font: 400 clamp(1.8rem, 3.4vw, 2.6rem)/1.05 var(--display); text-transform: uppercase; color: #fff; margin: 0 0 10px; }
+.news-form { display: grid; gap: 10px; min-width: 0; }
+.news-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.news-row input { flex: 1 1 220px; min-width: 0; font: inherit; padding: 14px 18px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.25); background: rgba(255, 255, 255, 0.06); color: #fff; }
+.news-row input::placeholder { color: #a99d86; }
+.news-row .btn { flex: none; }
+.news-hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.news-note { margin: 0; font-size: 0.82rem; color: #a99d86; }
+.news-msg { margin: 0; font-weight: 600; color: #f1a58f; }
+.news-msg.good { color: var(--gold); }
+.newsletter-page .news-row input { background: #fff; color: var(--ink); border-color: rgba(20, 17, 13, 0.25); }
+.newsletter-page .news-row input::placeholder { color: #8a8070; }
+.newsletter-page .news-note { color: var(--muted); }
+.newsletter-page .news-msg { color: #a12a1a; }
+.newsletter-page .news-msg.good { color: var(--green); }
+.newsletter-state { background: var(--cream); border-radius: var(--radius); padding: clamp(20px, 4vw, 36px); margin-top: 28px; }
+.newsletter-state h2 { margin: 0 0 8px; }
+.newsletter-state p { margin: 0; }

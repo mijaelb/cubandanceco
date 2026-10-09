@@ -344,3 +344,32 @@ html:has(.pv-save) { scroll-padding-bottom: 90px; }
 .pv-sub.warn { color: var(--red); }
 @media (max-width: 760px) { .pv-person { grid-template-columns: minmax(0, 1fr) auto; } .pv-person .pv-sub { grid-column: 1 / -1; } }
 .pv-badge.free { background: var(--gold); color: var(--ink); }
+
+/* Mailing list */
+.pv-compose { display: grid; gap: 10px; background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+.pv-compose h3, .pv h3 { margin: 6px 0 4px; font-size: 1.05rem; }
+.pv-compose input, .pv-compose textarea, .pv-compose select { font: inherit; padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; min-width: 0; max-width: 100%; }
+.pv-compose textarea { resize: vertical; line-height: 1.5; }
+.pv-compose-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pv-compose-row .btn-small { margin: 0; }
+.pv-test { display: flex; align-items: center; gap: 6px; flex: 1 1 260px; min-width: 0; font-size: 0.9rem; }
+.pv-test input { flex: 1; min-width: 0; }
+.pv-send { background: var(--ink); color: var(--gold); }
+.pv-reach { margin: 0; font-size: 0.9rem; color: var(--muted); }
+.pv-note { margin: 0; font-weight: 600; color: var(--green, #2b5b3c); }
+.pv-note.bad { color: var(--red); }
+.pv-note:empty { display: none; }
+.pv-confirm { background: #fff8e1; border: 1px solid #e8c95f; border-radius: 12px; padding: 12px 14px; }
+.pv-confirm p { margin: 0 0 10px; }
+.pv-confirm-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+.pv-confirm-buttons .btn-small { margin: 0; }
+.pv-sent { display: grid; gap: 6px; }
+.pv-sent-row, .pv-sub-row { display: grid; grid-template-columns: 110px minmax(0, 1.6fr) minmax(0, 1fr) auto; gap: 10px; align-items: center; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font-size: 0.92rem; }
+.pv-sub-row { grid-template-columns: minmax(0, 2fr) 90px auto 110px auto; }
+.pv-sub-mail { overflow-wrap: anywhere; }
+.pv-subs { display: grid; gap: 6px; }
+.pv-subs-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pv-subs-head .btn-small { margin: 0; }
+@media (max-width: 640px) {
+  .pv-sent-row, .pv-sub-row { grid-template-columns: minmax(0, 1fr) auto; }
+}

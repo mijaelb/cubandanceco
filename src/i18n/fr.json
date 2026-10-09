@@ -405,7 +405,7 @@
   "Nothing found.": "Aucun résultat.",
   "Notes": "Notes",
   "Other": "Autres",
-  "Something went wrong. Please try again.": "Une erreur est survenue. Réessayez.",
+  "Something went wrong. Please try again.": "Une erreur s’est produite. Merci de réessayer.",
   "Manage subscription": "Gérer l’abonnement",
   "Thank you!": "Merci !",
   "Your subscription is being activated…": "Votre abonnement est en cours d’activation…",
@@ -456,5 +456,17 @@
   "Our partners": "Nos partenaires",
   "Our partnership offer (PDF)": "Notre offre de partenariat (PDF)",
   "Write to us": "Écrivez-nous",
-  "Give to this campaign": "Donner pour cette campagne"
+  "Give to this campaign": "Donner pour cette campagne",
+  "Newsletter": "Newsletter",
+  "Stay in the loop": "Restez informé",
+  "Training dates, shows and news, about once a month.": "Dates des stages, spectacles et nouvelles, environ une fois par mois.",
+  "Your email": "Votre e-mail",
+  "We only use your email for this newsletter. Unsubscribe any time.": "Nous utilisons votre e-mail uniquement pour cette newsletter. Désinscription possible à tout moment.",
+  "Almost done: check your inbox and confirm your email.": "Presque fini : vérifiez votre boîte mail et confirmez votre adresse.",
+  "Please check your email address.": "Merci de vérifier votre adresse e-mail.",
+  "You are subscribed. Thank you!": "Vous êtes inscrit. Merci !",
+  "From now on you will receive our news, about once a month.": "Vous recevrez désormais nos nouvelles, environ une fois par mois.",
+  "You are unsubscribed": "Vous êtes désinscrit",
+  "You will not receive our newsletter any more. You can sign up again at any time.": "Vous ne recevrez plus notre newsletter. Vous pouvez vous réinscrire à tout moment.",
+  "This link is not valid any more. Please sign up again.": "Ce lien n’est plus valable. Merci de vous réinscrire."
 }

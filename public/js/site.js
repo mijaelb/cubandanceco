@@ -67,3 +67,23 @@ if (dlg && items.length) {
     items.forEach((a) => (a.hidden = !!b.dataset.filter && a.dataset.cat !== b.dataset.filter));
   }));
 }
+
+// Newsletter sign-up (footer of every page): the members service sends a confirmation email
+document.querySelectorAll('[data-news]').forEach((form) => {
+  const msg = form.querySelector('[data-news-msg]'), btn = form.querySelector('button');
+  const say = (text, good) => { msg.textContent = text; msg.classList.toggle('good', !!good); msg.hidden = false; };
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = form.email.value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return say(form.dataset.bad);
+    btn.disabled = true;
+    try {
+      const r = await fetch(`${form.dataset.api}/news/subscribe`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, lang: form.dataset.lang, source: form.dataset.source, website: form.website.value }) });
+      if (r.status === 400) say(form.dataset.bad);
+      else if (!r.ok) say(form.dataset.error);
+      else { say(form.dataset.ok, true); form.email.value = ''; }
+    } catch { say(form.dataset.error); }
+    btn.disabled = false;
+  });
+});

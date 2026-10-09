@@ -53,6 +53,7 @@ const SECTIONS = [
   { id: 'inbox', title: 'Members area · inbox', help: 'Recordings uploaded from the ICCD drive, waiting to be sorted.' },
   { id: 'videos', title: 'Members area · videos', help: 'Choreographies and class recordings for company and academy dancers.' },
   { id: 'access', title: 'Members area · access', help: 'Who can sign in to the private videos page.' },
+  { id: 'mailing', title: 'Mailing list', help: 'Newsletter subscribers from the website, and emails to the newsletter or the members-area dancers.' },
   {
     id: 'show', title: 'Raíces Cubanas', file: 'src/data/show.json',
     schema: {
@@ -134,9 +135,9 @@ const store = (remember) => (remember ? localStorage : sessionStorage);
 // Team mode: organisers sign in with a shared team password through a small gateway
 // (worker/index.js) that holds the GitHub key. They can only edit trainings and timetables.
 const TEAM_API = document.body.dataset.teamApi || '';
-const TEAM_SECTIONS = ['trainings', 'timetable', 'inbox', 'videos', 'access'];
+const TEAM_SECTIONS = ['trainings', 'timetable', 'inbox', 'videos', 'access', 'mailing'];
 // The members area (private.js) is saved in the members service, not on GitHub
-const PRIVATE = ['inbox', 'access', 'videos'];
+const PRIVATE = ['inbox', 'access', 'videos', 'mailing'];
 let priv = null; // the private.js module, loaded on start
 const state = {
   team: sessionStorage.getItem('iccd-team') || '',
@@ -647,7 +648,7 @@ function render() {
   publishBtn = h('button', { class: 'publish', type: 'button', onclick: publish });
   const nav = h('nav', {}, visibleSections().map((s) => h('button', { type: 'button', class: s.id === state.section ? 'active' : '', onclick: () => { state.section = s.id; render(); scrollTo(0, 0); } }, s.title)));
   const body = sec.id === 'translations' ? translationsView() : sec.id === 'timetable' ? timetableView()
-    : PRIVATE.includes(sec.id) ? { inbox: priv.inboxView, access: priv.accessView, videos: priv.videosView }[sec.id](privateCtx())
+    : PRIVATE.includes(sec.id) ? { inbox: priv.inboxView, access: priv.accessView, videos: priv.videosView, mailing: priv.mailingView }[sec.id](privateCtx())
     : fieldsEditor(state.files[sec.file].data, sec.schema);
   if (location.hash.slice(1) !== state.section) history.replaceState(null, '', '#' + state.section);
   app.replaceChildren(

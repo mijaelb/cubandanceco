@@ -405,7 +405,7 @@
   "Nothing found.": "No se ha encontrado nada.",
   "Notes": "Notas",
   "Other": "Otros",
-  "Something went wrong. Please try again.": "Algo ha fallado. Inténtalo de nuevo.",
+  "Something went wrong. Please try again.": "Algo ha salido mal. Por favor, inténtalo de nuevo.",
   "Manage subscription": "Gestionar suscripción",
   "Thank you!": "¡Gracias!",
   "Your subscription is being activated…": "Estamos activando tu suscripción…",
@@ -456,5 +456,17 @@
   "Our partners": "Nuestros patrocinadores",
   "Our partnership offer (PDF)": "Nuestra propuesta de patrocinio (PDF)",
   "Write to us": "Escríbenos",
-  "Give to this campaign": "Donar a esta campaña"
+  "Give to this campaign": "Donar a esta campaña",
+  "Newsletter": "Newsletter",
+  "Stay in the loop": "Mantente al día",
+  "Training dates, shows and news, about once a month.": "Fechas de entrenamientos, espectáculos y noticias, más o menos una vez al mes.",
+  "Your email": "Tu correo electrónico",
+  "We only use your email for this newsletter. Unsubscribe any time.": "Solo usamos tu correo para esta newsletter. Puedes darte de baja cuando quieras.",
+  "Almost done: check your inbox and confirm your email.": "Casi listo: revisa tu bandeja de entrada y confirma tu correo.",
+  "Please check your email address.": "Por favor, revisa tu dirección de correo.",
+  "You are subscribed. Thank you!": "¡Ya estás suscrito! Gracias.",
+  "From now on you will receive our news, about once a month.": "A partir de ahora recibirás nuestras noticias, más o menos una vez al mes.",
+  "You are unsubscribed": "Te has dado de baja",
+  "You will not receive our newsletter any more. You can sign up again at any time.": "Ya no recibirás nuestra newsletter. Puedes volver a suscribirte cuando quieras.",
+  "This link is not valid any more. Please sign up again.": "Este enlace ya no es válido. Por favor, suscríbete de nuevo."
 }
