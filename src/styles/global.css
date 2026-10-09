@@ -510,6 +510,7 @@ h1.hero-title { font-size: clamp(2.8rem, 7.6vw, 7.4rem); max-width: 17ch; color:
 .m-links { font-size: 0.9rem; color: #c2b7a2; }
 .m-link { background: none; border: 0; padding: 0; color: inherit; font: inherit; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
 .m-link:disabled { opacity: 0.45; cursor: default; }
+.members-rule { margin: 14px 0 0; max-width: 62ch; color: #e8dfcd; border-left: 3px solid var(--gold, #e8c95f); padding-left: 14px; }
 .members-help { margin: 22px 0 0; font-size: 0.9rem; color: #c2b7a2; }
 .members-help a { color: inherit; }
 .m-who { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; font-weight: 600; color: #fff; }

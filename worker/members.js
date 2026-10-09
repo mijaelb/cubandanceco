@@ -126,7 +126,9 @@ function cleanMembers(list) {
     if (!EMAIL.test(email)) throw new Error(`Check the email of ${text(p.name, 60) || 'a member'}`);
     if (seen.has(email)) throw new Error(`${email} is on the list twice`);
     seen.add(email);
-    return { name: text(p.name, 80), email, level: LEVELS.includes(p.level) ? p.level : 'company', ...(p.free ? { free: true } : {}) };
+    const level = LEVELS.includes(p.level) ? p.level : 'company';
+    // site: the name under which a company member appears on the website (people.json), for the photo
+    return { name: text(p.name, 80), email, level, ...(p.free ? { free: true } : {}), ...(level === 'company' && text(p.site, 80) ? { site: text(p.site, 80) } : {}) };
   });
 }
 function cleanLibrary(items) {

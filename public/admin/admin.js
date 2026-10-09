@@ -50,9 +50,9 @@ const SECTIONS = [
     },
   },
   { id: 'timetable', title: 'Timetable', help: 'The class timetable of each training weekend, shown on the Trainings page.' },
+  { id: 'access', group: 'Members area', title: 'Members', help: 'Company and academy members: who can sign in to the videos, their photo on the website and how often they came lately.' },
   { id: 'videos', group: 'Members area', title: 'Videos', help: 'Choreographies and class recordings for company and academy dancers.' },
   { id: 'inbox', group: 'Members area', title: 'Inbox', help: 'Recordings uploaded from the ICCD drive, waiting to be sorted.' },
-  { id: 'access', group: 'Members area', title: 'Access', help: 'Who can sign in to the private videos page.' },
   { id: 'participants', title: 'Participants', help: 'Who booked which training this season, from Weezevent. Add people to the members area or email a training.' },
   { id: 'mailing', title: 'Mailing list', help: 'Newsletter subscribers from the website, and emails to the newsletter or the members-area dancers.' },
   {

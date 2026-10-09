@@ -459,3 +459,13 @@ button.pv-code.on { background: var(--ink); color: var(--gold); border-color: va
 @media (max-width: 640px) { .pv-tpl-row { grid-template-columns: 90px minmax(0, 1fr); } .pv-tpl-row img, .pv-tpl-noimg { width: 90px; } .pv-tpl-row > .pv-compose-row { grid-column: 1 / -1; } }
 [data-mtab][hidden] { display: none !important; }
 .pv-photo-fields { justify-items: start; }
+
+/* Members: website photo, link and activity */
+.pv-person-meta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: -2px 0 6px; }
+.pv-avatar { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; object-position: center 20%; flex: none; display: inline-block; vertical-align: middle; background: var(--line); }
+.pv-avatar.none { display: inline-grid; place-items: center; font-size: 12px; font-weight: 700; color: var(--muted); }
+.pv-site { max-width: 100%; }
+.pv-person { border-bottom: 1px solid var(--line); border-radius: 0; padding-bottom: 6px; }
+.pv-person-meta select { width: auto; flex: 0 1 340px; min-width: 0; }
+.pv-compose-row .pv-search { flex: 1 1 260px; width: auto; margin: 0; }
+.pv-compose-row > select[aria-label="Show"] { width: auto; flex: 0 1 auto; }

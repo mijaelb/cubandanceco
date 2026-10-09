@@ -3,6 +3,42 @@
 // Loaded by admin.js, which passes its helpers in `ctx`.
 
 const LEVEL = { company: 'Company · sees all videos', academy: 'Academy · sees videos marked for the Academy' };
+
+// ---------- members and the website: photos of company members ----------
+const plainName = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z ]/g, ' ').replace(/\s+/g, ' ').trim();
+// everyone with a photo on the Company page (company members, the team, the musicians)
+const sitePeople = (ctx) => [...(ctx.people.members || []), ...(ctx.people.team || []), ...(ctx.people.musicians || [])].filter((x) => x.name);
+// the website person of a company member: chosen by the team, or the same name
+function sitePerson(ctx, m) {
+  if (!m || m.level !== 'company') return null;
+  const all = sitePeople(ctx);
+  if (m.site) return all.find((x) => x.name === m.site) || null;
+  const n = plainName(m.name);
+  if (!n) return null;
+  const words = n.split(' ');
+  return all.find((x) => plainName(x.name) === n) || all.find((x) => { const w = plainName(x.name).split(' '); return w[0] === words[0] && w.at(-1) === words.at(-1); }) || null;
+}
+const avatar = (ctx, m) => {
+  const p = sitePerson(ctx, m);
+  if (p?.photo) return ctx.h('img', { class: 'pv-avatar', src: ctx.SITE + p.photo, alt: '', loading: 'lazy', title: p.name });
+  const initials = plainName(m?.name).split(' ').filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+  return ctx.h('span', { class: 'pv-avatar none', 'aria-hidden': 'true' }, initials || '?');
+};
+
+// Active members: how many of the last 3 training weekends they came to (Weezevent tickets, by email)
+const ACTIVE_NEEDS = { company: 2, academy: 1 }; // company: at most one missed in three; academy: at least one in three
+function recentWeekends(s, ctx) {
+  const today = new Date().toLocaleDateString('sv-SE'), thisMonth = today.slice(0, 7); // local date: a weekend counts from its first day
+  const upcoming = new Set((ctx.trainings.events || []).filter((e) => e.start > today).map((e) => e.start.slice(0, 7)));
+  const months = new Set();
+  for (const x of peopleIndex(s)) for (const t of x.trainings) months.add(t.split(':')[1]);
+  return [...months].filter((m) => m < thisMonth || (m === thisMonth && !upcoming.has(m))).sort().slice(-3);
+}
+function activity(s, ctx) {
+  const last = recentWeekends(s, ctx), by = new Map();
+  for (const x of peopleIndex(s)) by.set(x.email, new Set([...x.trainings].map((t) => t.split(':')[1])));
+  return { last, of: (m) => { const mine = by.get((m.email || '').toLowerCase()); return mine ? last.filter((ym) => mine.has(ym)).length : null; } };
+}
 const YT = /(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/))([\w-]{11})|^([\w-]{11})$/;
 const ytId = (s) => { const m = String(s || '').trim().match(YT); return m ? m[1] || m[2] : ''; };
 const uid = () => crypto.randomUUID().slice(0, 8);
@@ -110,7 +146,8 @@ export function accessView(ctx) {
   const { h, icon, iconBtn, SITE } = ctx;
   const wrap = h('div', { class: 'pv' }, h('p', { class: 'muted' }, 'Loading…'));
   load(ctx).then(draw).catch((e) => wrap.replaceChildren(h('p', { class: 'error' }, e.message)));
-  let q = '';
+  let q = '', show = 'all', act = null;
+  loadSeason(ctx).then((s) => { if (s?.connected) { act = activity(s, ctx); if (cache) draw(); } }).catch(() => { /* no Weezevent: no activity shown */ });
   function draw() {
     const bar = saveBar(ctx, 'members');
     const changed = () => bar.refresh();
@@ -129,7 +166,24 @@ export function accessView(ctx) {
     const drawList = () => {
       const paying = cache.members.filter((p) => !p.free && ['active', 'trialing', 'past_due'].includes(cache.subs[p.email]?.status)).length;
       levels.replaceChildren(...Object.entries(LEVEL).map(([l, text]) => h('span', {}, h('b', {}, cache.members.filter((p) => p.level === l).length), ' ', text)), h('span', {}, h('b', {}, paying), ' subscribed to class recordings'), h('span', {}, h('b', {}, cache.members.filter((p) => p.free).length), ' with free access'));
-      const shown = cache.members.map((p, i) => [p, i]).filter(([p]) => !q || `${p.name} ${p.email}`.toLowerCase().includes(q));
+      const came = (p) => (act ? act.of(p) : null);
+      // fewer than 3 weekends so far (start of the records): the need shrinks with them
+      const needs = (p) => Math.min(ACTIVE_NEEDS[p.level], act ? act.last.length : 0);
+      const quiet = (p) => came(p) !== null && came(p) < needs(p);
+      const shown = cache.members.map((p, i) => [p, i]).filter(([p]) => (!q || `${p.name} ${p.email}`.toLowerCase().includes(q))
+        && (show === 'all' || (show === 'quiet' ? quiet(p) || came(p) === null : show === 'nosite' ? p.level === 'company' && !sitePerson(ctx, p) : p.level === show)));
+      const monthsText = act ? act.last.map((m) => cap(MONTH_NAMES[Number(m.slice(5)) - 1])).join(', ') : '';
+      // a second line per person: website photo (company), and how often they came lately
+      const meta = (p) => {
+        const site = sitePerson(ctx, p);
+        const pick = p.level === 'company' && h('select', { 'aria-label': `Website profile of ${p.name || p.email}`, class: 'pv-site', onchange: (e) => { if (e.target.value) p.site = e.target.value; else delete p.site; changed(); drawList(); } },
+          h('option', { value: '' }, site && !p.site ? `Website: ${site.name} (same name)` : 'Website: not linked'),
+          sitePeople(ctx).map((x) => h('option', { value: x.name, selected: p.site === x.name }, `Website: ${x.name}`)));
+        const n = came(p);
+        const badge = !act || !act.last.length ? null : n === null ? h('span', { class: 'pv-sub' }, 'No Weezevent bookings with this email')
+          : h('span', { class: `pv-sub ${n >= needs(p) ? 'on' : 'warn'}`, title: `Training weekends: ${monthsText}` }, `${n >= needs(p) ? 'Active' : 'Not active lately'} · came ${n} of the last ${act.last.length} (${monthsText})`);
+        return h('div', { class: 'pv-person-meta' }, avatar(ctx, p), pick || h('span', { class: 'pv-sub' }, 'Academy · not on the website'), badge);
+      };
       listEl.replaceChildren(...(shown.length ? shown.map(([p, i]) => h('div', { class: 'pv-person' },
         h('input', { value: p.name, placeholder: 'Name', 'aria-label': 'Name', list: 'pv-names', oninput: (e) => { p.name = e.target.value; changed(); } }),
         h('input', { type: 'email', value: p.email, placeholder: 'name@example.com', 'aria-label': 'Email', oninput: (e) => { p.email = e.target.value.trim(); changed(); } }),
@@ -137,7 +191,8 @@ export function accessView(ctx) {
           Object.keys(LEVEL).map((l) => h('option', { value: l, selected: p.level === l }, l === 'company' ? 'Company' : 'Academy'))),
         h('label', { class: 'pv-free', title: 'Class recordings without paying (teachers, organisers, special cases)' }, h('input', { type: 'checkbox', checked: !!p.free, onchange: (e) => { if (e.target.checked) p.free = true; else delete p.free; changed(); drawList(); } }), ' Free'),
         subStatus(p),
-        iconBtn('trash', `Remove ${p.name || 'this person'}`, () => { if (confirm(`Remove ${p.name || p.email}? They can no longer sign in.`)) { cache.members.splice(i, 1); changed(); drawList(); } }, { class: 'danger' })))
+        iconBtn('trash', `Remove ${p.name || 'this person'}`, () => { if (confirm(`Remove ${p.name || p.email}? They can no longer sign in.`)) { cache.members.splice(i, 1); changed(); drawList(); } }, { class: 'danger' }),
+        meta(p)))
         : [h('p', { class: 'muted' }, q ? 'Nobody found.' : 'Nobody yet. Add the first person above.')]));
     };
     const name = h('input', { placeholder: 'Name', list: 'pv-names', 'aria-label': 'Name' });
@@ -159,7 +214,11 @@ export function accessView(ctx) {
       levels,
       h('form', { class: 'pv-add', onsubmit: add }, name, email, level, h('button', { type: 'submit', class: 'btn-small' }, icon('plus'), 'Add')),
       err,
-      h('input', { type: 'search', class: 'pv-search', placeholder: 'Search by name or email', oninput: (e) => { q = e.target.value.toLowerCase(); drawList(); } }),
+      h('p', { class: 'pv-hint' }, `Active members: company dancers come every month (at least ${ACTIVE_NEEDS.company} of the last 3 training weekends); academy dancers at least ${ACTIVE_NEEDS.academy} of the last 3. Counted from Weezevent tickets booked with the same email. Company members are linked to their photo on the website by name; choose another name if it does not match.`),
+      h('div', { class: 'pv-compose-row' },
+        h('input', { type: 'search', class: 'pv-search', placeholder: 'Search by name or email', value: q, oninput: (e) => { q = e.target.value.toLowerCase(); drawList(); } }),
+        h('select', { 'aria-label': 'Show', onchange: (e) => { show = e.target.value; drawList(); } },
+          [['all', 'Everyone'], ['company', 'Company members'], ['academy', 'Academy members'], ['quiet', 'Not active lately'], ['nosite', 'Company, no website photo']].map(([v, t]) => h('option', { value: v, selected: show === v }, t)))),
       listEl,
       h('datalist', { id: 'pv-names' }, names.map((n) => h('option', { value: n }))),
       bar.el);
@@ -1030,7 +1089,7 @@ export function participantsView(ctx) {
     const say = (t, bad) => { message = [t, !!bad]; note.textContent = t; note.classList.toggle('bad', !!bad); };
     const badges = (email) => [members.has(email) && h('span', { class: 'pv-badge on' }, members.get(email).level === 'academy' ? 'Academy member' : 'Company member'), subscribed.has(email) && h('span', { class: 'pv-badge' }, 'Newsletter')];
     const memberCell = (p) => {
-      if (members.has(p.email)) return h('span', { class: 'pv-badges' }, ...badges(p.email));
+      if (members.has(p.email)) return h('span', { class: 'pv-badges' }, avatar(ctx, members.get(p.email)), ...badges(p.email));
       if (!p.email) return h('span', { class: 'muted' }, 'No email');
       const level = h('select', { 'aria-label': 'Level' }, h('option', { value: 'company' }, 'Company'), h('option', { value: 'academy' }, 'Academy'));
       return h('span', { class: 'pv-add-member' }, subscribed.has(p.email) && h('span', { class: 'pv-badge' }, 'Newsletter'), level, h('button', { type: 'button', class: 'btn-small', onclick: async (e) => {
