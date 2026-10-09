@@ -417,6 +417,9 @@ const AUDIENCE = { newsletter: 'Newsletter subscribers', members: 'Members area:
 const TICKETS = 'https://my.weezevent.com/iccd-training-2026-2027';
 const TEMPLATES = {
   participants: [
+    { id: 'next', label: 'Next training (announce, with booking)', card: 'upcoming',
+      subject: (t) => `Next training: ${t.city}, ${t.dates}`,
+      body: (t) => `Hi {name},\n\nOur next training weekend is in ${t.city} on ${t.dates}, with live drums and our maestros. Places are limited, so book early.\n\n{card}\n\nWe would love to see you there!\n**The ICCD team**` },
     { id: 'invite', label: 'Invite to our newsletter', button: 'join',
       subject: () => 'Shall we keep you posted?',
       body: () => `Hi {name},\n\nYou have danced with us or come to one of our shows, and we would love to keep in touch. Our newsletter brings our training dates, shows and news, about once a month.\n\nIf you would like it, just click the button below. If not, you don't need to do anything: we will not add you without your yes.\n\nWarm regards,\n**The ICCD team**` },
@@ -431,6 +434,9 @@ const TEMPLATES = {
       body: (t) => `Hi {name},\n\nThank you for joining us in ${t.city}. It was a joy to share the weekend with you, the maestros and the musicians.\n\nPhotos and videos will follow on our Instagram. We would love to see you again at our next training.\n\n{card}\n\nWith love,\n**The ICCD team**` },
   ],
   members: [
+    { id: 'next', label: 'Next training (announce, with booking)', card: 'upcoming',
+      subject: (t) => `Next training: ${t.city}, ${t.dates}`,
+      body: (t) => `Hi {name},\n\nOur next training weekend is in ${t.city} on ${t.dates}, with live drums and our maestros. Places are limited, so book early.\n\n{card}\n\nWe would love to see you there!\n**The ICCD team**` },
     { id: 'invite', label: 'Invite to our newsletter', button: 'join',
       subject: () => 'Shall we keep you posted?',
       body: () => `Hi {name},\n\nAs a member of the company you already hear from us about the members area. Would you also like our newsletter? It brings our training dates, shows and news, about once a month.\n\nIf you would like it, just click the button below. If not, you don't need to do anything: we will not add you without your yes.\n\nWarm regards,\n**The ICCD team**` },
@@ -442,9 +448,9 @@ const TEMPLATES = {
       body: () => `Hi {name},\n\n[Write your news here.]\n\nSee you soon,\n**The ICCD team**` },
   ],
   news: [
-    { id: 'next', label: 'Next training', card: 'next',
+    { id: 'next', label: 'Next training (announce, with booking)', card: 'upcoming',
       subject: (t) => `Next training: ${t.city}, ${t.dates}`,
-      body: (t) => `Hello,\n\nOur next training weekend is in ${t.city} on ${t.dates}, with live drums and our maestros. Places are limited, so book early.\n\n{card}\n\nSee you there!\n**The ICCD team**` },
+      body: (t) => `Hello,\n\nOur next training weekend is in ${t.city} on ${t.dates}, with live drums and our maestros. Places are limited, so book early.\n\n{card}\n\nWe would love to see you there!\n**The ICCD team**` },
     { id: 'news', label: 'News from ICCD',
       subject: () => 'News from the International Company of Cuban Dances',
       body: () => `Hello,\n\n[Write your news here.]\n\nWarm regards,\n**The ICCD team**` },
@@ -475,11 +481,16 @@ export function mailingView(ctx) {
       const ids = new Set(aud.slice(8).split(','));
       return uniqueEmails(season.people.filter((p) => (ids.has('all') ? p.event === season.current : ids.has(p.ticket)))).filter((e) => !skip.has(e)).length;
     }
+    if (aud.startsWith('segment:unbooked:')) {
+      const ym = aud.slice(17), cur = season.events.find((e) => e.id === season.current), tname = new Map(season.tickets.map((t) => [t.id, t.name]));
+      const booked = new Set(season.people.filter((p) => p.event === season.current && ticketMonth({ name: tname.get(p.ticket) || '' }, cur) === ym).map((p) => p.email));
+      return peopleIndex(season).filter((x) => x.now && !booked.has(x.email)).map((x) => x.email).filter((e) => !skip.has(e)).length;
+    }
     if (aud.startsWith('segment:')) return peopleIndex(season).filter((x) => SEGMENTS[aud.slice(8)].test(x)).map((x) => x.email).filter((e) => !skip.has(e)).length;
     if (invite) return membersEmails(aud).filter((e) => !skip.has(e)).length;
     return { members: data.members.all, 'members:company': data.members.company, 'members:academy': data.members.academy }[aud];
   };
-  const label = (value) => AUDIENCE[value] || (value === 'tickets:all' ? 'Participants · this whole season' : value.startsWith('segment:') ? SEGMENTS[value.slice(8)].label : `Participants · ${groups.find((g) => `tickets:${g.tickets.join(',')}` === value)?.label || pendingLabel || 'a training'}`);
+  const label = (value) => AUDIENCE[value] || (value === 'tickets:all' ? 'Participants · this whole season' : value.startsWith('segment:unbooked:') ? `Trained this season, not booked for ${(ctx.trainings.events || []).find((e) => e.start.startsWith(value.slice(17)))?.city || 'the next training'} yet` : value.startsWith('segment:') ? SEGMENTS[value.slice(8)].label : `Participants · ${groups.find((g) => `tickets:${g.tickets.join(',')}` === value)?.label || pendingLabel || 'a training'}`);
 
   function draw() {
     const subs = data.subscribers;
@@ -487,11 +498,13 @@ export function mailingView(ctx) {
     const byLang = Object.entries(subs.filter((s) => s.status === 'active').reduce((m, s) => ({ ...m, [s.lang]: (m[s.lang] || 0) + 1 }), {}));
 
     // ----- write and send -----
+    const upcomingEv = [...(ctx.trainings.events || [])].sort((a, b) => a.start.localeCompare(b.start)).find((e) => e.start >= new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10));
     const audience = h('select', { 'aria-label': 'Audience' },
       h('optgroup', { label: 'Website and members area' }, Object.entries(AUDIENCE).map(([v, t]) => h('option', { value: v }, t))),
       groups.length > 0 && h('optgroup', { label: 'This season (Weezevent)' },
         groups.map((g) => h('option', { value: `tickets:${g.tickets.join(',')}` }, `Participants · ${g.label}`)),
         h('option', { value: 'tickets:all' }, 'Participants · this whole season')),
+      season?.connected && upcomingEv && h('optgroup', { label: `${upcomingEv.city} (Weezevent)` }, h('option', { value: `segment:unbooked:${upcomingEv.start.slice(0, 7)}` }, `Trained this season, not booked for ${upcomingEv.city} yet`)),
       season?.connected && h('optgroup', { label: 'Since 2023 (Weezevent)' }, SEGMENT_AUDIENCES.map((k) => h('option', { value: `segment:${k}` }, SEGMENTS[k].label))));
     if (pendingAudience) {
       // a training of an older event (from All events) is not in the list yet: add it
@@ -516,6 +529,8 @@ export function mailingView(ctx) {
       const g = groups.find((x) => `tickets:${x.tickets.join(',')}` === aud);
       return g && g.ym ? events.findIndex((e) => e.start.slice(0, 7) === g.ym) : -1;
     };
+    const weekAhead = new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10);
+    const upcoming = () => events.findIndex((e) => e.start >= weekAhead);
     const nextAfter = (i) => events.findIndex((e, j) => j > i && e.start >= today) >= 0 ? events.findIndex((e, j) => j > i && e.start >= today) : events.findIndex((e) => e.start >= today);
     const fillTemplates = () => {
       const kind = kindOf(audience.value);
@@ -528,7 +543,7 @@ export function mailingView(ctx) {
       if (!t) return;
       if ((subject.value.trim() || body.value.trim()) && !confirm('Replace the subject and message with this template?')) { template.value = ''; return; }
       const own = trainingFor(audience.value);
-      const idx = t.card === 'this' ? (own >= 0 ? own : nextAfter(-1)) : t.card === 'next' ? nextAfter(own) : -1;
+      const idx = t.card === 'this' ? (own >= 0 ? own : nextAfter(-1)) : t.card === 'next' ? nextAfter(own) : t.card === 'upcoming' ? upcoming() : -1;
       const ev = events[idx] || events[nextAfter(-1)] || {};
       const info = { city: ev.city || '[city]', dates: ev.start ? ctx.range(ev.start, ev.end) : '[dates]' };
       subject.value = t.subject(info); body.value = t.body(info);
@@ -607,7 +622,7 @@ export function mailingView(ctx) {
       const t = new Date(); t.setDate(t.getDate() + 1); t.setHours(10, 0, 0, 0);
       const when = h('input', { type: 'datetime-local', value: localInput(t), min: localInput(new Date(Date.now() + 10 * 60e3)), 'aria-label': 'Date and time' });
       scheduleBox.replaceChildren(
-        h('p', {}, h('b', {}, `Schedule "${subject.value.trim()}" for ${label(audience.value)}`), ` (about ${c} ${c === 1 ? 'person' : 'people'} today; the list is checked again when it goes out). It is sent within 10 minutes of the time you choose.`),
+        h('p', {}, h('b', {}, `Schedule "${subject.value.trim()}" for ${label(audience.value)}`), ` (about ${c} ${c === 1 ? 'person' : 'people'} today; the list is checked again when it goes out). It is sent within 10 minutes of the time you choose.`, c > (data.daily?.limit || 100) - 5 ? ` The email service allows ${data.daily?.limit || 100} emails a day, so this one goes out in daily portions over about ${Math.ceil(c / ((data.daily?.limit || 100) - 5))} days, each morning at 10:00.` : ''),
         h('div', { class: 'pv-confirm-buttons' }, when,
           h('button', { type: 'button', class: 'btn-small pv-send', onclick: async (e) => {
             e.target.disabled = true;
@@ -677,7 +692,7 @@ export function mailingView(ctx) {
       h('section', {},
         h('h3', {}, 'Sent'),
         data.campaigns.length ? h('div', { class: 'pv-sent' }, data.campaigns.map((c) => h('div', { class: 'pv-sent-row' },
-          h('span', { class: 'muted' }, day(c.at)), h('b', {}, c.subject, c.scheduled ? h('small', { class: 'muted' }, ' · scheduled') : '', c.error ? h('small', { class: 'pv-note bad' }, ` · not sent: ${c.error}`) : ''), h('span', {}, `${c.label || AUDIENCE[c.audience] || 'Participants'}${c.lang && c.lang !== 'all' ? ` · ${LANG_NAMES[c.lang]}` : ''}`), h('span', {}, `${c.sent} sent${c.failed ? `, ${c.failed} failed` : ''}`))))
+          h('span', { class: 'muted' }, day(c.at)), h('b', {}, c.subject, c.left ? h('small', { class: 'muted' }, ` · ${c.left} more in the next days`) : '', c.scheduled ? h('small', { class: 'muted' }, ' · scheduled') : '', c.error ? h('small', { class: 'pv-note bad' }, ` · not sent: ${c.error}`) : ''), h('span', {}, `${c.label || AUDIENCE[c.audience] || 'Participants'}${c.lang && c.lang !== 'all' ? ` · ${LANG_NAMES[c.lang]}` : ''}`), h('span', {}, `${c.sent} sent${c.failed ? `, ${c.failed} failed` : ''}`))))
           : h('p', { class: 'muted' }, 'Nothing sent yet.')),
       h('section', {},
         h('div', { class: 'pv-subs-head' }, h('h3', {}, 'Subscribers'), h('button', { type: 'button', class: 'btn-small', onclick: exportCsv }, 'Export the subscribed list (CSV)')),

@@ -136,7 +136,7 @@ async function buildMessage(env, p, o) {
   const first = String(p.name || '').trim().split(/\s+/)[0] || '';
   const personal = (s) => (first ? s.replace(/\{name\}/g, first) : s.replace(/\s*\{name\}/g, ''));
   const body = personal(o.body);
-  const unsub = p.kind === 'news' ? `${page(l)}?u=${await token('u', p.email, env)}` : '';
+  const unsub = p.kind === 'news' || p.kind === 'participants' ? `${page(l)}?u=${await token('u', p.email, env)}` : '';
   const reason = p.kind === 'news' ? esc(w.foot) : p.kind === 'participants' ? PARTICIPANTS_FOOT : MEMBERS_FOOT;
   const foot = `<p style="margin:0;">${reason}${unsub ? `<br><a href="${unsub}" style="color:#8a8070;">${esc(w.unsub)}</a>` : ''}</p>`;
   // the invitation button is personal: one click subscribes this person (their yes, by email)
@@ -222,7 +222,8 @@ async function audience(env, name, l, invite) {
   } else if (name.startsWith('segment:')) {
     // groups of past and present participants: everyone, lapsed dancers, show audiences, regulars
     const h = await history(env);
-    const wanted = new Set(segments(h)[name.slice(8)] || []);
+    const [segName, ym] = name.slice(8).split(':');
+    const wanted = new Set(segments(h, ym)[segName] || []);
     const names = new Map(h.people.map((p) => [p.email, `${p.first} ${p.last}`.trim()]));
     list = [...wanted].map((email) => ({ email, name: names.get(email) || '', kind: 'participants' }));
   } else throw new Error('Unknown audience');
@@ -245,7 +246,7 @@ export async function newsPublic(req, env, url, reply) {
     const old = JSON.parse((await kv.get(await key(email))) || 'null');
     if (old?.status !== 'active') {
       await save(kv, { email, lang: l, status: 'pending', created: Date.now(), source: text(body.source, 40) || 'website' });
-      try { await sendConfirm(env, email, l); } catch { return reply({ message: 'We could not send the confirmation email right now. Please try again later.' }, 502); }
+      try { await sendConfirm(env, email, l); await countSent(kv, 1); } catch { return reply({ message: 'We could not send the confirmation email right now. Please try again later.' }, 502); }
     }
     return reply({ ok: true }); // the same answer whether or not the address was already on the list
   }
@@ -286,6 +287,11 @@ export async function oneClick(req, env, url) {
 
 // One campaign: checks, audience, personal emails, Resend, the record in "Sent".
 // `scheduled` skips the count check (the audience may have grown since it was planned).
+const DAILY = (env) => Number(env.MAIL_DAILY_LIMIT) || 100;
+const today = () => new Date().toISOString().slice(0, 10);
+const usedToday = async (kv) => Number(await kv.get(`mailcount:${today()}`)) || 0;
+async function countSent(kv, n) { if (n) await kv.put(`mailcount:${today()}`, String((await usedToday(kv)) + n), { expirationTtl: 3 * 86400 }); }
+
 async function sendCampaign(env, b, scheduled) {
   const kv = env.PRIVATE;
   const subject = text(b.subject, 150), body = String(b.body || '').replace(/\r\n/g, '\n').trim().slice(0, 20000);
@@ -299,17 +305,28 @@ async function sendCampaign(env, b, scheduled) {
     try { people = await audience(env, text(b.audience, 2000), text(b.lang, 3), !!b.button?.join); } catch (e) { return { status: 400, body: { message: e.message } }; }
     if (!people.length) return { status: 400, body: { message: 'Nobody to send to in this audience.' } };
     if (people.length > 2000) return { status: 400, body: { message: 'More than 2,000 people: ask for a bigger sending plan first.' } };
+    if (Array.isArray(b.only)) { const only = new Set(b.only); people = people.filter((p) => only.has(p.email)); } // the rest of a split email
     if (!scheduled && Number(b.expect) !== people.length) return { status: 409, body: { message: `The audience changed: it now has ${people.length} people. Check and send again.`, count: people.length } };
+  }
+  // a few emails a day stay free for sign-up confirmations and member codes
+  const room = Math.max(0, DAILY(env) - (await usedToday(kv)) - 5);
+  let rest = [];
+  if (!b.test && people.length > room) {
+    if (!scheduled) return { status: 400, body: { message: `Today ${room} more emails can be sent (the email service allows ${DAILY(env)} a day). Use Schedule… instead: a big list is then sent in daily portions automatically.`, room } };
+    rest = people.slice(room).map((p) => p.email);
+    people = people.slice(0, room);
+    if (!people.length) return { status: 200, body: { sent: 0, failed: 0, rest } };
   }
   const opts = { subject, body, test: !!b.test, ...extras(b) };
   const messages = await Promise.all(people.map((p) => buildMessage(env, p, opts)));
   const result = await resend(env, messages);
+  await countSent(kv, result.sent);
   if (!b.test) {
     const at = Date.now();
-    const record = { at, subject, audience: text(b.audience, 60), label: text(b.label, 80), lang: text(b.lang, 3) || 'all', ...(scheduled ? { scheduled: true } : {}), ...result };
+    const record = { at, subject, audience: text(b.audience, 60), label: text(b.label, 80), lang: text(b.lang, 3) || 'all', ...(scheduled ? { scheduled: true } : {}), ...(rest.length ? { left: rest.length } : {}), ...result };
     await kv.put(`campaign:${at}`, JSON.stringify({ ...record, body }), { metadata: record });
   }
-  return result.failed && !result.sent ? { status: 502, body: { message: 'Resend refused the emails. Check the sending plan and the domain.' } } : { status: 200, body: result };
+  return result.failed && !result.sent ? { status: 502, body: { message: 'Resend refused the emails. Check the sending plan and the domain.' } } : { status: 200, body: { ...result, rest } };
 }
 
 // The timer (every 10 minutes): send the scheduled emails that are due
@@ -321,6 +338,12 @@ export async function runScheduled(env) {
     await kv.delete(k.name); // first, so a slow send is never sent twice
     if (item?.payload) {
       const r = await sendCampaign(env, item.payload, true).catch((e) => ({ status: 500, body: { message: e.message } }));
+      if (r.status === 200 && r.body.rest?.length) {
+        const next = new Date(); next.setUTCDate(next.getUTCDate() + 1); next.setUTCHours(8, 0, 0, 0); // 10:00 in Luxembourg (summer)
+        const id = `${next.getTime()}-${crypto.randomUUID().slice(0, 8)}`;
+        const meta = { id, at: next.getTime(), subject: item.subject, label: `${item.label.replace(/ \(continued\)$/, '')} (continued)`, lang: item.lang, left: r.body.rest.length };
+        await kv.put(`scheduled:${id}`, JSON.stringify({ ...meta, payload: { ...item.payload, only: r.body.rest } }), { metadata: meta });
+      }
       if (r.status !== 200) await kv.put(`campaign:${Date.now()}`, JSON.stringify({ subject: item.subject, error: r.body.message }), { metadata: { at: Date.now(), subject: item.subject, label: item.label, sent: 0, failed: 0, error: r.body.message, scheduled: true } });
     }
   }
@@ -335,7 +358,7 @@ export async function newsAdmin(req, env, url, reply) {
     const campaigns = camp.keys.map((k) => k.metadata).filter(Boolean).sort((a, b) => b.at - a.at).slice(0, 30);
     const scheduled = (await kv.list({ prefix: 'scheduled:' })).keys.map((k) => k.metadata).filter(Boolean).sort((a, b) => a.at - b.at);
     const members = JSON.parse((await kv.get('members')) || '[]');
-    return reply({ subscribers, campaigns, scheduled, members: { all: members.length, company: members.filter((m) => m.level === 'company').length, academy: members.filter((m) => m.level === 'academy').length } });
+    return reply({ subscribers, campaigns, scheduled, daily: { limit: DAILY(env), used: await usedToday(kv) }, members: { all: members.length, company: members.filter((m) => m.level === 'company').length, academy: members.filter((m) => m.level === 'academy').length } });
   }
   if (url.pathname === '/news/admin' && req.method === 'DELETE') {
     const email = norm((await req.json().catch(() => ({}))).email);

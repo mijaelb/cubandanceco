@@ -120,7 +120,7 @@ function ticketMonth(name, ev) {
   const written = words.find((w) => /^20\d\d$/.test(w));
   return `${written ? Number(written) : m + 1 >= m0 ? y0 : y0 + 1}-${String(m + 1).padStart(2, '0')}`;
 }
-export function segments(h) {
+export function segments(h, ym) {
   const kind = new Map(h.events.map((e) => [e.id, e.kind]));
   const evs = new Map(h.events.map((e) => [e.id, e]));
   const tname = new Map(h.tickets.map((t) => [t.id, t.name]));
@@ -128,9 +128,9 @@ export function segments(h) {
   const by = new Map();
   for (const p of h.people) {
     if (!p.email) continue;
-    const x = by.get(p.email) || { trainings: new Set(), shows: new Set(), now: false };
+    const x = by.get(p.email) || { trainings: new Set(), shows: new Set(), now: false, months: new Set() };
     const month = kind.get(p.event) === 'show' ? null : ticketMonth(tname.get(p.ticket) || '', evs.get(p.event));
-    if (kind.get(p.event) === 'show') x.shows.add(p.event); else if (month) { x.trainings.add(`${p.event}:${month}`); if (p.event === current) x.now = true; } // T-shirts and passes are not trainings; 'now' = trains this season
+    if (kind.get(p.event) === 'show') x.shows.add(p.event); else if (month) { x.trainings.add(`${p.event}:${month}`); if (p.event === current) { x.now = true; x.months.add(month); } } // T-shirts and passes are not trainings; 'now' = trains this season
     by.set(p.email, x);
   }
   const pick = (f) => [...by.entries()].filter(([, x]) => f(x)).map(([e]) => e);
@@ -140,6 +140,8 @@ export function segments(h) {
     lapsed: pick((x) => x.trainings.size > 0 && !x.now),
     shows: pick((x) => x.shows.size > 0 && x.trainings.size === 0),
     regulars: pick((x) => x.trainings.size >= 5),
+    // trained this season, but no ticket yet for the training of month ym
+    unbooked: ym ? pick((x) => x.now && !x.months.has(ym)) : [],
   };
 }
 
