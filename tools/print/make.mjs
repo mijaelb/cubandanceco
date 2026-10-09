@@ -3,6 +3,7 @@
 //   iccd-support-card-a6.pdf     table / reception card
 //   iccd-support-story.png       Instagram / WhatsApp story (1080 × 1920)
 //   iccd-sponsorship.pdf         two-page offer for businesses and towns
+//   iccd-gofundme-*.png          cover and gallery photos for the GoFundMe fundraiser
 // Usage: node tools/print/make.mjs   → files in public/print/ (cubandance.co/print/…)
 // Chrome renders the pages, so the PDFs have real, selectable text and working links.
 import { readFileSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
@@ -235,16 +236,36 @@ async function sponsorship() {
   return page(css, body, 'A4');
 }
 
+// ---------- GoFundMe photos (1200 × 675, the landscape size GoFundMe shows best) ----------
+// Each is an exact crop, measured on the 800 px wide version of the photo: x, y = top left corner,
+// w = width of the crop (the height follows from 16:9). Every face stays whole and the festival logos
+// printed in the corners stay out.
+const crop = (src, x, y, w) => async () => {
+  const scale = 1200 / w; // 800-px units → output pixels
+  return page(`body { width: 1200px; height: 675px; overflow: hidden; position: relative; }
+    img { position: absolute; width: ${800 * scale}px; left: ${-x * scale}px; top: ${-y * scale}px; max-width: none; }`,
+  `<img src="${file(src)}" alt="">`, '1200px 675px');
+};
+const GOFUNDME = [
+  ['cover', 'stage-masks', 100, 28, 680], // costumes and live drums together: the cover
+  ['yemaya', 'stage-yemaya', 0, 20, 800],
+  ['drums', 'rome-musicians', 0, 0, 778],
+  ['company', 'studio-group', 0, 40, 800],
+  ['joy', 'training-joy', 0, 15, 800],
+  ['maestro', 'training-leonardo', 0, 10, 800],
+];
+
 // ---------- render ----------
 mkdirSync(OUT, { recursive: true }); mkdirSync(TMP, { recursive: true });
 const chrome = (args) => execFileSync(CHROME, ['--headless=new', '--disable-gpu', '--allow-file-access-from-files', '--hide-scrollbars', '--virtual-time-budget=8000', ...args], { stdio: 'ignore' });
-const jobs = [['iccd-support-poster-a4', poster, 'pdf'], ['iccd-support-card-a6', card, 'pdf'], ['iccd-support-story', story, 'png'], ['iccd-sponsorship', sponsorship, 'pdf']];
+const jobs = [['iccd-support-poster-a4', poster, 'pdf'], ['iccd-support-card-a6', card, 'pdf'], ['iccd-support-story', story, 'png'], ['iccd-sponsorship', sponsorship, 'pdf'],
+  ...GOFUNDME.map(([name, src, x, y, w], i) => [`iccd-gofundme-${i + 1}-${name}`, crop(`public/images/photos/${src}.webp`, x, y, w), 'png'])];
 for (const [name, make, type] of jobs) {
   const html = join(TMP, name + '.html');
   writeFileSync(html, await make());
   const out = join(OUT, `${name}.${type}`);
   if (type === 'pdf') chrome(['--no-pdf-header-footer', `--print-to-pdf=${out}`, pathToFileURL(html).href]);
-  else chrome(['--window-size=1080,1920', '--force-device-scale-factor=1', `--screenshot=${out}`, pathToFileURL(html).href]);
+  else chrome([name.includes('gofundme') ? '--window-size=1200,675' : '--window-size=1080,1920', '--force-device-scale-factor=1', `--screenshot=${out}`, pathToFileURL(html).href]);
   console.log('made', out.replace(ROOT, '').replace(/\\/g, '/'));
 }
 if (!process.argv.includes('--keep')) rmSync(TMP, { recursive: true, force: true });

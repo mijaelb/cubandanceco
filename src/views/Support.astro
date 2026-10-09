@@ -41,6 +41,7 @@ const ways = [
           {c.text && <p class="campaign-text">{t(c.text)}</p>}
           <div class="campaign-bar" role="progressbar" aria-label={t(c.title)} aria-valuemin="0" aria-valuemax={goal} aria-valuenow={extra}><span style={`width:${Math.min(100, (extra / goal) * 100)}%`}></span></div>
           <p class="campaign-numbers"><strong data-raised>{euro(extra)}</strong><span>{t('raised of')} {euro(goal)}</span><span class="campaign-meta" data-meta></span></p>
+          {c.url && <a class="btn btn-dark campaign-btn" href={c.url} target="_blank" rel="noopener">{t('Give to this campaign')}</a>}
         </div>
       )}
       <div class="section-head"><div><p class="eyebrow">{t('Donate')}</p><h2 class="display">{t('Give once or every month')}</h2></div><p class="muted narrow">{t('A monthly gift, however small, lets us plan the season ahead.')}</p></div>
