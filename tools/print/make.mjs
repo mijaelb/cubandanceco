@@ -247,10 +247,11 @@ const crop = (src, x, y, w) => async () => {
   `<img src="${file(src)}" alt="">`, '1200px 675px');
 };
 const GOFUNDME = [
-  ['cover', 'stage-masks', 100, 28, 680], // costumes and live drums together: the cover
+  ['cover', 'studio-group', 0, 40, 800], // the whole company in costume, every face clear even as a small preview
+  ['stage', 'stage-africa', 0, 12, 800], // all of us on stage with the sticks (the festival's logo stays: cropping it would cut a face)
+  ['masks', 'stage-masks', 100, 28, 680], // costumes and live drums together
   ['yemaya', 'stage-yemaya', 0, 20, 800],
   ['drums', 'rome-musicians', 0, 0, 778],
-  ['company', 'studio-group', 0, 40, 800],
   ['joy', 'training-joy', 0, 15, 800],
   ['maestro', 'training-leonardo', 0, 10, 800],
 ];
