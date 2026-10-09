@@ -111,19 +111,19 @@
     }
   },
   "donate": {
-    "once": "https://donate.stripe.com/test_00wdR9fwvbyOaTfehQ83C00",
+    "once": "https://donate.stripe.com/dRm28s6Pi087eRoeya9Zm03",
     "monthly": [
       {
         "amount": 5,
-        "url": "https://buy.stripe.com/test_6oUcN5esrcCS7H31v483C01"
+        "url": "https://buy.stripe.com/5kQeVe7TmcUT9x4blY9Zm00"
       },
       {
         "amount": 10,
-        "url": "https://buy.stripe.com/test_28EcN584332id1na1A83C02"
+        "url": "https://buy.stripe.com/9B614o5LeaMLfVs75I9Zm01"
       },
       {
         "amount": 20,
-        "url": "https://buy.stripe.com/test_fZu4gz3NNauK6CZ1v483C03"
+        "url": "https://buy.stripe.com/5kQdRaddGf3124C61E9Zm02"
       }
     ]
   }
