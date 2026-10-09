@@ -104,6 +104,27 @@
     "faq": {
       "title": "Questions about trainings and joining · ICCD",
       "description": "Who can join, what you need, where the trainings take place, what they cost and how to sign up for an ICCD training weekend."
+    },
+    "support": {
+      "title": "Support us · Donate to the International Company of Cuban Dances",
+      "description": "Help keep Afro-Cuban folklore alive in Europe. Give once or every month to our non-profit company: live drums, maestros from Cuba and shows."
     }
+  },
+  "donate": {
+    "once": "https://donate.stripe.com/test_00wdR9fwvbyOaTfehQ83C00",
+    "monthly": [
+      {
+        "amount": 5,
+        "url": "https://buy.stripe.com/test_6oUcN5esrcCS7H31v483C01"
+      },
+      {
+        "amount": 10,
+        "url": "https://buy.stripe.com/test_28EcN584332id1na1A83C02"
+      },
+      {
+        "amount": 20,
+        "url": "https://buy.stripe.com/test_fZu4gz3NNauK6CZ1v483C03"
+      }
+    ]
   }
 }

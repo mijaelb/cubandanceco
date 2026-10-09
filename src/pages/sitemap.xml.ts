@@ -1,8 +1,8 @@
 // Sitemap with every page in every language (and hreflang alternates).
 import { LANGS } from '../i18n';
-import { link } from '../lib/utils';
+import { link, donateLive } from '../lib/utils';
 
-const PAGES = ['', 'trainings', 'performances', 'raices-cubanas', 'about', 'company', 'gallery', 'faq'];
+const PAGES = ['', 'trainings', 'performances', 'raices-cubanas', 'about', 'company', 'gallery', 'faq', ...(donateLive() ? ['support'] : [])];
 
 export function GET({ site }: { site: URL }) {
   const abs = (lang: string, page: string) => new URL(link(lang, page), site).href;

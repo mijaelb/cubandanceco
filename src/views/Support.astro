@@ -1,0 +1,74 @@
+---
+// Donations through Stripe payment links (site.json → donate). While the links are
+// Stripe test links the page is a preview: not in the menu, the sitemap or search results.
+import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
+import site from '../data/site.json';
+import { link, donateLive } from '../lib/utils';
+import { useT, locale } from '../i18n';
+
+const { lang } = Astro.props;
+const t = useT(lang);
+const d = (site as any).donate || {};
+const live = donateLive();
+const euro = (n: number) => new Intl.NumberFormat(locale(lang), { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
+const monthly = (d.monthly || []).filter((m: any) => m.url && Number(m.amount));
+const ways = [
+  ['Live music', 'Drummers and singers at every training weekend and every show. Afro-Cuban dance does not exist without them.'],
+  ['The maestros', 'Bringing our teachers, former dancers of the Conjunto Folklórico Nacional de Cuba, to a different European city every month.'],
+  ['Costumes and stage', 'Costumes, props and travel for Raíces Cubanas and our other shows.'],
+];
+---
+<Layout lang={lang} page="support" title="Support us" noindex={!live} image="/images/photos/rome-musicians.webp">
+  <PageHero image="/images/photos/rome-musicians.webp" position="62% 0%" mobilePosition="37% 0%" eyebrow={t('Support us')} title={t('Keep the drums playing')} text={t('We are a non-profit association. Every donation goes into training weekends, live music and shows that keep Afro-Cuban folklore alive in Europe.')} />
+
+  <section class="section cream" id="donate">
+    <div class="wrap">
+      {!live && <p class="give-preview">{t('Preview: these buttons use Stripe test mode. No real payments are taken.')}</p>}
+      <div class="section-head"><div><p class="eyebrow">{t('Donate')}</p><h2 class="display">{t('Give once or every month')}</h2></div><p class="muted narrow">{t('A monthly gift, however small, lets us plan the season ahead.')}</p></div>
+      <div class="give">
+        {monthly.length > 0 && (
+          <div class="give-card dark reveal">
+            <h3 class="display">{t('Give monthly')}</h3>
+            <div class="give-amounts">
+              {monthly.map((m: any) => (
+                <a class="give-amount" href={m.url} rel="noopener"><strong>{euro(Number(m.amount))}</strong><span>{t('per month')}</span></a>
+              ))}
+            </div>
+            <p class="give-note">{t('To change or stop a monthly donation, write to us at')} <a href={`mailto:${site.links.email}`}>{site.links.email}</a>.</p>
+          </div>
+        )}
+        {d.once && (
+          <div class="give-card paper reveal">
+            <h3 class="display">{t('Give once')}</h3>
+            <p>{t('Choose your own amount, from €5. Any gift helps.')}</p>
+            <a class="btn btn-dark" href={d.once} rel="noopener">{t('Choose an amount')}</a>
+          </div>
+        )}
+      </div>
+      <p class="give-secure"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2" /><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" /></svg>{t('Secure payment, handled by Stripe.')}</p>
+    </div>
+  </section>
+
+  <section class="section paper">
+    <div class="wrap">
+      <div class="section-head"><div><p class="eyebrow">{t('Your donation at work')}</p><h2 class="display">{t('Where your donation goes')}</h2></div></div>
+      <ol class="pillars">
+        {ways.map(([title, text], i) => <li class="reveal"><span class="display">0{i + 1}</span><h3>{t(title)}</h3><p>{t(text)}</p></li>)}
+      </ol>
+      <p class="give-org muted">{t('The International Company of Cuban Dances is a project of Generación Abbilona, a non-profit cultural association registered in Luxembourg.')}</p>
+    </div>
+  </section>
+
+  <section class="section gold cta">
+    <div class="wrap cta-inner reveal">
+      <h2 class="display huge">{t('Other ways to help')}</h2>
+      <p class="lead">{t('Come dancing with us, book us for your festival or theatre, or share our work with your friends.')}</p>
+      <div class="actions">
+        <a class="btn btn-dark" href={link(lang, 'trainings')}>{t('See training dates')}</a>
+        <a class="btn btn-line" href={link(lang, 'performances')}>{t('Book a performance')}</a>
+        <a class="btn btn-line" href={site.links.instagram} target="_blank" rel="noopener">{t('Follow us')}</a>
+      </div>
+    </div>
+  </section>
+</Layout>

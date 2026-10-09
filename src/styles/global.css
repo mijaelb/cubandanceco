@@ -550,3 +550,23 @@ h1.hero-title { font-size: clamp(2.8rem, 7.6vw, 7.4rem); max-width: 17ch; color:
 .m-tabs a[aria-current] .m-tab-lock svg { stroke: var(--ink); }
 .m-paid { background: #e7f3ea; color: #1f5a2e; border-radius: 14px; padding: 14px 18px; margin: 0 auto 20px; max-width: 1200px; width: calc(100% - 40px); }
 .m-free { position: absolute; left: 10px; top: 10px; background: var(--gold); color: var(--ink); font: 700 0.72rem/1 var(--body); letter-spacing: 0.08em; text-transform: uppercase; padding: 6px 10px; border-radius: 999px; }
+
+/* ---------- Support us (donations) ---------- */
+.give { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: clamp(16px, 2.5vw, 28px); }
+.give-card { border-radius: var(--radius); padding: clamp(26px, 4vw, 44px); display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.give-card.paper { border: 1px solid var(--line); }
+.give-card h3 { font-size: clamp(1.9rem, 3.6vw, 2.6rem); margin: 0; }
+.give-card p { margin: 0; }
+.give-card .btn { align-self: flex-start; margin-top: auto; }
+.give-amounts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.give-amount { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 8px 18px; border-radius: 16px; background: var(--gold); color: var(--ink); text-decoration: none; transition: transform 0.25s var(--ease), background 0.25s; }
+.give-amount:hover { background: var(--gold-pale); transform: translateY(-2px); }
+.give-amount strong { font: 400 clamp(1.7rem, 3.4vw, 2.3rem)/1 var(--display); letter-spacing: 0.01em; }
+.give-amount span { font: 700 0.68rem/1.3 var(--body); text-transform: uppercase; letter-spacing: 0.1em; text-align: center; }
+.give-note { font-size: 0.92rem; color: #c2b7a2; }
+.give-note a { color: inherit; }
+.give-secure { display: flex; align-items: center; gap: 10px; margin: 24px 0 0; font-size: 0.92rem; color: var(--muted); max-width: 100%; }
+.give-secure svg { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.give-preview { background: var(--ink); color: var(--gold-pale); border-radius: 12px; padding: 12px 18px; font-weight: 600; font-size: 0.92rem; margin: 0 0 32px; max-width: 100%; }
+.give-org { margin: 32px 0 0; font-size: 0.95rem; }
+@media (max-width: 600px) { .page-hero-bg[style*='--pos-m'] { object-position: var(--pos-m) !important; } }

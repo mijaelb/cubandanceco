@@ -3,6 +3,15 @@ import { existsSync, readFileSync } from 'node:fs';
 import { imageSize } from 'image-size';
 import { join } from 'node:path';
 
+import site from '../data/site.json';
+
+/** Donations are live once every Stripe link is set and none is a test link (site.json → donate). */
+export const donateLive = () => {
+  const d = (site as any).donate || {};
+  const urls = [d.once, ...(d.monthly || []).map((m: any) => m.url)].filter(Boolean);
+  return urls.length > 0 && urls.every((u: string) => /^https:\/\/(donate|buy)\.stripe\.com\//.test(u) && !u.includes('/test_'));
+};
+
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 /** Prefix a site-relative path with the deploy base (GitHub Pages sub-path). */

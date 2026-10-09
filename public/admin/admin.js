@@ -116,6 +116,7 @@ const SECTIONS = [
       stats: L('Numbers', 'number', { value: T('Value'), label: T('Label') }, (s) => `${s.value} ${s.label}`),
       styles: S('Dance styles (moving banner)'),
       links: O('Links', { tickets: U('Tickets (Weezevent)'), whatsapp: U('WhatsApp group'), instagram: U('Instagram'), facebook: U('Facebook'), tiktok: U('TikTok'), email: T('Contact e-mail', 'Shown in the footer'), bookingEmail: T('Booking e-mail', 'Used for show bookings'), instagramFeed: U('Instagram feed (Behold JSON URL)', 'Shows your latest posts on the home page; updated once a day') }),
+      donate: O('Donations (Stripe payment links)', { once: U('One-time donation link'), monthly: L('Monthly donations', 'amount', { amount: T('Amount in euros', 'Only the number, for example 10'), url: U('Stripe link') }, (m) => `€${m.amount} a month`) }),
       instagramHandle: T('Instagram handle'),
       name: T('Company name'), description: A('Search engine description'),
     },
