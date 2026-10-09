@@ -373,3 +373,12 @@ html:has(.pv-save) { scroll-padding-bottom: 90px; }
 @media (max-width: 640px) {
   .pv-sent-row, .pv-sub-row { grid-template-columns: minmax(0, 1fr) auto; }
 }
+
+/* Participants (Weezevent) */
+.pv-part-row { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.2fr) auto; gap: 12px; align-items: center; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; font-size: 0.92rem; }
+.pv-part-row > * { min-width: 0; overflow-wrap: anywhere; }
+.pv-add-member { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.pv-add-member select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-radius: 8px; }
+.pv-add-member .btn-small { margin: 0; }
+.pv-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+@media (max-width: 640px) { .pv-part-row { grid-template-columns: minmax(0, 1fr); } }

@@ -14,7 +14,7 @@ import { inbox } from './bunny.js';
 import { webhook, setup as stripeSetup, donationProgress } from './stripe.js';
 import { createRequest, readRequest, signRequest, fullRecord } from './sign.js';
 import { newsPublic, newsAdmin, oneClick } from './news.js';
-import { probe as weezeventProbe } from './weezevent.js';
+import { probe as weezeventProbe, season as weezeventSeason, addMember as weezeventAddMember } from './weezevent.js';
 
 const ORIGINS = ['https://cubandance.co', 'https://www.cubandance.co', 'http://localhost:4321'];
 const READ = /^src\/(data|i18n)\/[a-z-]+\.json$/;
@@ -115,6 +115,14 @@ export default {
 
     // Everything else needs a valid session
     if (!(await teamOk())) return reply({ message: 'Please sign in again' }, 401);
+
+    // Weezevent: this season's participants (team only), and adding one to the members area
+    if (url.pathname === '/weezevent/participants' && req.method === 'GET') {
+      try { return reply(await weezeventSeason(env, url.searchParams.has('fresh'))); } catch (e) { return reply({ message: e.message }, 502); }
+    }
+    if (url.pathname === '/weezevent/add-member' && req.method === 'POST') {
+      try { return reply(await weezeventAddMember(env, await req.json().catch(() => ({})))); } catch (e) { return reply({ message: e.message }, 400); }
+    }
 
     // Weezevent: first look at what the API returns (event names, field names only)
     if (url.pathname === '/weezevent/probe' && req.method === 'GET') {

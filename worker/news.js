@@ -5,6 +5,8 @@
 //     (status, language and email also as key metadata, so the list needs no extra reads)
 //     campaign:<time> = what was sent, to whom (counts only)
 
+import { season } from './weezevent.js';
+
 const LANGS = ['en', 'es', 'fr', 'it', 'de', 'nl'];
 const EMAIL = /^[^\s@<>()",;]+@[^\s@<>()",;]+\.[^\s@<>()",;]{2,}$/;
 const API = 'https://iccd-team-editor.iccd-cubandance.workers.dev';
@@ -54,6 +56,7 @@ const WORDS = {
   nl: { subject: 'Bevestig je inschrijving', hi: 'Hoi', intro: 'Bedankt voor je inschrijving voor het nieuws van de International Company of Cuban Dances: trainingsdata, shows en verhalen, ongeveer één keer per maand.', button: 'Inschrijving bevestigen', ignore: 'Heb je je niet ingeschreven? Negeer deze e-mail, dan hoor je niets meer van ons.', foot: 'Je krijgt deze e-mail omdat je je hebt ingeschreven op cubandance.co.', unsub: 'Uitschrijven' },
 };
 const MEMBERS_FOOT = 'You receive this email because you are on the ICCD members list.';
+const PARTICIPANTS_FOOT = 'You receive this email because you booked a ticket for an ICCD training.';
 
 // Branded email: tables and inline styles, so it looks right in Gmail, Outlook and Apple Mail
 const shell = ({ preview, body, foot }) => `<!doctype html>
@@ -131,6 +134,11 @@ async function audience(env, name, l) {
     const level = name.split(':')[1];
     const members = JSON.parse((await kv.get('members')) || '[]');
     list = members.filter((m) => !level || m.level === level).map((m) => ({ email: m.email, name: m.name, kind: 'members' }));
+  } else if (name.startsWith('tickets:')) {
+    // participants with one of these Weezevent ticket types (a training, or the whole season)
+    const ids = new Set(name.slice(8).split(',').filter(Boolean));
+    const s = await season(env);
+    list = s.people.filter((p) => p.email && (ids.has('all') || ids.has(p.ticket))).map((p) => ({ email: p.email, name: `${p.first} ${p.last}`.trim(), kind: 'participants' }));
   } else throw new Error('Unknown audience');
   const seen = new Set();
   return list.filter((p) => !off.has(p.email) && (!l || l === 'all' || p.lang === l) && !seen.has(p.email) && seen.add(p.email));
@@ -206,7 +214,7 @@ export async function newsAdmin(req, env, url, reply) {
       if (!EMAIL.test(to)) return reply({ message: 'Check the test email address.' }, 400);
       people = [{ email: to, lang: 'en', kind: 'news' }];
     } else {
-      try { people = await audience(env, text(b.audience, 40), text(b.lang, 3)); } catch (e) { return reply({ message: e.message }, 400); }
+      try { people = await audience(env, text(b.audience, 2000), text(b.lang, 3)); } catch (e) { return reply({ message: e.message }, 400); }
       if (!people.length) return reply({ message: 'Nobody to send to in this audience.' }, 400);
       if (people.length > 2000) return reply({ message: 'More than 2,000 people: ask for a bigger sending plan first.' }, 400);
       if (Number(b.expect) !== people.length) return reply({ message: `The audience changed: it now has ${people.length} people. Check and send again.`, count: people.length }, 409);
@@ -217,7 +225,7 @@ export async function newsAdmin(req, env, url, reply) {
       const unsub = p.kind === 'news' ? `${page(l)}?u=${await token('u', p.email, env)}` : '';
       const foot = p.kind === 'news'
         ? `${esc(w.foot)}<br><a href="${unsub}" style="color:#8a8070;">${esc(w.unsub)}</a> · <a href="https://cubandance.co" style="color:#8a8070;">cubandance.co</a>`
-        : `${MEMBERS_FOOT}<br><a href="https://cubandance.co" style="color:#8a8070;">cubandance.co</a>`;
+        : `${p.kind === 'participants' ? PARTICIPANTS_FOOT : MEMBERS_FOOT}<br><a href="https://cubandance.co" style="color:#8a8070;">cubandance.co</a>`;
       return {
         from: from(env), to: [p.email], reply_to: 'info@cubandance.co', subject: (b.test ? '[Test] ' : '') + subject,
         html: shell({ preview: esc(plain(body).slice(0, 140)), body: html, foot }),
@@ -228,7 +236,7 @@ export async function newsAdmin(req, env, url, reply) {
     const result = await resend(env, messages);
     if (!b.test) {
       const at = Date.now();
-      const record = { at, subject, audience: text(b.audience, 40), lang: text(b.lang, 3) || 'all', ...result };
+      const record = { at, subject, audience: text(b.audience, 60), label: text(b.label, 80), lang: text(b.lang, 3) || 'all', ...result };
       await kv.put(`campaign:${at}`, JSON.stringify({ ...record, body }), { metadata: record });
     }
     return reply(result.failed && !result.sent ? { message: 'Resend refused the emails. Check the sending plan and the domain.' } : result, result.failed && !result.sent ? 502 : 200);

@@ -416,13 +416,23 @@ export function mailingView(ctx) {
   const { h } = ctx;
   const wrap = h('div', { class: 'pv' }, h('p', { class: 'muted' }, 'Loading…'));
   let data = null, q = '';
-  const reload = () => ctx.api('/news/admin').then((d) => { data = d; draw(); }).catch((e) => wrap.replaceChildren(h('p', { class: 'error' }, e.message)));
+  let groups = [];
+  const reload = () => Promise.all([ctx.api('/news/admin'), loadSeason(ctx).catch(() => null)])
+    .then(([d, s]) => { data = d; groups = s ? trainingGroups(s, ctx.trainings).filter((g) => g.people.length) : []; draw(); })
+    .catch((e) => wrap.replaceChildren(h('p', { class: 'error' }, e.message)));
   reload();
   const day = (ms) => (ms ? new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '');
   // who an audience reaches, as far as the panel can tell (the service counts again before sending)
-  const count = (aud, lang) => (aud === 'newsletter'
-    ? data.subscribers.filter((s) => s.status === 'active' && (lang === 'all' || s.lang === lang)).length
-    : { members: data.members.all, 'members:company': data.members.company, 'members:academy': data.members.academy }[aud]);
+  const off = () => new Set(data.subscribers.filter((s) => s.status === 'unsubscribed').map((s) => s.email));
+  const count = (aud, lang) => {
+    if (aud === 'newsletter') return data.subscribers.filter((s) => s.status === 'active' && (lang === 'all' || s.lang === lang)).length;
+    if (aud.startsWith('tickets:')) {
+      const ids = new Set(aud.slice(8).split(','));
+      return uniqueEmails(season.people.filter((p) => ids.has('all') || ids.has(p.ticket))).filter((e) => !off().has(e)).length;
+    }
+    return { members: data.members.all, 'members:company': data.members.company, 'members:academy': data.members.academy }[aud];
+  };
+  const label = (value) => AUDIENCE[value] || (value === 'tickets:all' ? 'Participants · the whole season' : `Participants · ${groups.find((g) => `tickets:${g.tickets.join(',')}` === value)?.label || 'a training'}`);
 
   function draw() {
     const subs = data.subscribers;
@@ -430,7 +440,12 @@ export function mailingView(ctx) {
     const byLang = Object.entries(subs.filter((s) => s.status === 'active').reduce((m, s) => ({ ...m, [s.lang]: (m[s.lang] || 0) + 1 }), {}));
 
     // ----- write and send -----
-    const audience = h('select', { 'aria-label': 'Audience' }, Object.entries(AUDIENCE).map(([v, t]) => h('option', { value: v }, t)));
+    const audience = h('select', { 'aria-label': 'Audience' },
+      h('optgroup', { label: 'Website and members area' }, Object.entries(AUDIENCE).map(([v, t]) => h('option', { value: v }, t))),
+      groups.length > 0 && h('optgroup', { label: 'Training participants (Weezevent)' },
+        groups.map((g) => h('option', { value: `tickets:${g.tickets.join(',')}` }, `Participants · ${g.label}`)),
+        h('option', { value: 'tickets:all' }, 'Participants · the whole season')));
+    if (pendingAudience) { audience.value = pendingAudience.value; pendingAudience = null; }
     const lang = h('select', { 'aria-label': 'Language' }, h('option', { value: 'all' }, 'All languages'), Object.entries(LANG_NAMES).map(([v, t]) => h('option', { value: v }, `${t} readers only`)));
     const subject = h('input', { placeholder: 'Subject, for example: Brussels training: the timetable is out', 'aria-label': 'Subject', maxlength: 150 });
     const body = h('textarea', { rows: 10, 'aria-label': 'Message', placeholder: 'Write your message.\n\nA blank line starts a new paragraph. **Two stars** make words bold. Links: [the timetable](https://cubandance.co/trainings/) or just paste the address.' });
@@ -461,7 +476,7 @@ export function mailingView(ctx) {
     async function send() {
       confirmBox.hidden = true; sendBtn.disabled = true; say('Sending…');
       try {
-        const r = await ctx.api('/news/send', { method: 'POST', body: JSON.stringify({ subject: subject.value, body: body.value, audience: audience.value, lang: lang.value, expect }) });
+        const r = await ctx.api('/news/send', { method: 'POST', body: JSON.stringify({ subject: subject.value, body: body.value, audience: audience.value, label: label(audience.value), lang: lang.value, expect }) });
         say(`Sent to ${r.sent} ${r.sent === 1 ? 'person' : 'people'}${r.failed ? `, ${r.failed} could not be sent` : ''} ✓`);
         subject.value = body.value = '';
         sendBtn.disabled = false;
@@ -472,7 +487,7 @@ export function mailingView(ctx) {
       if (!ready()) return;
       expect = updateReach();
       if (!expect) { say('Nobody to send to in this audience.', true); return; }
-      const who = `${AUDIENCE[audience.value]}${lang.value !== 'all' ? `, ${LANG_NAMES[lang.value]} readers` : ''}`;
+      const who = `${label(audience.value)}${lang.value !== 'all' ? `, ${LANG_NAMES[lang.value]} readers` : ''}`;
       confirmBox.replaceChildren(
         h('p', {}, h('b', {}, `Send "${subject.value.trim()}" to ${expect} ${expect === 1 ? 'person' : 'people'} (${who}) now?`), ' This cannot be undone.'),
         h('div', { class: 'pv-confirm-buttons' },
@@ -517,13 +532,120 @@ export function mailingView(ctx) {
       h('section', {},
         h('h3', {}, 'Sent'),
         data.campaigns.length ? h('div', { class: 'pv-sent' }, data.campaigns.map((c) => h('div', { class: 'pv-sent-row' },
-          h('span', { class: 'muted' }, day(c.at)), h('b', {}, c.subject), h('span', {}, `${AUDIENCE[c.audience] || c.audience}${c.lang && c.lang !== 'all' ? ` · ${LANG_NAMES[c.lang]}` : ''}`), h('span', {}, `${c.sent} sent${c.failed ? `, ${c.failed} failed` : ''}`))))
+          h('span', { class: 'muted' }, day(c.at)), h('b', {}, c.subject), h('span', {}, `${c.label || AUDIENCE[c.audience] || 'Participants'}${c.lang && c.lang !== 'all' ? ` · ${LANG_NAMES[c.lang]}` : ''}`), h('span', {}, `${c.sent} sent${c.failed ? `, ${c.failed} failed` : ''}`))))
           : h('p', { class: 'muted' }, 'Nothing sent yet.')),
       h('section', {},
         h('div', { class: 'pv-subs-head' }, h('h3', {}, 'Subscribers'), h('button', { type: 'button', class: 'btn-small', onclick: exportCsv }, 'Export the subscribed list (CSV)')),
         h('input', { type: 'search', class: 'pv-search', placeholder: 'Search by email', oninput: (e) => { q = e.target.value.toLowerCase(); drawList(); } }),
         listEl));
     updateReach();
+  }
+  return wrap;
+}
+
+// ---------- Participants (Weezevent) ----------
+// This season's ticket holders, grouped by training: each Weezevent ticket type starts with the
+// month ("October - Early Bird - 2Days Training"), matched to the training of that month.
+const MONTH_NAMES = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
+let season = null, pendingAudience = null;
+const loadSeason = async (ctx, fresh) => (season && !fresh ? season : (season = await ctx.api('/weezevent/participants' + (fresh ? '?fresh=1' : ''))));
+
+// groups: one per training month (season order August → July), then passes and T-shirts
+export function trainingGroups(s, trainings) {
+  const groups = new Map();
+  const monthOf = (name) => MONTH_NAMES.indexOf(String(name).trim().split(/[\s-]+/)[0].toLowerCase());
+  const byId = new Map(s.tickets.map((t) => [t.id, t]));
+  for (const t of s.tickets) {
+    const m = monthOf(t.name);
+    const key = m < 0 ? 'other' : `m${m}`;
+    if (!groups.has(key)) {
+      const ev = m < 0 ? null : (trainings?.events || []).find((e) => Number(String(e.start).slice(5, 7)) === m + 1);
+      const Month = m < 0 ? '' : MONTH_NAMES[m][0].toUpperCase() + MONTH_NAMES[m].slice(1);
+      groups.set(key, { key, order: m < 0 ? 99 : (m + 5) % 12, label: m < 0 ? 'Passes and T-shirts' : ev ? `${Month} · ${ev.city}` : Month, tickets: [], people: [] });
+    }
+    groups.get(key).tickets.push(t.id);
+  }
+  for (const p of s.people) {
+    const t = byId.get(p.ticket); if (!t) continue;
+    const m = monthOf(t.name);
+    groups.get(m < 0 ? 'other' : `m${m}`)?.people.push({ ...p, ticketName: t.name });
+  }
+  return [...groups.values()].filter((g) => g.people.length || g.key !== 'other').sort((a, b) => a.order - b.order);
+}
+const uniqueEmails = (people) => [...new Set(people.map((p) => p.email).filter(Boolean))];
+
+export function participantsView(ctx) {
+  const { h } = ctx;
+  const wrap = h('div', { class: 'pv' }, h('p', { class: 'muted' }, 'Loading the participants from Weezevent…'));
+  let tab = null, q = '', message = ['', false]; // the last message stays when the list is drawn again
+  const start = (fresh) => Promise.all([loadSeason(ctx, fresh), load(ctx, fresh)]).then(draw).catch((e) => wrap.replaceChildren(h('p', { class: 'error' }, e.message)));
+  start(false);
+  const day = (s) => (s ? new Date(s.replace(' ', 'T')).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '');
+  const short = (name) => name.replace(/^\s*[A-Za-z]+\s*-\s*/, '').trim();
+
+  function draw() {
+    if (!season.connected) return wrap.replaceChildren(h('p', { class: 'muted' }, 'Weezevent is not connected yet: its API key and login are needed in the members service.'));
+    const groups = trainingGroups(season, ctx.trainings);
+    const members = new Map(cache.members.map((m) => [m.email.toLowerCase(), m]));
+    if (!tab) tab = groups.find((g) => g.key !== 'other' && g.people.length)?.key || 'people';
+    const note = h('p', { class: `pv-note${message[1] ? ' bad' : ''}`, role: 'status' }, message[0]);
+    const say = (t, bad) => { message = [t, !!bad]; note.textContent = t; note.classList.toggle('bad', !!bad); };
+
+    const memberCell = (p) => {
+      const m = members.get(p.email);
+      if (m) return h('span', { class: 'pv-badge on' }, m.level === 'academy' ? 'Academy member' : 'Company member');
+      if (!p.email) return h('span', { class: 'muted' }, 'No email');
+      const level = h('select', { 'aria-label': 'Level' }, h('option', { value: 'company' }, 'Company'), h('option', { value: 'academy' }, 'Academy'));
+      return h('span', { class: 'pv-add-member' }, level, h('button', { type: 'button', class: 'btn-small', onclick: async (e) => {
+        e.target.disabled = true;
+        try {
+          const r = await ctx.api('/weezevent/add-member', { method: 'POST', body: JSON.stringify({ name: `${p.first} ${p.last}`.trim(), email: p.email, level: level.value }) });
+          await load(ctx, true);
+          say(r.already ? `${p.email} was already in the members area.` : `${p.first} ${p.last} can now sign in to the members area ✓`);
+          draw();
+        } catch (err) { say(err.message, true); e.target.disabled = false; }
+      } }, 'Add to members area'));
+    };
+
+    const tabs = h('div', { class: 'pv-tabs' },
+      groups.map((g) => h('button', { type: 'button', class: tab === g.key ? 'active' : '', onclick: () => { tab = g.key; draw(); } }, g.label, h('small', {}, uniqueEmails(g.people).length))),
+      h('button', { type: 'button', class: tab === 'people' ? 'active' : '', onclick: () => { tab = 'people'; draw(); } }, 'Everyone', h('small', {}, uniqueEmails(season.people).length)));
+
+    let body;
+    if (tab === 'people') {
+      // one row per person: which trainings they booked this season
+      const map = new Map();
+      for (const g of groups.filter((x) => x.key !== 'other')) for (const p of g.people) {
+        if (!p.email) continue;
+        const e = map.get(p.email) || { ...p, months: new Set() };
+        e.months.add(g.label.split(' · ')[0]); map.set(p.email, e);
+      }
+      const rows = [...map.values()].filter((p) => !q || `${p.first} ${p.last} ${p.email}`.toLowerCase().includes(q)).sort((a, b) => b.months.size - a.months.size || a.first.localeCompare(b.first));
+      body = h('div', { class: 'pv-subs' }, rows.length ? rows.map((p) => h('div', { class: 'pv-part-row' },
+        h('span', {}, h('b', {}, `${p.first} ${p.last}`), h('br'), h('small', { class: 'muted' }, p.email)),
+        h('span', {}, h('b', {}, p.months.size), p.months.size === 1 ? ' training' : ' trainings', h('br'), h('small', { class: 'muted' }, [...p.months].join(' · '))),
+        memberCell(p))) : [h('p', { class: 'muted' }, 'Nobody found.')]);
+    } else {
+      const g = groups.find((x) => x.key === tab);
+      const rows = g.people.filter((p) => !q || `${p.first} ${p.last} ${p.email}`.toLowerCase().includes(q)).sort((a, b) => a.first.localeCompare(b.first));
+      const emails = uniqueEmails(g.people);
+      body = h('div', { class: 'pv' },
+        h('div', { class: 'pv-compose-row' },
+          h('button', { type: 'button', class: 'btn-small pv-send', onclick: () => { pendingAudience = { value: `tickets:${g.tickets.join(',')}`, label: `Participants · ${g.label}` }; ctx.go('mailing'); } }, `Email these ${emails.length} people`),
+          h('button', { type: 'button', class: 'btn-small', onclick: async () => { try { await navigator.clipboard.writeText(emails.join(', ')); say(`${emails.length} email addresses copied ✓`); } catch { say('Copying is not allowed in this browser.', true); } } }, 'Copy the emails')),
+        h('div', { class: 'pv-subs' }, rows.length ? rows.map((p) => h('div', { class: 'pv-part-row' },
+          h('span', {}, h('b', {}, `${p.first} ${p.last}`), h('br'), h('small', { class: 'muted' }, p.email || 'no email')),
+          h('span', {}, short(p.ticketName), h('br'), h('small', { class: 'muted' }, [`booked ${day(p.booked)}`, p.scanned && 'checked in'].filter(Boolean).join(' · '))),
+          memberCell(p))) : [h('p', { class: 'muted' }, g.people.length ? 'Nobody found.' : 'No bookings yet.')]));
+    }
+    wrap.replaceChildren(
+      h('div', { class: 'pv-levels' },
+        h('span', {}, h('b', {}, uniqueEmails(season.people).length), ' people booked this season'),
+        h('span', {}, `From Weezevent: ${season.events.map((e) => e.name).join(', ')} · updated ${new Date(season.at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`),
+        h('button', { type: 'button', class: 'btn-small', onclick: () => { wrap.replaceChildren(h('p', { class: 'muted' }, 'Updating from Weezevent…')); start(true); } }, 'Update now')),
+      tabs,
+      h('input', { type: 'search', class: 'pv-search', placeholder: 'Search by name or email', value: q, oninput: (e) => { q = e.target.value.toLowerCase(); clearTimeout(wrap.t); wrap.t = setTimeout(draw, 200); } }),
+      note, body);
   }
   return wrap;
 }
