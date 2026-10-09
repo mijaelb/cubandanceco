@@ -412,6 +412,42 @@ const LANG_NAMES = { en: 'English', es: 'Spanish', fr: 'French', it: 'Italian', 
 const STATUS = { active: 'Subscribed', pending: 'Waiting for confirmation', unsubscribed: 'Unsubscribed' };
 const AUDIENCE = { newsletter: 'Newsletter subscribers', members: 'Members area: everyone', 'members:company': 'Members area: Company', 'members:academy': 'Members area: Academy' };
 
+// Ready-made emails: which ones are offered depends on who the email is for.
+// {name} stays in the text (each person gets their own first name); city and dates are filled in now.
+const TICKETS = 'https://my.weezevent.com/iccd-training-2026-2027';
+const TEMPLATES = {
+  participants: [
+    { id: 'reminder', label: 'Training reminder (a few days before)', card: 'this', reminders: true,
+      subject: (t) => `See you in ${t.city} this weekend!`,
+      body: (t) => `Hi {name},\n\nWe're looking forward to dancing with you in ${t.city} on ${t.dates}! Here is everything you need for the weekend.\n\nThe full timetable is on our website. Please arrive 10 minutes early so we can start on time with the musicians.\n\n{card}\n\nSee you on the dance floor,\n**The ICCD team**` },
+    { id: 'timetable', label: 'The timetable is out', card: 'this',
+      subject: (t) => `${t.city}: the timetable is out`,
+      body: (t) => `Hi {name},\n\nThe timetable for ${t.city} (${t.dates}) is now online. Have a look so you know which classes are for you, and when the breaks are.\n\nIf you have any questions, just reply to this email.\n\n{card}\n\nSee you soon,\n**The ICCD team**` },
+    { id: 'thanks', label: 'Thank you, after the training', card: 'next',
+      subject: (t) => `Thank you for dancing with us in ${t.city}!`,
+      body: (t) => `Hi {name},\n\nThank you for joining us in ${t.city}. It was a joy to share the weekend with you, the maestros and the musicians.\n\nPhotos and videos will follow on our Instagram. We would love to see you again at our next training.\n\n{card}\n\nWith love,\n**The ICCD team**` },
+  ],
+  members: [
+    { id: 'videos', label: 'New videos in the members area', button: 'members',
+      subject: () => 'New videos in the members area',
+      body: () => `Hi {name},\n\nNew class recordings and choreographies are waiting for you in the members area.\n\nSign in with your email address and you'll receive a code to open the videos.\n\nEnjoy practising!\n**The ICCD team**` },
+    { id: 'news', label: 'News for the company',
+      subject: () => 'News for the company',
+      body: () => `Hi {name},\n\n[Write your news here.]\n\nSee you soon,\n**The ICCD team**` },
+  ],
+  news: [
+    { id: 'next', label: 'Next training', card: 'next',
+      subject: (t) => `Next training: ${t.city}, ${t.dates}`,
+      body: (t) => `Hello,\n\nOur next training weekend is in ${t.city} on ${t.dates}, with live drums and our maestros. Places are limited, so book early.\n\n{card}\n\nSee you there!\n**The ICCD team**` },
+    { id: 'news', label: 'News from ICCD',
+      subject: () => 'News from the International Company of Cuban Dances',
+      body: () => `Hello,\n\n[Write your news here.]\n\nWarm regards,\n**The ICCD team**` },
+  ],
+};
+const BUTTONS = { members: { label: 'Open the members area', url: 'https://cubandance.co/members/' }, tickets: { label: 'Book your training', url: TICKETS }, support: { label: 'Support us', url: 'https://cubandance.co/support/' } };
+const kindOf = (aud) => (aud.startsWith('tickets:') ? 'participants' : aud.startsWith('members') ? 'members' : 'news');
+const remember = { get: (k, d) => { try { return localStorage.getItem(k) || d; } catch { return d; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch { /* private mode */ } } };
+
 export function mailingView(ctx) {
   const { h } = ctx;
   const wrap = h('div', { class: 'pv' }, h('p', { class: 'muted' }, 'Loading…'));
@@ -449,7 +485,65 @@ export function mailingView(ctx) {
     const lang = h('select', { 'aria-label': 'Language' }, h('option', { value: 'all' }, 'All languages'), Object.entries(LANG_NAMES).map(([v, t]) => h('option', { value: v }, `${t} readers only`)));
     const subject = h('input', { placeholder: 'Subject, for example: Brussels training: the timetable is out', 'aria-label': 'Subject', maxlength: 150 });
     const body = h('textarea', { rows: 10, 'aria-label': 'Message', placeholder: 'Write your message.\n\nA blank line starts a new paragraph. **Two stars** make words bold. Links: [the timetable](https://cubandance.co/trainings/) or just paste the address.' });
-    const testTo = h('input', { type: 'email', value: 'info@cubandance.co', 'aria-label': 'Send the test to' });
+    const testTo = h('input', { type: 'email', value: remember.get('iccd-test-to', 'info@cubandance.co'), 'aria-label': 'Send the test to' });
+    // ----- template, training card, reminders, button -----
+    const today = new Date().toISOString().slice(0, 10);
+    const events = [...(ctx.trainings.events || [])].sort((a, b) => a.start.localeCompare(b.start));
+    const evLabel = (e) => `${e.city} · ${ctx.range(e.start, e.end)}`;
+    const template = h('select', { 'aria-label': 'Template' });
+    const cardSel = h('select', { 'aria-label': 'Training details in the email' }, h('option', { value: '' }, 'No training details'), events.map((e, i) => h('option', { value: String(i) }, `Training details: ${evLabel(e)}`)));
+    const remindersBox = h('input', { type: 'checkbox' });
+    const buttonSel = h('select', { 'aria-label': 'Button' }, h('option', { value: '' }, 'No button'), Object.entries(BUTTONS).map(([k, b]) => h('option', { value: k }, `Button: ${b.label}`)));
+    const previewBox = h('div', { class: 'pv-preview', hidden: true });
+    // the training an audience is about: its month, matched to the calendar
+    const trainingFor = (aud) => {
+      const g = groups.find((x) => `tickets:${x.tickets.join(',')}` === aud);
+      const m = g && /^m(\d+)$/.test(g.key) ? Number(g.key.slice(1)) + 1 : 0;
+      return m ? events.findIndex((e) => Number(e.start.slice(5, 7)) === m) : -1;
+    };
+    const nextAfter = (i) => events.findIndex((e, j) => j > i && e.start >= today) >= 0 ? events.findIndex((e, j) => j > i && e.start >= today) : events.findIndex((e) => e.start >= today);
+    const fillTemplates = () => {
+      const kind = kindOf(audience.value);
+      template.replaceChildren(h('option', { value: '' }, 'Start from a template…'), ...TEMPLATES[kind].map((t) => h('option', { value: t.id }, t.label)));
+      const own = trainingFor(audience.value);
+      if (own >= 0) cardSel.value = String(own);
+    };
+    template.onchange = () => {
+      const t = TEMPLATES[kindOf(audience.value)].find((x) => x.id === template.value);
+      if (!t) return;
+      if ((subject.value.trim() || body.value.trim()) && !confirm('Replace the subject and message with this template?')) { template.value = ''; return; }
+      const own = trainingFor(audience.value);
+      const idx = t.card === 'this' ? (own >= 0 ? own : nextAfter(-1)) : t.card === 'next' ? nextAfter(own) : -1;
+      const ev = events[idx] || events[nextAfter(-1)] || {};
+      const info = { city: ev.city || '[city]', dates: ev.start ? ctx.range(ev.start, ev.end) : '[dates]' };
+      subject.value = t.subject(info); body.value = t.body(info);
+      cardSel.value = t.card && idx >= 0 ? String(idx) : '';
+      remindersBox.checked = !!t.reminders;
+      buttonSel.value = t.button || '';
+      grow(body);
+    };
+    const grow = (ta) => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 4 + 'px'; };
+    body.addEventListener('input', () => grow(body));
+    // everything the service needs to build the email
+    const extras = () => {
+      const e = events[Number(cardSel.value)];
+      const card = cardSel.value !== '' && e ? { label: 'Training weekend', title: `${e.city} · ${ctx.range(e.start, e.end)}`, when: e.time || '', venue: e.venue || '', address: e.address || '', note: e.note || '', mapUrl: e.mapUrl || '', timetableUrl: `${ctx.SITE}/trainings/`, ticketUrl: kindOf(audience.value) === 'participants' && Number(cardSel.value) === trainingFor(audience.value) ? '' : e.ticketUrl || TICKETS } : null;
+      return { card, reminders: remindersBox.checked ? ctx.trainings.reminders || [] : [], button: buttonSel.value ? BUTTONS[buttonSel.value] : null };
+    };
+    const previewBtn = h('button', { type: 'button', class: 'btn-small' }, 'Preview');
+    previewBtn.onclick = async () => {
+      if (!ready()) return;
+      previewBtn.disabled = true;
+      try {
+        const r = await ctx.api('/news/preview', { method: 'POST', body: JSON.stringify({ subject: subject.value, body: body.value, audience: audience.value, sampleName: kindOf(audience.value) === 'news' ? '' : 'Carla', ...extras() }) });
+        previewBox.replaceChildren(
+          h('div', { class: 'pv-preview-head' }, h('span', {}, h('b', {}, r.subject), kindOf(audience.value) === 'news' ? '' : ' · shown with "Carla" as an example name'), h('button', { type: 'button', class: 'btn-small', onclick: () => { previewBox.hidden = true; } }, 'Close preview')),
+          h('iframe', { src: r.url, title: 'Email preview', class: 'pv-preview-frame' }));
+        previewBox.hidden = false;
+        previewBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (e) { say(e.message, true); }
+      previewBtn.disabled = false;
+    };
     const reach = h('p', { class: 'pv-reach' });
     const note = h('p', { class: 'pv-note', role: 'status' });
     const confirmBox = h('div', { class: 'pv-confirm', hidden: true });
@@ -462,13 +556,15 @@ export function mailingView(ctx) {
       reach.textContent = `Goes to ${c} ${c === 1 ? 'person' : 'people'}. People who unsubscribed are always left out.`;
       return c;
     };
-    audience.onchange = lang.onchange = () => { confirmBox.hidden = true; updateReach(); };
+    audience.onchange = () => { confirmBox.hidden = true; previewBox.hidden = true; updateReach(); fillTemplates(); };
+    lang.onchange = () => { confirmBox.hidden = true; updateReach(); };
     const say = (t, bad) => { note.textContent = t; note.classList.toggle('bad', !!bad); };
     const ready = () => { if (!subject.value.trim() || !body.value.trim()) { say('Write a subject and a message first.', true); return false; } return true; };
     testBtn.onclick = async () => {
       if (!ready()) return;
       testBtn.disabled = true; say('Sending the test…');
-      try { await ctx.api('/news/send', { method: 'POST', body: JSON.stringify({ subject: subject.value, body: body.value, test: testTo.value }) }); say(`Test sent to ${testTo.value}. Check how it looks before sending to everyone.`); }
+      remember.set('iccd-test-to', testTo.value.trim());
+      try { await ctx.api('/news/send', { method: 'POST', body: JSON.stringify({ subject: subject.value, body: body.value, test: testTo.value, audience: audience.value, ...extras() }) }); say(`Test sent to ${testTo.value}. Check how it looks before sending to everyone.`); }
       catch (e) { say(e.message, true); }
       testBtn.disabled = false;
     };
@@ -476,7 +572,7 @@ export function mailingView(ctx) {
     async function send() {
       confirmBox.hidden = true; sendBtn.disabled = true; say('Sending…');
       try {
-        const r = await ctx.api('/news/send', { method: 'POST', body: JSON.stringify({ subject: subject.value, body: body.value, audience: audience.value, label: label(audience.value), lang: lang.value, expect }) });
+        const r = await ctx.api('/news/send', { method: 'POST', body: JSON.stringify({ subject: subject.value, body: body.value, audience: audience.value, label: label(audience.value), lang: lang.value, expect, ...extras() }) });
         say(`Sent to ${r.sent} ${r.sent === 1 ? 'person' : 'people'}${r.failed ? `, ${r.failed} could not be sent` : ''} ✓`);
         subject.value = body.value = '';
         sendBtn.disabled = false;
@@ -526,9 +622,11 @@ export function mailingView(ctx) {
       h('section', { class: 'pv-compose' },
         h('h3', {}, 'Write an email'),
         h('div', { class: 'pv-compose-row' }, audience, lang), reach,
-        subject, body,
-        h('div', { class: 'pv-compose-row' }, h('label', { class: 'pv-test' }, 'Test to ', testTo), testBtn, sendBtn),
-        confirmBox, note),
+        template, subject, body,
+        h('p', { class: 'pv-reach' }, '{name} becomes each person\'s first name. {card} marks where the training details go (otherwise they come after your message). A blank line starts a new paragraph, **two stars** make words bold.'),
+        h('div', { class: 'pv-compose-row' }, cardSel, buttonSel, h('label', { class: 'pv-check-inline' }, remindersBox, ' Add the kind reminders')),
+        h('div', { class: 'pv-compose-row' }, h('label', { class: 'pv-test' }, 'Test to ', testTo), previewBtn, testBtn, sendBtn),
+        confirmBox, note, previewBox),
       h('section', {},
         h('h3', {}, 'Sent'),
         data.campaigns.length ? h('div', { class: 'pv-sent' }, data.campaigns.map((c) => h('div', { class: 'pv-sent-row' },
@@ -539,6 +637,7 @@ export function mailingView(ctx) {
         h('input', { type: 'search', class: 'pv-search', placeholder: 'Search by email', oninput: (e) => { q = e.target.value.toLowerCase(); drawList(); } }),
         listEl));
     updateReach();
+    fillTemplates();
   }
   return wrap;
 }

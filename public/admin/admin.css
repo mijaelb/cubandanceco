@@ -382,3 +382,10 @@ html:has(.pv-save) { scroll-padding-bottom: 90px; }
 .pv-add-member .btn-small { margin: 0; }
 .pv-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
 @media (max-width: 640px) { .pv-part-row { grid-template-columns: minmax(0, 1fr); } }
+
+/* Email templates and preview */
+.pv-check-inline { display: inline-flex; gap: 6px; align-items: center; font-size: 0.92rem; }
+.pv-preview { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: #f3ecdf; }
+.pv-preview-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 14px; background: #fff; border-bottom: 1px solid var(--line); font-size: 0.9rem; }
+.pv-preview-head .btn-small { margin: 0; }
+.pv-preview-frame { display: block; width: 100%; height: 1100px; border: 0; background: #f3ecdf; }

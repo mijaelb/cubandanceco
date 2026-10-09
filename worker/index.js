@@ -13,7 +13,7 @@ import { members } from './members.js';
 import { inbox } from './bunny.js';
 import { webhook, setup as stripeSetup, donationProgress } from './stripe.js';
 import { createRequest, readRequest, signRequest, fullRecord } from './sign.js';
-import { newsPublic, newsAdmin, oneClick } from './news.js';
+import { newsPublic, newsAdmin, oneClick, previewPage } from './news.js';
 import { probe as weezeventProbe, season as weezeventSeason, addMember as weezeventAddMember } from './weezevent.js';
 
 const ORIGINS = ['https://cubandance.co', 'https://www.cubandance.co', 'http://localhost:4321'];
@@ -57,6 +57,9 @@ export default {
     if (url.pathname === '/stripe/webhook' && req.method === 'POST') return env.STRIPE_SECRET_KEY ? webhook(req, env) : new Response('Not set up', { status: 503 });
     // Mail apps' one-click unsubscribe comes from the mail provider, without an Origin
     if (url.pathname === '/news/one-click' && req.method === 'POST') return oneClick(req, env, url);
+    // Email previews open in the team panel's frame (a GET without Origin; random address, 15 minutes)
+    const previewPath = url.pathname.match(/^\/news\/preview\/([0-9a-f-]{36})$/);
+    if (previewPath && req.method === 'GET') return previewPage(env, previewPath[1]);
     if (!ORIGINS.includes(origin)) return reply({ message: 'Forbidden' }, 403);
 
     const session = async () => `${String(Date.now() + SESSION_HOURS * 3600e3)}`;
@@ -130,7 +133,7 @@ export default {
     }
 
     // Mailing list: subscribers, removing someone, sending to an audience
-    if (url.pathname === '/news/admin' || url.pathname === '/news/send') {
+    if (url.pathname === '/news/admin' || url.pathname === '/news/send' || url.pathname === '/news/preview') {
       try { return (await newsAdmin(req, env, url, reply)) || reply({ message: 'Not found' }, 404); } catch (e) { return reply({ message: e.message }, 502); }
     }
 

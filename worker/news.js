@@ -86,6 +86,83 @@ function format(body) {
     .replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g, '$1<a href="$2" style="color:#2b5b3c;">$2</a>');
   return body.split(/\n{2,}/).map((p) => `<p style="margin:0 0 16px;">${inline(p.trim()).replace(/\n/g, '<br>')}</p>`).join('');
 }
+// ---------- campaign emails: banner, logo band, message, training card, reminders, button ----------
+const url = (u) => (/^https:\/\/[^\s"'<>]+$/.test(String(u || '')) ? String(u) : '');
+const pill = (href, label, dark) => `<a href="${href}" style="display:inline-block;margin:6px 8px 0 0;background:${dark ? '#14110d' : '#e8c95f'};color:${dark ? '#fbf1d4' : '#14110d'};text-decoration:none;font-weight:700;font-size:13px;letter-spacing:0.8px;text-transform:uppercase;padding:12px 22px;border-radius:999px;">${esc(label)}</a>`;
+function cardHtml(c) {
+  if (!c || !c.title) return '';
+  const row = (label, value) => (value ? `<tr><td style="padding:6px 14px 6px 0;vertical-align:top;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#8a7a52;font-weight:700;white-space:nowrap;">${esc(label)}</td><td style="padding:6px 0;font-size:15px;line-height:1.5;color:#2a251e;">${value}</td></tr>` : '');
+  const where = [c.venue && `<strong>${esc(c.venue)}</strong>`, c.address && esc(c.address), c.note && `<span style="color:#746a5a;">${esc(c.note)}</span>`].filter(Boolean).join('<br>');
+  const buttons = [url(c.mapUrl) && pill(url(c.mapUrl), 'Open in Maps', true), url(c.timetableUrl) && pill(url(c.timetableUrl), 'See the timetable'), url(c.ticketUrl) && pill(url(c.ticketUrl), 'Book your place')].filter(Boolean).join('');
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:26px 0 8px;background:#fbf1d4;border-radius:14px;">
+    <tr><td style="padding:22px 24px 24px;border-left:5px solid #e8c95f;border-radius:14px;">
+      <p style="margin:0 0 6px;font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:#2b5b3c;font-weight:700;">${esc(c.label || 'Training weekend')}</p>
+      <p style="margin:0 0 12px;font-family:'Arial Narrow','Helvetica Neue',Arial,sans-serif;font-size:24px;line-height:1.15;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:#14110d;">${esc(c.title)}</p>
+      <table role="presentation" cellpadding="0" cellspacing="0">${row('When', esc(c.when || ''))}${row('Where', where)}</table>
+      ${buttons ? `<p style="margin:12px 0 0;">${buttons}</p>` : ''}
+    </td></tr></table>`;
+}
+function remindersHtml(list) {
+  if (!list?.length) return '';
+  return `<p style="margin:26px 0 10px;font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:#2b5b3c;font-weight:700;">Kind reminders</p>
+    <table role="presentation" cellpadding="0" cellspacing="0">${list.map((r) => `<tr><td style="padding:3px 10px 3px 0;vertical-align:top;color:#e8c95f;font-size:18px;line-height:1.2;">&bull;</td><td style="padding:3px 0;font-size:15px;line-height:1.5;color:#2a251e;">${esc(r)}</td></tr>`).join('')}</table>`;
+}
+const campaignShell = ({ preview, body, foot }) => `<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only"><title>ICCD</title></head>
+<body style="margin:0;padding:0;background:#f3ecdf;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">${preview}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3ecdf;">
+<tr><td align="center" style="padding:28px 12px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:18px;overflow:hidden;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#14110d;">
+    <tr><td style="padding:0;line-height:0;"><img src="https://cubandance.co/images/email/banner.jpg" width="600" alt="ICCD drummers and singers playing live" style="display:block;width:100%;max-width:600px;height:auto;border:0;"></td></tr>
+    <tr><td align="center" style="background:#14110d;padding:16px 20px;">
+      <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+        <td style="padding-right:12px;line-height:0;"><img src="https://cubandance.co/images/logo-512.png" width="40" height="40" alt="ICCD" style="display:block;border:0;width:40px;height:40px;"></td>
+        <td style="font-size:11px;letter-spacing:1.8px;text-transform:uppercase;color:#e8c95f;font-weight:700;">International Company of Cuban Dances</td>
+      </tr></table>
+    </td></tr>
+    <tr><td style="padding:36px 40px 30px;font-size:16px;line-height:1.65;color:#2a251e;">${body}</td></tr>
+    <tr><td align="center" style="padding:20px 40px 28px;background:#faf6ee;font-size:12px;line-height:1.7;color:#8a8070;">
+      <p style="margin:0 0 8px;"><a href="https://www.instagram.com/cuban_dance_international_co/" style="color:#14110d;font-weight:700;text-decoration:none;">Instagram</a> &nbsp;&middot;&nbsp; <a href="https://cubandance.co" style="color:#14110d;font-weight:700;text-decoration:none;">cubandance.co</a> &nbsp;&middot;&nbsp; <a href="mailto:info@cubandance.co" style="color:#14110d;font-weight:700;text-decoration:none;">info@cubandance.co</a></p>
+      ${foot}
+    </td></tr>
+  </table>
+</td></tr></table>
+</body></html>`;
+
+// One person's email: {name} becomes their first name ("Hi {name}," becomes "Hi," when there is none)
+async function buildMessage(env, p, o) {
+  const l = lang(p.lang), w = WORDS[l];
+  const first = String(p.name || '').trim().split(/\s+/)[0] || '';
+  const personal = (s) => (first ? s.replace(/\{name\}/g, first) : s.replace(/\s*\{name\}/g, ''));
+  const body = personal(o.body);
+  const unsub = p.kind === 'news' ? `${page(l)}?u=${await token('u', p.email, env)}` : '';
+  const reason = p.kind === 'news' ? esc(w.foot) : p.kind === 'participants' ? PARTICIPANTS_FOOT : MEMBERS_FOOT;
+  const foot = `<p style="margin:0;">${reason}${unsub ? `<br><a href="${unsub}" style="color:#8a8070;">${esc(w.unsub)}</a>` : ''}</p>`;
+  const btn = o.button && url(o.button.url) ? `<p style="margin:28px 0 4px;">${pill(url(o.button.url), o.button.label || 'Open')}</p>` : '';
+  const extra = cardHtml(o.card) + remindersHtml(o.reminders);
+  const text1 = format(body), marker = '<p style="margin:0 0 16px;">{card}</p>';
+  const main = text1.includes(marker) ? text1.replace(marker, extra ? `<div style="margin:0 0 28px;">${extra}</div>` : '') : text1.replace(/\{card\}/g, '') + extra;
+  const html = campaignShell({ preview: esc(plain(body.replace(/\{card\}/g, '')).slice(0, 140)), body: main + btn, foot });
+  const card = o.card?.title ? `\n\n${o.card.title}\n${[o.card.when, o.card.venue, o.card.address, o.card.note].filter(Boolean).join('\n')}${url(o.card.mapUrl) ? `\nMap: ${o.card.mapUrl}` : ''}${url(o.card.timetableUrl) ? `\nTimetable: ${o.card.timetableUrl}` : ''}${url(o.card.ticketUrl) ? `\nBook: ${o.card.ticketUrl}` : ''}` : '';
+  const rem = o.reminders?.length ? `\n\nKind reminders:\n${o.reminders.map((r) => `- ${r}`).join('\n')}` : '';
+  const btnText = o.button && url(o.button.url) ? `\n\n${o.button.label || 'Open'}: ${o.button.url}` : '';
+  return {
+    from: from(env), to: [p.email], reply_to: 'info@cubandance.co', subject: (o.test ? '[Test] ' : '') + personal(o.subject),
+    html, text: `${body.includes('{card}') ? plain(body).replace('{card}', `${card}${rem}`.trim()) : `${plain(body)}${card}${rem}`}${btnText}\n\n--\nInternational Company of Cuban Dances · cubandance.co${unsub ? `\n${w.unsub}: ${unsub}` : ''}`,
+    ...(unsub ? { headers: { 'List-Unsubscribe': `<${API}/news/one-click?t=${await token('u', p.email, env)}>, <mailto:info@cubandance.co?subject=unsubscribe>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } } : {}),
+  };
+}
+// what the team may add to an email, checked and trimmed
+function extras(b) {
+  const c = b.card && typeof b.card === 'object' ? b.card : null;
+  const card = c && text(c.title, 120) ? { label: text(c.label, 40), title: text(c.title, 120), when: text(c.when, 160), venue: text(c.venue, 160), address: text(c.address, 200), note: text(c.note, 200), mapUrl: url(c.mapUrl), timetableUrl: url(c.timetableUrl), ticketUrl: url(c.ticketUrl) } : null;
+  const reminders = Array.isArray(b.reminders) ? b.reminders.map((r) => text(r, 140)).filter(Boolean).slice(0, 12) : [];
+  const button = b.button && url(b.button.url) ? { label: text(b.button.label, 40) || 'Open', url: url(b.button.url) } : null;
+  return { card, reminders, button };
+}
+const kindOf = (aud) => (String(aud).startsWith('tickets:') ? 'participants' : String(aud).startsWith('members') ? 'members' : 'news');
+
 const plain = (body) => body.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '$1 ($2)');
 
 async function resend(env, messages) {
@@ -212,27 +289,15 @@ export async function newsAdmin(req, env, url, reply) {
     if (b.test) {
       const to = norm(b.test);
       if (!EMAIL.test(to)) return reply({ message: 'Check the test email address.' }, 400);
-      people = [{ email: to, lang: 'en', kind: 'news' }];
+      people = [{ email: to, lang: 'en', kind: kindOf(b.audience), name: text(b.testName, 40) }];
     } else {
       try { people = await audience(env, text(b.audience, 2000), text(b.lang, 3)); } catch (e) { return reply({ message: e.message }, 400); }
       if (!people.length) return reply({ message: 'Nobody to send to in this audience.' }, 400);
       if (people.length > 2000) return reply({ message: 'More than 2,000 people: ask for a bigger sending plan first.' }, 400);
       if (Number(b.expect) !== people.length) return reply({ message: `The audience changed: it now has ${people.length} people. Check and send again.`, count: people.length }, 409);
     }
-    const html = format(body);
-    const messages = await Promise.all(people.map(async (p) => {
-      const l = lang(p.lang), w = WORDS[l];
-      const unsub = p.kind === 'news' ? `${page(l)}?u=${await token('u', p.email, env)}` : '';
-      const foot = p.kind === 'news'
-        ? `${esc(w.foot)}<br><a href="${unsub}" style="color:#8a8070;">${esc(w.unsub)}</a> · <a href="https://cubandance.co" style="color:#8a8070;">cubandance.co</a>`
-        : `${p.kind === 'participants' ? PARTICIPANTS_FOOT : MEMBERS_FOOT}<br><a href="https://cubandance.co" style="color:#8a8070;">cubandance.co</a>`;
-      return {
-        from: from(env), to: [p.email], reply_to: 'info@cubandance.co', subject: (b.test ? '[Test] ' : '') + subject,
-        html: shell({ preview: esc(plain(body).slice(0, 140)), body: html, foot }),
-        text: `${plain(body)}\n\n--\nInternational Company of Cuban Dances · cubandance.co${unsub ? `\n${w.unsub}: ${unsub}` : ''}`,
-        ...(unsub ? { headers: { 'List-Unsubscribe': `<${API}/news/one-click?t=${await token('u', p.email, env)}>, <mailto:info@cubandance.co?subject=unsubscribe>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } } : {}),
-      };
-    }));
+    const opts = { subject, body, test: !!b.test, ...extras(b) };
+    const messages = await Promise.all(people.map((p) => buildMessage(env, p, opts)));
     const result = await resend(env, messages);
     if (!b.test) {
       const at = Date.now();
@@ -241,5 +306,19 @@ export async function newsAdmin(req, env, url, reply) {
     }
     return reply(result.failed && !result.sent ? { message: 'Resend refused the emails. Check the sending plan and the domain.' } : result, result.failed && !result.sent ? 502 : 200);
   }
+  if (url.pathname === '/news/preview' && req.method === 'POST') {
+    const b = await req.json().catch(() => ({}));
+    const sample = { email: 'preview@cubandance.co', lang: 'en', kind: kindOf(b.audience), name: text(b.sampleName, 40) };
+    const m = await buildMessage(env, sample, { subject: text(b.subject, 150) || '(no subject)', body: String(b.body || '').slice(0, 20000) || ' ', ...extras(b) });
+    const id = crypto.randomUUID();
+    await kv.put(`preview:${id}`, m.html, { expirationTtl: 900 });
+    return reply({ url: `${API}/news/preview/${id}`, subject: m.subject });
+  }
   return null;
+}
+
+// The preview page the team panel shows in a frame (random address, gone after 15 minutes)
+export async function previewPage(env, id) {
+  const html = /^[0-9a-f-]{36}$/.test(id) ? await env.PRIVATE.get(`preview:${id}`) : null;
+  return new Response(html || 'This preview has expired.', { status: html ? 200 : 404, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Content-Security-Policy': "default-src 'none'; img-src https://cubandance.co; style-src 'unsafe-inline'; frame-ancestors https://cubandance.co http://localhost:4321", 'Cache-Control': 'no-store' } });
 }
