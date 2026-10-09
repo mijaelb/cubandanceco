@@ -173,6 +173,7 @@ h1.hero-title { font-size: clamp(2.8rem, 7.6vw, 7.4rem); max-width: 17ch; color:
 .page-hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; animation: slowZoom 18s ease-out both; }
 @keyframes slowZoom { from { transform: scale(1.12); } }
 .page-hero h1 { color: #fff; max-width: 12ch; }
+.page-hero h1.long { max-width: 20ch; font-size: clamp(2.5rem, 6.2vw, 5.6rem); } /* long titles: wider and smaller, about three lines */
 .page-hero .lead { color: #efe6d3; }
 
 /* ---------- Marquee ---------- */

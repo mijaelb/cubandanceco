@@ -419,7 +419,6 @@
   "Free": "Gratis",
   "Subscription ends on {date}": "L’abbonamento termina il {date}",
   "Support us": "Sostienici",
-  "Keep the drums playing": "Che i tamburi continuino a suonare",
   "We are a non-profit association. Every donation goes into training weekends, live music and shows that keep Afro-Cuban folklore alive in Europe.": "Siamo un’associazione senza scopo di lucro. Ogni donazione va ai weekend di formazione, alla musica dal vivo e agli spettacoli che tengono vivo il folklore afrocubano in Europa.",
   "Preview: these buttons use Stripe test mode. No real payments are taken.": "Anteprima: questi pulsanti usano la modalità di test di Stripe. Nessun pagamento reale viene addebitato.",
   "Donate": "Dona",
@@ -441,5 +440,6 @@
   "Other ways to help": "Altri modi per aiutarci",
   "Come dancing with us, book us for your festival or theatre, or share our work with your friends.": "Vieni a ballare con noi, invitaci al tuo festival o teatro, oppure condividi il nostro lavoro con i tuoi amici.",
   "Support us · Donate to the International Company of Cuban Dances": "Sostienici · Dona all’International Company of Cuban Dances",
-  "Help keep Afro-Cuban folklore alive in Europe. Give once or every month to our non-profit company: live drums, maestros from Cuba and shows.": "Aiutaci a tenere vivo il folklore afrocubano in Europa. Dona una volta o ogni mese alla nostra compagnia senza scopo di lucro: tamburi dal vivo, maestri da Cuba e spettacoli."
+  "Help keep Afro-Cuban folklore alive in Europe. Give once or every month to our non-profit company: live drums, maestros from Cuba and shows.": "Aiutaci a tenere vivo il folklore afrocubano in Europa. Dona una volta o ogni mese alla nostra compagnia senza scopo di lucro: tamburi dal vivo, maestri da Cuba e spettacoli.",
+  "Keep spreading love for music, dance and culture": "Continuiamo a diffondere l’amore per la musica, la danza e la cultura"
 }

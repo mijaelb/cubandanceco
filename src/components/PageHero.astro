@@ -1,15 +1,16 @@
 ---
 import Img from './Img.astro';
 // position: crop focus; mobilePosition: a different one for phones (keeps faces whole on narrow screens)
-interface Props { image: string; eyebrow?: string; title: string; text?: string; position?: string; mobilePosition?: string }
-const { image, eyebrow, title, text, position, mobilePosition } = Astro.props;
+interface Props { image: string; eyebrow?: string; title: string; text?: string; position?: string; mobilePosition?: string; long?: boolean }
+// long: a longer title, set wider and smaller
+const { image, eyebrow, title, text, position, mobilePosition, long = false } = Astro.props;
 const style = [position && `object-position:${position}`, mobilePosition && `--pos-m:${mobilePosition}`].filter(Boolean).join(';');
 ---
 <section class="page-hero dark">
   <Img src={image} alt="" eager class="page-hero-bg" style={style || undefined} />
   <div class="wrap page-hero-content">
     {eyebrow && <p class="eyebrow">{eyebrow}</p>}
-    <h1 class="display">{title}</h1>
+    <h1 class:list={['display', { long }]}>{title}</h1>
     {text && <p class="lead">{text}</p>}
     <slot />
   </div>
