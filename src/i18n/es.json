@@ -416,5 +416,6 @@
   "per month": "al mes",
   "cancel any time": "cancela cuando quieras",
   "Subscribe": "Suscribirme",
-  "Free": "Gratis"
+  "Free": "Gratis",
+  "Subscription ends on {date}": "La suscripción termina el {date}"
 }

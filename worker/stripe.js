@@ -64,7 +64,9 @@ async function saveSubscription(env, s, email) {
   if (s.metadata?.kind === 'donation') return; // monthly donations are not class subscriptions
   email ||= s.metadata?.email || await kv.get(`cust:${s.customer}`);
   if (!email) return;
-  const sub = { customer: s.customer, id: s.id, status: s.status, until: (s.current_period_end || s.items?.data?.[0]?.current_period_end || 0) * 1000, cancelAtEnd: !!s.cancel_at_period_end };
+  // a cancellation shows as cancel_at_period_end, or (flexible billing) as a cancel_at date
+  const end = s.cancel_at || s.current_period_end || s.items?.data?.[0]?.current_period_end || 0;
+  const sub = { customer: s.customer, id: s.id, status: s.status, until: end * 1000, cancelAtEnd: !!(s.cancel_at_period_end || s.cancel_at) };
   await kv.put(subKey(email), JSON.stringify(sub), { metadata: { status: sub.status, until: sub.until, cancelAtEnd: sub.cancelAtEnd } });
 }
 
@@ -157,6 +159,13 @@ export async function setup(env, { testers = [] } = {}) {
   });
   await kv.put(`stripe-portal:${mode}`, portal.id);
   done.push('subscription page: members can cancel (at the end of the month) and change their card');
+  // bring the saved subscriptions up to date with Stripe
+  const subs = Object.values(await allSubs(kv)).length ? await kv.list({ prefix: 'sub:' }) : { keys: [] };
+  for (const k of subs.keys) {
+    const saved = await kv.get(k.name, 'json');
+    if (saved?.id) await saveSubscription(env, await stripe(env, `/subscriptions/${saved.id}`), k.name.slice(4)).catch(() => {});
+  }
+  if (subs.keys.length) done.push(`${subs.keys.length} saved subscription(s) refreshed from Stripe`);
   if (mode === 'test') {
     const list = testers.map((e) => String(e).trim().toLowerCase()).filter((e) => /@/.test(e));
     await kv.put('stripe-testers', JSON.stringify(list));

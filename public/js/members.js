@@ -101,6 +101,7 @@ async function open() {
   login.replaceChildren(h('div', { class: 'm-who' },
     h('span', {}, `${W.Hi} ${data.name.split(' ')[0]}`),
     h('span', { class: 'm-level' }, data.level === 'company' ? W.Company : W.Academy),
+    data.classes?.open && data.classes.cancelAtEnd && data.classes.until && !data.classes.free && h('span', { class: 'm-ends' }, W['Subscription ends on {date}'].replace('{date}', new Date(data.classes.until).toLocaleDateString(LANG, { day: 'numeric', month: 'long', year: 'numeric' }))),
     data.classes?.open && data.classes.canManage && !data.classes.free && h('button', { type: 'button', class: 'm-link', onclick: () => go('/m/manage') }, W['Manage subscription']),
     h('button', { type: 'button', class: 'm-link', onclick: () => { saved.set(KEY, null); location.hash = ''; location.reload(); } }, W['Sign out'])));
   lib.hidden = false;

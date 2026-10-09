@@ -416,5 +416,6 @@
   "per month": "per maand",
   "cancel any time": "altijd opzegbaar",
   "Subscribe": "Abonneren",
-  "Free": "Gratis"
+  "Free": "Gratis",
+  "Subscription ends on {date}": "Abonnement eindigt op {date}"
 }

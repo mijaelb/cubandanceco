@@ -496,6 +496,7 @@ h1.hero-title { font-size: clamp(2.8rem, 7.6vw, 7.4rem); max-width: 17ch; color:
 .m-who { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; font-weight: 600; color: #fff; }
 .m-level { background: var(--gold); color: var(--ink); font: 700 0.72rem/1 var(--body); letter-spacing: 0.12em; text-transform: uppercase; padding: 7px 12px; border-radius: 999px; }
 .m-who .m-link { color: #c2b7a2; font-weight: 500; }
+.m-ends { color: #c2b7a2; font-weight: 500; font-size: 0.9rem; }
 .members-library { padding-top: clamp(40px, 6vw, 70px); scroll-margin-top: 90px; } /* clear of the sticky header */
 .m-email { font-weight: 700; color: #fff; overflow-wrap: anywhere; }
 .m-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 28px; border-bottom: 2px solid var(--ink); }
