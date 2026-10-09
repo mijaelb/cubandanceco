@@ -11,7 +11,7 @@ import about from '../data/about.json';
 import gallery from '../data/gallery.json';
 import insta from '../lib/instagram.json';
 import perf from '../data/performances.json';
-import { url, link, upcoming, dateRange, photoAlt, pastTrainings } from '../lib/utils';
+import { url, link, upcoming, dateRange, photoAlt, pastTrainings, donateLive } from '../lib/utils';
 import { useT, locale } from '../i18n';
 
 const { lang } = Astro.props;
@@ -90,6 +90,7 @@ const marquee = [...site.styles, ...site.styles];
       <p class="eyebrow">{t(site.family.title)}</p>
       <blockquote>{t(site.family.text)}</blockquote>
       <p class="display family-tag">{t(site.tagline)}</p>
+      {donateLive() && <p class="family-give">{t('Love what we do? Help us keep it going.')} <a class="btn btn-gold btn-sm" href={link(lang, 'support')}>{t('Support us')}</a></p>}
     </div>
   </section>
 

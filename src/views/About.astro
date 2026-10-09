@@ -4,7 +4,7 @@ import PageHero from '../components/PageHero.astro';
 import Img from '../components/Img.astro';
 import about from '../data/about.json';
 import teachers from '../data/teachers.json';
-import { url, link, paragraphs, photoAlt } from '../lib/utils';
+import { url, link, paragraphs, photoAlt, donateLive } from '../lib/utils';
 import { useT } from '../i18n';
 
 const { lang } = Astro.props;
@@ -77,6 +77,7 @@ const t = useT(lang);
         <p class="eyebrow">{t('Our mission')}</p>
         <h2 class="display">{t('Teach, preserve, share')}</h2>
         {about.mission.map((p) => <p>{t(p)}</p>)}
+        {donateLive() && <a class="link-arrow mission-give" href={link(lang, 'support')}>{t('Support our mission')}</a>}
       </div>
       <div class="reveal">
         <p class="eyebrow">{t(about.exchange.title)}</p>
