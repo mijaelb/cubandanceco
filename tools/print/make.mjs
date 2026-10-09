@@ -81,24 +81,39 @@ async function poster() {
   return page(css, body, 'A4');
 }
 
-// ---------- table card (A6) ----------
+// ---------- table card (A6): photo, the ask with real amounts, a big QR code ----------
 async function card() {
+  const amounts = (site.donate?.monthly || []).map((m) => Number(m.amount)).filter(Boolean);
   const css = `
-  .sheet { width: 105mm; height: 148mm; background: var(--gold); padding: 9mm 9mm 7mm; display: grid; grid-template-rows: auto auto 1fr auto; gap: 4mm; overflow: hidden; }
-  .logo { width: 14mm; }
-  .eyebrow { font-size: 6.5pt; margin-bottom: 2.5mm; }
-  h1 { font-size: 19pt; }
-  .give { display: grid; grid-template-columns: 38mm 1fr; gap: 4mm; align-items: center; align-self: center; }
-  .qr { background: var(--cream); border-radius: 2.5mm; padding: 3mm; }
-  .give b { font: 400 13pt/1.05 Anton, sans-serif; text-transform: uppercase; display: block; margin-bottom: 2mm; }
-  .give span { font-size: 7.5pt; line-height: 1.45; display: block; }
-  .give .url { font-weight: 700; margin-top: 2mm; }
-  .foot { font-size: 6pt; line-height: 1.45; color: var(--muted); }`;
+  .sheet { width: 105mm; height: 148mm; background: var(--ink); color: var(--cream); display: grid; grid-template-rows: 44mm 1fr auto; overflow: hidden; }
+  .top { position: relative; }
+  .top .photo { height: 44mm; object-position: 40% 0%; }
+  .top::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, var(--ink) 2%, rgba(20,17,13,0.15) 60%, rgba(20,17,13,0.35)); }
+  .top .logo { position: absolute; right: 5mm; top: 4mm; width: 11mm; z-index: 1; }
+  .main { padding: 1mm 8mm 0; display: grid; gap: 3.6mm; align-content: start; }
+  .eyebrow { font-size: 6pt; color: var(--gold); }
+  h1 { font-size: 19pt; color: #fff; line-height: 1.02; }
+  .why { font-size: 7pt; line-height: 1.5; color: #e2d8c3; }
+  .amounts { display: flex; flex-wrap: wrap; align-items: center; gap: 1.6mm; font-size: 6.6pt; color: #c2b7a2; }
+  .amounts b { font: 400 10pt/1 Anton, sans-serif; color: var(--ink); background: var(--gold); border-radius: 99mm; padding: 1.3mm 2.6mm 1.1mm; }
+  .give { display: grid; grid-template-columns: 37mm 1fr; gap: 4.5mm; align-items: center; margin-top: 1.6mm; }
+  .qr { background: var(--cream); border-radius: 2.5mm; padding: 2.6mm; }
+  .give strong { display: block; font: 400 13pt/1.05 Anton, sans-serif; text-transform: uppercase; color: var(--gold); margin-bottom: 1.6mm; }
+  .give span { display: block; font-size: 6.6pt; line-height: 1.45; color: #e2d8c3; }
+  .give .url { font-weight: 700; color: var(--gold-pale); font-size: 7pt; margin-top: 1.2mm; }
+  .foot { padding: 0 8mm 5mm; display: flex; justify-content: space-between; align-items: end; gap: 3mm; border-top: 0.25mm solid rgba(232,201,95,0.25); margin: 0 8mm; padding: 2.6mm 0 5mm; }
+  .foot b { font: 400 13pt/1 Anton, sans-serif; text-transform: uppercase; color: var(--gold); }
+  .foot span { font-size: 5.2pt; line-height: 1.45; color: #a99f8c; text-align: right; }`;
   const body = `<div class="sheet">
-    <img class="logo" src="${file('public/images/logo.svg')}" alt="">
-    <div><p class="eyebrow">Support us</p><h1 class="display">Keep spreading love for music, dance and culture</h1></div>
-    <a class="give" href="${SUPPORT}"><div class="qr">${await qr(SUPPORT)}</div><div><b>Scan to donate</b><span>From €5, once or every month.</span><span class="url">cubandance.co/support</span></div></a>
-    <p class="foot">${esc(site.name)} · a non-profit cultural association (Luxembourg)<br>${LANGS_LINE}</p>
+    <div class="top"><img class="photo" src="${file('public/images/photos/rome-musicians.webp')}" alt=""><img class="logo" src="${file('public/images/logo.svg')}" alt=""></div>
+    <div class="main">
+      <p class="eyebrow">Support us</p>
+      <h1 class="display">Keep spreading love for music, dance and culture</h1>
+      <p class="why">We are a non-profit association. Your gift pays for live music, the maestros' travel, costumes and shows.</p>
+      ${amounts.length ? `<p class="amounts">${amounts.map((a) => `<b>€${a}</b>`).join('')}<span>a month, or any amount once</span></p>` : ''}
+      <a class="give" href="${SUPPORT}"><div class="qr">${await qr(SUPPORT)}</div><div><strong>Scan to donate</strong><span>Card, Apple Pay, Google Pay and more. Takes a minute.</span><span class="url">cubandance.co/support</span></div></a>
+    </div>
+    <div class="foot"><b>¡Gracias!</b><span>${esc(site.name)}<br>A non-profit cultural association, Luxembourg</span></div>
   </div>`;
   return page(css, body, '105mm 148mm');
 }
