@@ -156,7 +156,7 @@ const campaignShell = ({ preview, body, foot, photo, eyebrow, headline }) => {
     <tr><td class="px" style="padding:34px 40px 30px;font-size:16px;line-height:1.65;color:#2a251e;">${body}</td></tr>
     <tr><td class="px" align="center" style="padding:26px 40px 30px;background:#14110d;font-size:12px;line-height:1.7;color:#a99f8c;">
       <img src="https://cubandance.co/images/logo-512.png" width="44" height="44" alt="" style="display:block;border:0;width:44px;height:44px;margin:0 auto 10px;">
-      <p style="margin:0 0 4px;font-family:${HEAD};font-size:16px;letter-spacing:1px;text-transform:uppercase;color:#ffffff;">Keep spreading love for music, dance and culture</p>
+      <p style="margin:0 0 4px;font-family:${HEAD};font-size:16px;letter-spacing:1px;text-transform:uppercase;color:#ffffff;">Sharing our love for Cuban music, dance and culture</p>
       <p style="margin:0 0 14px;"><a href="https://www.instagram.com/cuban_dance_international_co/" style="color:#e8c95f;font-weight:700;text-decoration:none;">Instagram</a> &nbsp;&middot;&nbsp; <a href="https://cubandance.co" style="color:#e8c95f;font-weight:700;text-decoration:none;">cubandance.co</a> &nbsp;&middot;&nbsp; <a href="mailto:info@cubandance.co" style="color:#e8c95f;font-weight:700;text-decoration:none;">info@cubandance.co</a></p>
       ${foot.replace(/color:#8a8070/g, 'color:#a99f8c')}
     </td></tr>

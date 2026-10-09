@@ -781,8 +781,7 @@ export function mailingView(ctx) {
     };
     const exportCsv = () => {
       const rows = [['email', 'language', 'date'], ...subs.filter((s) => s.status === 'active').map((s) => [s.email, s.lang, new Date(s.at || 0).toISOString().slice(0, 10)])];
-      const a = h('a', { href: URL.createObjectURL(new Blob([rows.map((r) => r.join(',')).join('\n')], { type: 'text/csv' })), download: 'iccd-newsletter.csv' });
-      document.body.append(a); a.click(); a.remove();
+      saveCsv('iccd-newsletter', rows);
     };
     drawList();
 
@@ -838,6 +837,17 @@ export function mailingView(ctx) {
 // ---------- Participants (Weezevent) ----------
 // Every Weezevent event since 2023. Training tickets start with the month ("October - Early Bird…",
 // "June 2024…"), matched to the training of that month in the calendar; shows are one group each.
+// A spreadsheet file of what is on screen: semicolons and a UTF-8 mark, so Excel opens it
+// in columns with the accents right (Google Sheets and Numbers read it too)
+function saveCsv(name, rows) {
+  const cell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const blob = new Blob(['\ufeff' + rows.map((r) => r.map(cell).join(';')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}.csv`;
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
 const MONTH_NAMES = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
 let season = null, pendingAudience = null, subsCache = null;
 const loadSeason = async (ctx, fresh) => (season && !fresh ? season : (season = await ctx.api('/weezevent/participants' + (fresh ? '?fresh=1' : ''))));
@@ -944,9 +954,10 @@ export function participantsView(ctx) {
         } catch (err) { say(err.message, true); e.target.disabled = false; }
       } }, 'Add to members area'));
     };
-    const emailButtons = (value, label, emails) => h('div', { class: 'pv-compose-row' },
+    const emailButtons = (value, label, emails, extra) => h('div', { class: 'pv-compose-row' },
       h('button', { type: 'button', class: 'btn-small pv-send', onclick: () => { pendingAudience = { value, label }; ctx.go('mailing'); } }, `Email these ${emails.length} people`),
-      h('button', { type: 'button', class: 'btn-small', onclick: async () => { try { await navigator.clipboard.writeText(emails.join(', ')); say(`${emails.length} email addresses copied ✓`); } catch { say('Copying is not allowed in this browser.', true); } } }, 'Copy the emails'));
+      h('button', { type: 'button', class: 'btn-small', onclick: async () => { try { await navigator.clipboard.writeText(emails.join(', ')); say(`${emails.length} email addresses copied ✓`); } catch { say('Copying is not allowed in this browser.', true); } } }, 'Copy the emails'),
+      extra);
 
     // ----- one event: a tab per training month (or the show), its participants -----
     const eventPanel = (id) => {
@@ -955,10 +966,15 @@ export function participantsView(ctx) {
       if (!groups.some((g) => g.key === tab)) tab = (groups.find((g) => g.key !== 'other' && g.people.length) || groups[0]).key;
       const g = groups.find((x) => x.key === tab);
       const rows = g.people.filter((p) => !q || `${p.first} ${p.last} ${p.email} ${p.promo || ''}`.toLowerCase().includes(q)).sort((a, b) => a.first.localeCompare(b.first));
+      const exportRows = () => {
+        saveCsv(`iccd-${g.label}${q ? `-${q}` : ''}`, [['first name', 'last name', 'email', 'training', 'ticket', 'promo code', 'booked', 'checked in', 'members area', 'newsletter'],
+          ...rows.map((p) => [p.first, p.last, p.email, g.label, p.ticketName, p.promo || '', (p.booked || '').slice(0, 10), p.scanned ? 'yes' : '', members.get(p.email)?.level || '', subscribed.has(p.email) ? 'yes' : ''])]);
+        say(`${rows.length} ${rows.length === 1 ? 'ticket' : 'tickets'} exported ✓`);
+      };
       const codes = Object.entries(g.people.reduce((m, p) => (p.promo ? { ...m, [p.promo]: (m[p.promo] || 0) + 1 } : m), {})).sort((a, b) => b[1] - a[1]);
       return h('div', { class: 'pv' },
         groups.length > 1 && h('div', { class: 'pv-tabs' }, groups.map((x) => h('button', { type: 'button', class: tab === x.key ? 'active' : '', onclick: () => { tab = x.key; draw(); } }, x.label, h('small', {}, uniqueEmails(x.people).length)))),
-        emailButtons(`tickets:${g.tickets.join(',')}`, `Participants · ${g.label}`, uniqueEmails(g.people)),
+        emailButtons(`tickets:${g.tickets.join(',')}`, `Participants · ${g.label}`, uniqueEmails(g.people), h('button', { type: 'button', class: 'btn-small', onclick: exportRows }, q ? `Export these ${rows.length} (Excel)` : 'Export this list (Excel)')),
         codes.length > 0 && h('p', { class: 'pv-codes' }, 'Promo codes: ', codes.map(([c, n]) => h('button', { type: 'button', class: `pv-code${q === c.toLowerCase() ? ' on' : ''}`, title: `Show the ${n} ticket${n === 1 ? '' : 's'} booked with ${c}`, onclick: () => { q = q === c.toLowerCase() ? '' : c.toLowerCase(); draw(); } }, `${c} × ${n}`)),
           h('small', { class: 'muted' }, ` · ${g.people.length - codes.reduce((s, [, n]) => s + n, 0)} without a code`)),
         h('div', { class: 'pv-subs' }, rows.length ? rows.map((p) => h('div', { class: 'pv-part-row' },
@@ -976,14 +992,14 @@ export function participantsView(ctx) {
       const exportCsv = () => {
         const lines = [['name', 'email', 'trainings', 'shows', 'first booking', 'last booking', 'spent (EUR, approx.)', 'checked in', 'member', 'newsletter', 'promo codes'],
           ...rows.map((x) => [`${x.first} ${x.last}`, x.email, x.trainings.size, x.shows.size, x.first_at, x.last_at, Math.round(x.spent), x.checkins, members.get(x.email)?.level || '', subscribed.has(x.email) ? 'yes' : '', [...(x.promos || [])].join(' ')])];
-        const csv = lines.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
-        const a = h('a', { href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })), download: `iccd-people-${seg}.csv` }); document.body.append(a); a.click(); a.remove();
+        saveCsv(`iccd-people-${SEGMENTS[seg].label}${q ? `-${q}` : ''}`, lines);
+        say(`${rows.length} ${rows.length === 1 ? 'person' : 'people'} exported ✓`);
       };
       return h('div', { class: 'pv' },
         h('div', { class: 'pv-tabs' }, Object.entries(SEGMENTS).map(([k, s]) => h('button', { type: 'button', class: seg === k ? 'active' : '', onclick: () => { seg = k; open = null; draw(); } }, s.label, h('small', {}, index.filter((x) => s.test(x)).length)))),
         h('div', { class: 'pv-compose-row' },
           h('label', { class: 'pv-check-inline' }, 'Sort by ', h('select', { onchange: (e) => { sort = e.target.value; draw(); } }, [['trainings', 'most trainings'], ['recent', 'most recent booking'], ['spent', 'most spent'], ['name', 'name']].map(([v, t]) => h('option', { value: v, selected: sort === v }, t)))),
-          h('button', { type: 'button', class: 'btn-small', onclick: exportCsv }, 'Export this list (CSV)')),
+          h('button', { type: 'button', class: 'btn-small', onclick: exportCsv }, q ? `Export these ${rows.length} (Excel)` : 'Export this list (Excel)')),
         SEGMENT_AUDIENCES.includes(seg) ? emailButtons(`segment:${seg}`, S.label, chosen.map((x) => x.email)) : null,
         h('div', { class: 'pv-subs' }, rows.length ? rows.slice(0, 400).map((x) => h('div', { class: `pv-person-card${open === x.email ? ' open' : ''}` },
           h('button', { type: 'button', class: 'pv-person-sum', onclick: () => { open = open === x.email ? null : x.email; draw(); } },
@@ -1016,8 +1032,14 @@ export function participantsView(ctx) {
       const all = [...by.values()].filter((c) => !q || c.code.toLowerCase().includes(q) || c.tickets.some((t) => `${t.first} ${t.last} ${t.email}`.toLowerCase().includes(q))).sort((a, b) => b.last.localeCompare(a.last));
       if (!by.size) return h('p', { class: 'muted' }, 'No promo codes used in any event yet.');
       const total = season.people.length, used = season.people.filter((p) => p.promo).length;
+      const exportCodes = () => {
+        const list = all.flatMap((c) => c.tickets.map((t) => [c.code, t.first, t.last, t.email, t.eventName, t.ticketName, t.when]));
+        saveCsv(`iccd-promo-codes${q ? `-${q}` : ''}`, [['promo code', 'first name', 'last name', 'email', 'event', 'ticket', 'booked'], ...list]);
+        say(`${list.length} ${list.length === 1 ? 'ticket' : 'tickets'} exported ✓`);
+      };
       return h('div', { class: 'pv' },
         h('p', { class: 'muted' }, `${used} of ${total} tickets were booked with a promo code (${by.size} different codes). Newest first; open a code to see who used it.`),
+        h('div', { class: 'pv-compose-row' }, h('button', { type: 'button', class: 'btn-small', onclick: exportCodes }, q ? `Export the ${all.length} codes found (Excel)` : 'Export all codes and who used them (Excel)')),
         h('div', { class: 'pv-subs' }, all.map((c) => h('div', { class: `pv-person-card${open === `code:${c.code}` ? ' open' : ''}` },
           h('button', { type: 'button', class: 'pv-person-sum', onclick: () => { open = open === `code:${c.code}` ? null : `code:${c.code}`; draw(); } },
             h('span', {}, h('span', { class: 'pv-code big' }, c.code)),
