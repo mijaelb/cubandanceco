@@ -13,9 +13,10 @@ import Gallery from '../views/Gallery.astro';
 import Faq from '../views/Faq.astro';
 import Members from '../views/Members.astro';
 import Support from '../views/Support.astro';
+import Sign from '../views/Sign.astro';
 
 export function getStaticPaths() {
-  const pages = ['', 'trainings', 'performances', 'raices-cubanas', 'about', 'company', 'gallery', 'faq', 'members', 'support'];
+  const pages = ['', 'trainings', 'performances', 'raices-cubanas', 'about', 'company', 'gallery', 'faq', 'members', 'support', 'sign'];
   return LANGS.flatMap((lang) =>
     pages.map((page) => ({
       params: { path: [lang === 'en' ? '' : lang, page].filter(Boolean).join('/') || undefined },
@@ -24,7 +25,7 @@ export function getStaticPaths() {
   );
 }
 
-const views = { '': Home, trainings: Trainings, performances: Performances, 'raices-cubanas': Show, about: About, company: Company, gallery: Gallery, faq: Faq, members: Members, support: Support };
+const views = { '': Home, trainings: Trainings, performances: Performances, 'raices-cubanas': Show, about: About, company: Company, gallery: Gallery, faq: Faq, members: Members, support: Support, sign: Sign };
 const { lang, page } = Astro.props;
 const View = views[page as keyof typeof views];
 ---

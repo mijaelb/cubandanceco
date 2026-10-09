@@ -12,6 +12,7 @@
 import { members } from './members.js';
 import { inbox } from './bunny.js';
 import { webhook, setup as stripeSetup, donationProgress } from './stripe.js';
+import { createRequest, readRequest, signRequest, fullRecord } from './sign.js';
 
 const ORIGINS = ['https://cubandance.co', 'https://www.cubandance.co', 'http://localhost:4321'];
 const READ = /^src\/(data|i18n)\/[a-z-]+\.json$/;
@@ -97,8 +98,20 @@ export default {
       try { return reply(await donationProgress(env, from, to)); } catch { return reply({ message: 'Not available right now' }, 502); }
     }
 
+    // Online signatures: the signer reads and signs with the link (cubandance.co/sign/#<id>)
+    const signPath = url.pathname.match(/^\/sign\/([A-Za-z0-9_-]{24})$/);
+    if (signPath && req.method === 'GET') { const r = await readRequest(env, signPath[1]); return r ? reply(r) : reply({ message: 'This link is not valid.' }, 404); }
+    if (signPath && req.method === 'POST') { const r = await signRequest(env, signPath[1], await req.json().catch(() => ({})), req); return reply(r.body, r.status); }
+
     // Everything else needs a valid session
     if (!(await teamOk())) return reply({ message: 'Please sign in again' }, 401);
+
+    // Online signatures: create a request, read the signed record (for the PDF)
+    if (url.pathname === '/sign' && req.method === 'POST') {
+      try { return reply(await createRequest(env, await req.json().catch(() => ({})))); } catch (e) { return reply({ message: e.message }, 400); }
+    }
+    const recordPath = url.pathname.match(/^\/sign\/([A-Za-z0-9_-]{24})\/record$/);
+    if (recordPath && req.method === 'GET') { const r = await fullRecord(env, recordPath[1]); return r ? reply(r) : reply({ message: 'Not found' }, 404); }
 
     // One-time Stripe setup (prices, webhook, customer portal, testers)
     if (url.pathname === '/stripe/setup' && req.method === 'POST') {

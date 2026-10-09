@@ -1,0 +1,39 @@
+---
+// Online signature page (cubandance.co/sign/#<id>). Not in the menu, the sitemap or search
+// results. The document and the signing come from the members service (worker/sign.js);
+// /js/sign.js shows the text, the signature pad and the confirmation.
+import Layout from '../layouts/Layout.astro';
+
+const { lang } = Astro.props;
+const API = 'https://iccd-team-editor.iccd-cubandance.workers.dev';
+---
+<Layout lang={lang} page="sign" title="Sign a document" noindex csp={{ connect: API }} script="/js/sign.js">
+  <section class="section paper page-top sign" data-api={API}>
+    <div class="wrap narrow-wrap">
+      <p class="eyebrow">Signature · Generación Abbilona asbl</p>
+      <h1 class="display sign-title" data-title>Loading the document…</h1>
+      <p class="sign-error" data-error hidden></p>
+      <article class="sign-doc" data-doc hidden></article>
+      <p class="sign-for muted" data-for hidden></p>
+
+      <form class="sign-form" data-form hidden novalidate>
+        <label class="sign-label" for="sign-name">Your full name</label>
+        <input id="sign-name" class="sign-input" name="name" autocomplete="name" required />
+        <div class="sign-pad-head"><span class="sign-label">Your signature</span><button type="button" class="m-link" data-clear>Clear</button></div>
+        <canvas class="sign-pad" data-pad aria-label="Draw your signature with your finger or mouse"></canvas>
+        <p class="sign-hint muted">Draw with your finger, a pen or the mouse.</p>
+        <label class="sign-agree"><input type="checkbox" name="agree" /> <span>I have read this document and I sign it on behalf of the association.</span></label>
+        <button type="submit" class="btn btn-dark sign-btn">Sign</button>
+        <p class="sign-error" data-form-error hidden></p>
+      </form>
+
+      <div class="sign-done" data-done hidden>
+        <h2 class="display">Thank you</h2>
+        <p data-done-text></p>
+        <p class="muted">You can close this page.</p>
+      </div>
+      <p class="sign-hash muted" data-hash hidden></p>
+      <noscript><p>This page needs JavaScript to show the document and the signature pad.</p></noscript>
+    </div>
+  </section>
+</Layout>
