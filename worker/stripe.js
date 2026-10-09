@@ -12,10 +12,11 @@ const ALLOWED = ['active', 'trialing', 'past_due']; // past_due: Stripe is still
 const HOOK = 'https://iccd-team-editor.iccd-cubandance.workers.dev/stripe/webhook';
 const EVENTS = ['checkout.session.completed', 'customer.subscription.created', 'customer.subscription.updated', 'customer.subscription.deleted'];
 export const testMode = (env) => /^(rk|sk)_test_/.test(String(env.STRIPE_SECRET_KEY || '').trim());
-// Is the paywall on for this member? Live key: for everyone. Test key: only for the testers.
+// Is the paywall on for this member? Live key: for everyone, once switched on in setup ({ paywall: true }).
+// Test key: only for the testers.
 export async function paywallFor(env, email) {
   if (!env.STRIPE_SECRET_KEY) return false;
-  if (!testMode(env)) return true;
+  if (!testMode(env)) return (await env.PRIVATE.get('stripe-paywall')) === 'on';
   return ((await env.PRIVATE.get('stripe-testers', 'json')) || []).includes(email);
 }
 
@@ -141,7 +142,7 @@ export async function allSubs(kv) {
 }
 
 // One-time setup from the admin: prices, webhook, customer portal, testers. Safe to run again.
-export async function setup(env, { testers = [] } = {}) {
+export async function setup(env, { testers = [], paywall } = {}) {
   const kv = env.PRIVATE, mode = testMode(env) ? 'test' : 'live';
   const done = [];
   for (const level of Object.keys(PRICES)) { const p = await priceFor(env, level); done.push(`${level} price: €${(p.unit_amount / 100).toFixed(2)} a month`); }
@@ -163,13 +164,17 @@ export async function setup(env, { testers = [] } = {}) {
   const subs = Object.values(await allSubs(kv)).length ? await kv.list({ prefix: 'sub:' }) : { keys: [] };
   for (const k of subs.keys) {
     const saved = await kv.get(k.name, 'json');
-    if (saved?.id) await saveSubscription(env, await stripe(env, `/subscriptions/${saved.id}`), k.name.slice(4)).catch(() => {});
+    // a subscription from the other mode (test records after switching to live) no longer exists: forget it
+    if (saved?.id) await stripe(env, `/subscriptions/${saved.id}`).then((s) => saveSubscription(env, s, k.name.slice(4)), (e) => /No such subscription/i.test(e.message) && kv.delete(k.name));
   }
   if (subs.keys.length) done.push(`${subs.keys.length} saved subscription(s) refreshed from Stripe`);
   if (mode === 'test') {
     const list = testers.map((e) => String(e).trim().toLowerCase()).filter((e) => /@/.test(e));
     await kv.put('stripe-testers', JSON.stringify(list));
     done.push(`test mode: the paywall only applies to ${list.join(', ') || 'nobody yet'}`);
-  } else done.push('live mode: the paywall applies to all members without free access');
+  } else {
+    if (typeof paywall === 'boolean') await kv.put('stripe-paywall', paywall ? 'on' : 'off');
+    done.push((await kv.get('stripe-paywall')) === 'on' ? 'live mode: the paywall is on for all members without free access' : 'live mode: the paywall is off, class recordings stay open (run setup with paywall: true to switch it on)');
+  }
   return { mode, done };
 }
