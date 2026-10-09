@@ -451,10 +451,10 @@ const remember = { get: (k, d) => { try { return localStorage.getItem(k) || d; }
 export function mailingView(ctx) {
   const { h } = ctx;
   const wrap = h('div', { class: 'pv' }, h('p', { class: 'muted' }, 'Loading…'));
-  let data = null, q = '';
+  let data = null, q = '', pendingLabel = '', lastNote = ['', false]; // the last message stays after the list is drawn again
   let groups = [];
   const reload = () => Promise.all([ctx.api('/news/admin'), loadSeason(ctx).catch(() => null)])
-    .then(([d, s]) => { data = d; groups = s ? trainingGroups(s, ctx.trainings).filter((g) => g.people.length) : []; draw(); })
+    .then(([d, s]) => { data = d; groups = s?.connected ? groupsFor(s, ctx.trainings, s.current).filter((g) => g.people.length) : []; draw(); })
     .catch((e) => wrap.replaceChildren(h('p', { class: 'error' }, e.message)));
   reload();
   const day = (ms) => (ms ? new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '');
@@ -464,11 +464,12 @@ export function mailingView(ctx) {
     if (aud === 'newsletter') return data.subscribers.filter((s) => s.status === 'active' && (lang === 'all' || s.lang === lang)).length;
     if (aud.startsWith('tickets:')) {
       const ids = new Set(aud.slice(8).split(','));
-      return uniqueEmails(season.people.filter((p) => ids.has('all') || ids.has(p.ticket))).filter((e) => !off().has(e)).length;
+      return uniqueEmails(season.people.filter((p) => (ids.has('all') ? p.event === season.current : ids.has(p.ticket)))).filter((e) => !off().has(e)).length;
     }
+    if (aud.startsWith('segment:')) return peopleIndex(season).filter((x) => SEGMENTS[aud.slice(8)].test(x)).map((x) => x.email).filter((e) => !off().has(e)).length;
     return { members: data.members.all, 'members:company': data.members.company, 'members:academy': data.members.academy }[aud];
   };
-  const label = (value) => AUDIENCE[value] || (value === 'tickets:all' ? 'Participants · the whole season' : `Participants · ${groups.find((g) => `tickets:${g.tickets.join(',')}` === value)?.label || 'a training'}`);
+  const label = (value) => AUDIENCE[value] || (value === 'tickets:all' ? 'Participants · this whole season' : value.startsWith('segment:') ? SEGMENTS[value.slice(8)].label : `Participants · ${groups.find((g) => `tickets:${g.tickets.join(',')}` === value)?.label || pendingLabel || 'a training'}`);
 
   function draw() {
     const subs = data.subscribers;
@@ -478,10 +479,15 @@ export function mailingView(ctx) {
     // ----- write and send -----
     const audience = h('select', { 'aria-label': 'Audience' },
       h('optgroup', { label: 'Website and members area' }, Object.entries(AUDIENCE).map(([v, t]) => h('option', { value: v }, t))),
-      groups.length > 0 && h('optgroup', { label: 'Training participants (Weezevent)' },
+      groups.length > 0 && h('optgroup', { label: 'This season (Weezevent)' },
         groups.map((g) => h('option', { value: `tickets:${g.tickets.join(',')}` }, `Participants · ${g.label}`)),
-        h('option', { value: 'tickets:all' }, 'Participants · the whole season')));
-    if (pendingAudience) { audience.value = pendingAudience.value; pendingAudience = null; }
+        h('option', { value: 'tickets:all' }, 'Participants · this whole season')),
+      season?.connected && h('optgroup', { label: 'Since 2023 (Weezevent)' }, SEGMENT_AUDIENCES.map((k) => h('option', { value: `segment:${k}` }, SEGMENTS[k].label))));
+    if (pendingAudience) {
+      // a training of an older event (from All events) is not in the list yet: add it
+      if (![...audience.options].some((o) => o.value === pendingAudience.value)) audience.append(h('option', { value: pendingAudience.value }, pendingAudience.label));
+      audience.value = pendingAudience.value; pendingLabel = pendingAudience.label; pendingAudience = null;
+    }
     const lang = h('select', { 'aria-label': 'Language' }, h('option', { value: 'all' }, 'All languages'), Object.entries(LANG_NAMES).map(([v, t]) => h('option', { value: v }, `${t} readers only`)));
     const subject = h('input', { placeholder: 'Subject, for example: Brussels training: the timetable is out', 'aria-label': 'Subject', maxlength: 150 });
     const body = h('textarea', { rows: 10, 'aria-label': 'Message', placeholder: 'Write your message.\n\nA blank line starts a new paragraph. **Two stars** make words bold. Links: [the timetable](https://cubandance.co/trainings/) or just paste the address.' });
@@ -498,8 +504,7 @@ export function mailingView(ctx) {
     // the training an audience is about: its month, matched to the calendar
     const trainingFor = (aud) => {
       const g = groups.find((x) => `tickets:${x.tickets.join(',')}` === aud);
-      const m = g && /^m(\d+)$/.test(g.key) ? Number(g.key.slice(1)) + 1 : 0;
-      return m ? events.findIndex((e) => Number(e.start.slice(5, 7)) === m) : -1;
+      return g && g.ym ? events.findIndex((e) => e.start.slice(0, 7) === g.ym) : -1;
     };
     const nextAfter = (i) => events.findIndex((e, j) => j > i && e.start >= today) >= 0 ? events.findIndex((e, j) => j > i && e.start >= today) : events.findIndex((e) => e.start >= today);
     const fillTemplates = () => {
@@ -545,7 +550,7 @@ export function mailingView(ctx) {
       previewBtn.disabled = false;
     };
     const reach = h('p', { class: 'pv-reach' });
-    const note = h('p', { class: 'pv-note', role: 'status' });
+    const note = h('p', { class: `pv-note${lastNote[1] ? ' bad' : ''}`, role: 'status' }, lastNote[0]);
     const confirmBox = h('div', { class: 'pv-confirm', hidden: true });
     const sendBtn = h('button', { type: 'button', class: 'btn-small pv-send' }, 'Send…');
     const testBtn = h('button', { type: 'button', class: 'btn-small' }, 'Send me a test');
@@ -558,7 +563,7 @@ export function mailingView(ctx) {
     };
     audience.onchange = () => { confirmBox.hidden = true; previewBox.hidden = true; updateReach(); fillTemplates(); };
     lang.onchange = () => { confirmBox.hidden = true; updateReach(); };
-    const say = (t, bad) => { note.textContent = t; note.classList.toggle('bad', !!bad); };
+    const say = (t, bad) => { lastNote = [t, !!bad]; note.textContent = t; note.classList.toggle('bad', !!bad); };
     const ready = () => { if (!subject.value.trim() || !body.value.trim()) { say('Write a subject and a message first.', true); return false; } return true; };
     testBtn.onclick = async () => {
       if (!ready()) return;
@@ -643,59 +648,104 @@ export function mailingView(ctx) {
 }
 
 // ---------- Participants (Weezevent) ----------
-// This season's ticket holders, grouped by training: each Weezevent ticket type starts with the
-// month ("October - Early Bird - 2Days Training"), matched to the training of that month.
+// Every Weezevent event since 2023. Training tickets start with the month ("October - Early Bird…",
+// "June 2024…"), matched to the training of that month in the calendar; shows are one group each.
 const MONTH_NAMES = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
-let season = null, pendingAudience = null;
+let season = null, pendingAudience = null, subsCache = null;
 const loadSeason = async (ctx, fresh) => (season && !fresh ? season : (season = await ctx.api('/weezevent/participants' + (fresh ? '?fresh=1' : ''))));
-
-// groups: one per training month (season order August → July), then passes and T-shirts
-export function trainingGroups(s, trainings) {
-  const groups = new Map();
-  const monthOf = (name) => MONTH_NAMES.indexOf(String(name).trim().split(/[\s-]+/)[0].toLowerCase());
-  const byId = new Map(s.tickets.map((t) => [t.id, t]));
-  for (const t of s.tickets) {
-    const m = monthOf(t.name);
-    const key = m < 0 ? 'other' : `m${m}`;
-    if (!groups.has(key)) {
-      const ev = m < 0 ? null : (trainings?.events || []).find((e) => Number(String(e.start).slice(5, 7)) === m + 1);
-      const Month = m < 0 ? '' : MONTH_NAMES[m][0].toUpperCase() + MONTH_NAMES[m].slice(1);
-      groups.set(key, { key, order: m < 0 ? 99 : (m + 5) % 12, label: m < 0 ? 'Passes and T-shirts' : ev ? `${Month} · ${ev.city}` : Month, tickets: [], people: [] });
-    }
-    groups.get(key).tickets.push(t.id);
-  }
-  for (const p of s.people) {
-    const t = byId.get(p.ticket); if (!t) continue;
-    const m = monthOf(t.name);
-    groups.get(m < 0 ? 'other' : `m${m}`)?.people.push({ ...p, ticketName: t.name });
-  }
-  return [...groups.values()].filter((g) => g.people.length || g.key !== 'other').sort((a, b) => a.order - b.order);
-}
 const uniqueEmails = (people) => [...new Set(people.map((p) => p.email).filter(Boolean))];
+const cap = (w) => w[0].toUpperCase() + w.slice(1);
+
+// The training a ticket is for: its month (and year: written in the name, or the season's)
+function ticketMonth(t, ev) {
+  const words = String(t.name).toLowerCase().split(/[\s,:-]+/);
+  const m = MONTH_NAMES.indexOf(words[0]);
+  if (m < 0 || !ev?.start) return null;
+  const y0 = Number(ev.start.slice(0, 4)), m0 = Number(ev.start.slice(5, 7));
+  const written = words.find((w) => /^20\d\d$/.test(w));
+  const year = written ? Number(written) : m + 1 >= m0 ? y0 : y0 + 1;
+  return `${year}-${String(m + 1).padStart(2, '0')}`;
+}
+// groups for one event: a training month each (in date order), or the whole show
+function groupsFor(s, trainings, eventId) {
+  const ev = s.events.find((e) => e.id === eventId);
+  if (!ev) return [];
+  const cal = [...(trainings?.events || []), ...(trainings?.history || [])];
+  const byId = new Map(s.tickets.filter((t) => t.event === eventId).map((t) => [t.id, t]));
+  const groups = new Map();
+  const add = (key, make) => groups.get(key) || groups.set(key, make()).get(key);
+  for (const p of s.people.filter((x) => x.event === eventId)) {
+    const t = byId.get(p.ticket);
+    const ym = ev.kind === 'training' && t ? ticketMonth(t, ev) : null;
+    const key = ev.kind === 'show' ? 'show' : ym || 'other';
+    const g = add(key, () => {
+      if (key === 'show') return { key, ym: ev.start.slice(0, 7), label: ev.name, tickets: new Set(), people: [] };
+      if (key === 'other') return { key, ym: '9999', label: 'Passes, T-shirts and other', tickets: new Set(), people: [] };
+      const c = cal.find((e) => String(e.start).slice(0, 7) === ym);
+      const name = `${cap(MONTH_NAMES[Number(ym.slice(5)) - 1])} ${ym.slice(0, 4)}`;
+      return { key, ym, label: c ? `${name} · ${c.city}` : name, tickets: new Set(), people: [] };
+    });
+    g.tickets.add(p.ticket);
+    g.people.push({ ...p, ticketName: t?.name || 'Ticket' });
+  }
+  return [...groups.values()].map((g) => ({ ...g, tickets: [...g.tickets] })).sort((a, b) => a.ym.localeCompare(b.ym));
+}
+// one row per person across every event: the analytics
+function peopleIndex(s) {
+  const ev = new Map(s.events.map((e) => [e.id, e]));
+  const price = new Map(s.tickets.map((t) => [t.id, t.price || 0]));
+  const tname = new Map(s.tickets.map((t) => [t.id, t.name]));
+  const by = new Map();
+  for (const p of s.people) {
+    if (!p.email) continue;
+    const e = ev.get(p.event);
+    const x = by.get(p.email) || { email: p.email, first: p.first, last: p.last, trainings: new Set(), shows: new Set(), seasons: new Set(), spent: 0, checkins: 0, first_at: '9999', last_at: '', now: false, bookings: [] };
+    const when = (p.booked || e?.start || '').slice(0, 10);
+    const month = e?.kind === 'show' ? null : ticketMonth({ name: tname.get(p.ticket) || '' }, e);
+    if (e?.kind === 'show') x.shows.add(p.event); else if (month) { x.trainings.add(`${p.event}:${month}`); x.seasons.add(p.event); if (p.event === s.current) x.now = true; } // T-shirts and passes are not trainings; 'now' = trains this season
+    x.spent += price.get(p.ticket) || 0;
+    if (p.scanned) x.checkins++;
+    if (when && when < x.first_at) x.first_at = when;
+    if (when > x.last_at) { x.last_at = when; x.first = p.first || x.first; x.last = p.last || x.last; }
+    x.bookings.push({ when, event: e?.name || '', ticket: tname.get(p.ticket) || 'Ticket' });
+    by.set(p.email, x);
+  }
+  return [...by.values()];
+}
+const SEGMENTS = {
+  all: { label: 'Everyone who ever booked', test: () => true },
+  regulars: { label: 'Regulars (5+ trainings)', test: (x) => x.trainings.size >= 5 },
+  lapsed: { label: 'Trained before, not this season', test: (x) => x.trainings.size > 0 && !x.now },
+  shows: { label: 'Show audiences who never trained', test: (x) => x.shows.size > 0 && x.trainings.size === 0 },
+  newcomers: { label: 'New this season', test: (x) => x.now && x.seasons.size === 1 && x.shows.size === 0 },
+};
+const SEGMENT_AUDIENCES = ['all', 'lapsed', 'shows', 'regulars'];
 
 export function participantsView(ctx) {
   const { h } = ctx;
   const wrap = h('div', { class: 'pv' }, h('p', { class: 'muted' }, 'Loading the participants from Weezevent…'));
-  let tab = null, q = '', message = ['', false]; // the last message stays when the list is drawn again
-  const start = (fresh) => Promise.all([loadSeason(ctx, fresh), load(ctx, fresh)]).then(draw).catch((e) => wrap.replaceChildren(h('p', { class: 'error' }, e.message)));
+  let view = 'season', eventId = null, tab = null, q = '', seg = 'all', sort = 'trainings', open = null, message = ['', false];
+  const start = (fresh) => Promise.all([loadSeason(ctx, fresh), load(ctx, fresh), ctx.api('/news/admin').then((d) => { subsCache = d.subscribers; }).catch(() => {})])
+    .then(draw).catch((e) => wrap.replaceChildren(h('p', { class: 'error' }, e.message)));
   start(false);
-  const day = (s) => (s ? new Date(s.replace(' ', 'T')).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '');
-  const short = (name) => name.replace(/^\s*[A-Za-z]+\s*-\s*/, '').trim();
+  const day = (s) => (s ? new Date(s.slice(0, 10) + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '');
+  const monthYear = (s) => (s && s !== '9999' ? new Date(s.slice(0, 10) + 'T12:00:00').toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : '');
+  const short = (name) => name.replace(/^\s*[A-Za-z]+(\s+20\d\d)?\s*-\s*/, '').trim();
+  const euro = (n) => `€${Math.round(n).toLocaleString('en-GB')}`;
 
   function draw() {
     if (!season.connected) return wrap.replaceChildren(h('p', { class: 'muted' }, 'Weezevent is not connected yet: its API key and login are needed in the members service.'));
-    const groups = trainingGroups(season, ctx.trainings);
     const members = new Map(cache.members.map((m) => [m.email.toLowerCase(), m]));
-    if (!tab) tab = groups.find((g) => g.key !== 'other' && g.people.length)?.key || 'people';
+    const subscribed = new Set((subsCache || []).filter((s) => s.status === 'active').map((s) => s.email));
+    const index = peopleIndex(season);
     const note = h('p', { class: `pv-note${message[1] ? ' bad' : ''}`, role: 'status' }, message[0]);
     const say = (t, bad) => { message = [t, !!bad]; note.textContent = t; note.classList.toggle('bad', !!bad); };
-
+    const badges = (email) => [members.has(email) && h('span', { class: 'pv-badge on' }, members.get(email).level === 'academy' ? 'Academy member' : 'Company member'), subscribed.has(email) && h('span', { class: 'pv-badge' }, 'Newsletter')];
     const memberCell = (p) => {
-      const m = members.get(p.email);
-      if (m) return h('span', { class: 'pv-badge on' }, m.level === 'academy' ? 'Academy member' : 'Company member');
+      if (members.has(p.email)) return h('span', { class: 'pv-badges' }, ...badges(p.email));
       if (!p.email) return h('span', { class: 'muted' }, 'No email');
       const level = h('select', { 'aria-label': 'Level' }, h('option', { value: 'company' }, 'Company'), h('option', { value: 'academy' }, 'Academy'));
-      return h('span', { class: 'pv-add-member' }, level, h('button', { type: 'button', class: 'btn-small', onclick: async (e) => {
+      return h('span', { class: 'pv-add-member' }, subscribed.has(p.email) && h('span', { class: 'pv-badge' }, 'Newsletter'), level, h('button', { type: 'button', class: 'btn-small', onclick: async (e) => {
         e.target.disabled = true;
         try {
           const r = await ctx.api('/weezevent/add-member', { method: 'POST', body: JSON.stringify({ name: `${p.first} ${p.last}`.trim(), email: p.email, level: level.value }) });
@@ -705,46 +755,85 @@ export function participantsView(ctx) {
         } catch (err) { say(err.message, true); e.target.disabled = false; }
       } }, 'Add to members area'));
     };
+    const emailButtons = (value, label, emails) => h('div', { class: 'pv-compose-row' },
+      h('button', { type: 'button', class: 'btn-small pv-send', onclick: () => { pendingAudience = { value, label }; ctx.go('mailing'); } }, `Email these ${emails.length} people`),
+      h('button', { type: 'button', class: 'btn-small', onclick: async () => { try { await navigator.clipboard.writeText(emails.join(', ')); say(`${emails.length} email addresses copied ✓`); } catch { say('Copying is not allowed in this browser.', true); } } }, 'Copy the emails'));
 
-    const tabs = h('div', { class: 'pv-tabs' },
-      groups.map((g) => h('button', { type: 'button', class: tab === g.key ? 'active' : '', onclick: () => { tab = g.key; draw(); } }, g.label, h('small', {}, uniqueEmails(g.people).length))),
-      h('button', { type: 'button', class: tab === 'people' ? 'active' : '', onclick: () => { tab = 'people'; draw(); } }, 'Everyone', h('small', {}, uniqueEmails(season.people).length)));
-
-    let body;
-    if (tab === 'people') {
-      // one row per person: which trainings they booked this season
-      const map = new Map();
-      for (const g of groups.filter((x) => x.key !== 'other')) for (const p of g.people) {
-        if (!p.email) continue;
-        const e = map.get(p.email) || { ...p, months: new Set() };
-        e.months.add(g.label.split(' · ')[0]); map.set(p.email, e);
-      }
-      const rows = [...map.values()].filter((p) => !q || `${p.first} ${p.last} ${p.email}`.toLowerCase().includes(q)).sort((a, b) => b.months.size - a.months.size || a.first.localeCompare(b.first));
-      body = h('div', { class: 'pv-subs' }, rows.length ? rows.map((p) => h('div', { class: 'pv-part-row' },
-        h('span', {}, h('b', {}, `${p.first} ${p.last}`), h('br'), h('small', { class: 'muted' }, p.email)),
-        h('span', {}, h('b', {}, p.months.size), p.months.size === 1 ? ' training' : ' trainings', h('br'), h('small', { class: 'muted' }, [...p.months].join(' · '))),
-        memberCell(p))) : [h('p', { class: 'muted' }, 'Nobody found.')]);
-    } else {
+    // ----- one event: a tab per training month (or the show), its participants -----
+    const eventPanel = (id) => {
+      const groups = groupsFor(season, ctx.trainings, id);
+      if (!groups.length) return h('p', { class: 'muted' }, 'No bookings in this event.');
+      if (!groups.some((g) => g.key === tab)) tab = (groups.find((g) => g.key !== 'other' && g.people.length) || groups[0]).key;
       const g = groups.find((x) => x.key === tab);
       const rows = g.people.filter((p) => !q || `${p.first} ${p.last} ${p.email}`.toLowerCase().includes(q)).sort((a, b) => a.first.localeCompare(b.first));
-      const emails = uniqueEmails(g.people);
-      body = h('div', { class: 'pv' },
-        h('div', { class: 'pv-compose-row' },
-          h('button', { type: 'button', class: 'btn-small pv-send', onclick: () => { pendingAudience = { value: `tickets:${g.tickets.join(',')}`, label: `Participants · ${g.label}` }; ctx.go('mailing'); } }, `Email these ${emails.length} people`),
-          h('button', { type: 'button', class: 'btn-small', onclick: async () => { try { await navigator.clipboard.writeText(emails.join(', ')); say(`${emails.length} email addresses copied ✓`); } catch { say('Copying is not allowed in this browser.', true); } } }, 'Copy the emails')),
+      return h('div', { class: 'pv' },
+        groups.length > 1 && h('div', { class: 'pv-tabs' }, groups.map((x) => h('button', { type: 'button', class: tab === x.key ? 'active' : '', onclick: () => { tab = x.key; draw(); } }, x.label, h('small', {}, uniqueEmails(x.people).length)))),
+        emailButtons(`tickets:${g.tickets.join(',')}`, `Participants · ${g.label}`, uniqueEmails(g.people)),
         h('div', { class: 'pv-subs' }, rows.length ? rows.map((p) => h('div', { class: 'pv-part-row' },
           h('span', {}, h('b', {}, `${p.first} ${p.last}`), h('br'), h('small', { class: 'muted' }, p.email || 'no email')),
-          h('span', {}, short(p.ticketName), h('br'), h('small', { class: 'muted' }, [`booked ${day(p.booked)}`, p.scanned && 'checked in'].filter(Boolean).join(' · '))),
-          memberCell(p))) : [h('p', { class: 'muted' }, g.people.length ? 'Nobody found.' : 'No bookings yet.')]));
-    }
+          h('span', {}, short(p.ticketName), h('br'), h('small', { class: 'muted' }, [p.booked && `booked ${day(p.booked)}`, p.scanned && 'checked in'].filter(Boolean).join(' · '))),
+          memberCell(p))) : [h('p', { class: 'muted' }, 'Nobody found.')]));
+    };
+
+    // ----- people: one row each, across every event -----
+    const peoplePanel = () => {
+      const S = SEGMENTS[seg];
+      const chosen = index.filter((x) => S.test(x));
+      const sorters = { trainings: (a, b) => b.trainings.size - a.trainings.size || b.last_at.localeCompare(a.last_at), recent: (a, b) => b.last_at.localeCompare(a.last_at), spent: (a, b) => b.spent - a.spent, name: (a, b) => `${a.first} ${a.last}`.localeCompare(`${b.first} ${b.last}`) };
+      const rows = chosen.filter((x) => !q || `${x.first} ${x.last} ${x.email}`.toLowerCase().includes(q)).sort(sorters[sort]);
+      const exportCsv = () => {
+        const lines = [['name', 'email', 'trainings', 'shows', 'first booking', 'last booking', 'spent (EUR, approx.)', 'checked in', 'member', 'newsletter'],
+          ...rows.map((x) => [`${x.first} ${x.last}`, x.email, x.trainings.size, x.shows.size, x.first_at, x.last_at, Math.round(x.spent), x.checkins, members.get(x.email)?.level || '', subscribed.has(x.email) ? 'yes' : ''])];
+        const csv = lines.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+        const a = h('a', { href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })), download: `iccd-people-${seg}.csv` }); document.body.append(a); a.click(); a.remove();
+      };
+      return h('div', { class: 'pv' },
+        h('div', { class: 'pv-tabs' }, Object.entries(SEGMENTS).map(([k, s]) => h('button', { type: 'button', class: seg === k ? 'active' : '', onclick: () => { seg = k; open = null; draw(); } }, s.label, h('small', {}, index.filter((x) => s.test(x)).length)))),
+        h('div', { class: 'pv-compose-row' },
+          h('label', { class: 'pv-check-inline' }, 'Sort by ', h('select', { onchange: (e) => { sort = e.target.value; draw(); } }, [['trainings', 'most trainings'], ['recent', 'most recent booking'], ['spent', 'most spent'], ['name', 'name']].map(([v, t]) => h('option', { value: v, selected: sort === v }, t)))),
+          h('button', { type: 'button', class: 'btn-small', onclick: exportCsv }, 'Export this list (CSV)')),
+        SEGMENT_AUDIENCES.includes(seg) ? emailButtons(`segment:${seg}`, S.label, chosen.map((x) => x.email)) : null,
+        h('div', { class: 'pv-subs' }, rows.length ? rows.slice(0, 400).map((x) => h('div', { class: `pv-person-card${open === x.email ? ' open' : ''}` },
+          h('button', { type: 'button', class: 'pv-person-sum', onclick: () => { open = open === x.email ? null : x.email; draw(); } },
+            h('span', {}, h('b', {}, `${x.first} ${x.last}`), h('br'), h('small', { class: 'muted' }, x.email)),
+            h('span', { class: 'pv-stats' },
+              h('span', {}, h('b', {}, x.trainings.size), x.trainings.size === 1 ? ' training' : ' trainings'),
+              x.shows.size > 0 && h('span', {}, h('b', {}, x.shows.size), x.shows.size === 1 ? ' show' : ' shows'),
+              h('span', { class: 'muted' }, `${monthYear(x.first_at)} – ${monthYear(x.last_at)}`),
+              h('span', { class: 'muted' }, `about ${euro(x.spent)}`))),
+          memberCell(x),
+          open === x.email && h('ul', { class: 'pv-bookings' }, x.bookings.sort((a, b) => b.when.localeCompare(a.when)).map((b) => h('li', {}, h('span', { class: 'muted' }, day(b.when)), ' ', b.event, ' · ', short(b.ticket))))))
+          : [h('p', { class: 'muted' }, 'Nobody found.')]),
+        rows.length > 400 && h('p', { class: 'muted' }, `Showing the first 400 of ${rows.length}. Search to find someone.`));
+    };
+
+    // ----- all events -----
+    const eventsPanel = () => {
+      if (eventId) return h('div', { class: 'pv' }, h('button', { type: 'button', class: 'btn-small', onclick: () => { eventId = null; tab = null; draw(); } }, '← All events'), h('h3', {}, season.events.find((e) => e.id === eventId)?.name || ''), eventPanel(eventId));
+      return h('div', { class: 'pv-subs' }, [...season.events].reverse().map((e) => {
+        const ps = season.people.filter((p) => p.event === e.id);
+        return h('button', { type: 'button', class: 'pv-event-row', onclick: () => { eventId = e.id; tab = null; draw(); } },
+          h('span', {}, h('b', {}, e.name), h('br'), h('small', { class: 'muted' }, `${e.kind === 'show' ? 'Show' : 'Training season'} · ${monthYear(e.start)}`)),
+          h('span', {}, h('b', {}, ps.length), ' tickets · ', h('b', {}, uniqueEmails(ps).length), ' people'));
+      }));
+    };
+
+    const now = index.filter((x) => x.now);
+    const newcomers = index.filter((x) => SEGMENTS.newcomers.test(x));
+    const returning = now.length - newcomers.length;
     wrap.replaceChildren(
+      h('div', { class: 'pv-kpis' },
+        h('div', {}, h('b', {}, index.length), h('span', {}, 'people since 2023')),
+        h('div', {}, h('b', {}, now.length), h('span', {}, `training this season · ${newcomers.length} new, ${returning} returning`)),
+        h('div', {}, h('b', {}, index.filter((x) => SEGMENTS.regulars.test(x)).length), h('span', {}, 'regulars (5+ trainings)')),
+        h('div', {}, h('b', {}, index.filter((x) => SEGMENTS.lapsed.test(x)).length), h('span', {}, 'trained before, not this season'))),
       h('div', { class: 'pv-levels' },
-        h('span', {}, h('b', {}, uniqueEmails(season.people).length), ' people booked this season'),
-        h('span', {}, `From Weezevent: ${season.events.map((e) => e.name).join(', ')} · updated ${new Date(season.at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`),
+        h('span', {}, `From Weezevent: ${season.events.length} events, updated ${new Date(season.at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`),
         h('button', { type: 'button', class: 'btn-small', onclick: () => { wrap.replaceChildren(h('p', { class: 'muted' }, 'Updating from Weezevent…')); start(true); } }, 'Update now')),
-      tabs,
-      h('input', { type: 'search', class: 'pv-search', placeholder: 'Search by name or email', value: q, oninput: (e) => { q = e.target.value.toLowerCase(); clearTimeout(wrap.t); wrap.t = setTimeout(draw, 200); } }),
-      note, body);
+      h('div', { class: 'pv-views' }, [['season', 'This season'], ['people', 'People'], ['events', 'All events']].map(([v, t]) => h('button', { type: 'button', class: view === v ? 'active' : '', onclick: () => { view = v; tab = null; q = ''; draw(); } }, t))),
+      h('input', { type: 'search', class: 'pv-search', placeholder: 'Search by name or email', value: q, oninput: (e) => { q = e.target.value.toLowerCase(); clearTimeout(wrap.t); wrap.t = setTimeout(() => { draw(); const s = wrap.querySelector('.pv-search'); s.focus(); s.setSelectionRange(s.value.length, s.value.length); }, 250); } }),
+      note,
+      view === 'season' ? eventPanel(season.current) : view === 'people' ? peoplePanel() : eventsPanel());
   }
   return wrap;
 }

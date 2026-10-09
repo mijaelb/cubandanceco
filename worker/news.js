@@ -5,7 +5,7 @@
 //     (status, language and email also as key metadata, so the list needs no extra reads)
 //     campaign:<time> = what was sent, to whom (counts only)
 
-import { season } from './weezevent.js';
+import { history, segments } from './weezevent.js';
 
 const LANGS = ['en', 'es', 'fr', 'it', 'de', 'nl'];
 const EMAIL = /^[^\s@<>()",;]+@[^\s@<>()",;]+\.[^\s@<>()",;]{2,}$/;
@@ -214,8 +214,15 @@ async function audience(env, name, l) {
   } else if (name.startsWith('tickets:')) {
     // participants with one of these Weezevent ticket types (a training, or the whole season)
     const ids = new Set(name.slice(8).split(',').filter(Boolean));
-    const s = await season(env);
-    list = s.people.filter((p) => p.email && (ids.has('all') || ids.has(p.ticket))).map((p) => ({ email: p.email, name: `${p.first} ${p.last}`.trim(), kind: 'participants' }));
+    const h = await history(env);
+    const current = [...h.events].reverse().find((e) => e.kind === 'training')?.id;
+    list = h.people.filter((p) => p.email && (ids.has('all') ? p.event === current : ids.has(p.ticket))).map((p) => ({ email: p.email, name: `${p.first} ${p.last}`.trim(), kind: 'participants' }));
+  } else if (name.startsWith('segment:')) {
+    // groups of past and present participants: everyone, lapsed dancers, show audiences, regulars
+    const h = await history(env);
+    const wanted = new Set(segments(h)[name.slice(8)] || []);
+    const names = new Map(h.people.map((p) => [p.email, `${p.first} ${p.last}`.trim()]));
+    list = [...wanted].map((email) => ({ email, name: names.get(email) || '', kind: 'participants' }));
   } else throw new Error('Unknown audience');
   const seen = new Set();
   return list.filter((p) => !off.has(p.email) && (!l || l === 'all' || p.lang === l) && !seen.has(p.email) && seen.add(p.email));

@@ -34,7 +34,7 @@ async function get(path, env, extra = '', retry = true) {
 export async function probe(env) {
   if (!env.WEEZEVENT_API_KEY) return { message: 'WEEZEVENT_API_KEY is not set' };
   const out = { login: env.WEEZEVENT_USERNAME && env.WEEZEVENT_PASSWORD ? 'set' : 'missing: add WEEZEVENT_USERNAME and WEEZEVENT_PASSWORD' };
-  const ev = await get('/events', env);
+  const ev = await get('/events', env, '&include_closed=true&include_without_sales=true&include_not_published=true');
   out.events = { status: ev.status, shape: ev.d ? keysOf(ev.d) : ev.snippet, error: ev.d?.error || ev.d?.message || null };
   const list = ev.d?.events || ev.d?.data || [];
   out.eventList = Array.isArray(list) ? list.slice(0, 40).map((e) => ({ id: e.id, name: e.name || e.title, date: e.date?.start || e.date || e.start_date || null, participants: e.participants ?? null })) : null;
@@ -54,40 +54,93 @@ export async function probe(env) {
   return out;
 }
 
-// ---------- this season's participants (team panel, mailing audiences) ----------
-// Every ticket type sits under the season's event(s); refunded and deleted tickets are left out.
-// Kept 10 minutes in KV so the panel and a send use the same list without asking Weezevent twice.
-export async function season(env, fresh) {
-  const kv = env.PRIVATE;
-  if (!fresh) { const c = await kv.get('weezevent:season', 'json'); if (c) return c; }
-  if (!env.WEEZEVENT_API_KEY || !env.WEEZEVENT_USERNAME) return { connected: false, at: Date.now(), events: [], tickets: [], people: [] };
-  const ev = await get('/events', env);
-  if (ev.status !== 200) throw new Error(ev.d?.error?.message || `Weezevent answered ${ev.status}`);
-  const events = (ev.d?.events || []).map((e) => ({ id: e.id, name: e.name, start: e.date?.start || '' }));
-  const tickets = [];
-  const people = [];
-  for (const e of events) {
-    const tk = await get('/tickets', env, `&id_event[]=${e.id}`);
-    for (const te of tk.d?.events || []) for (const cat of te.categories || []) for (const t of cat.tickets || []) tickets.push({ id: String(t.id), name: String(t.name || '').trim(), price: t.price ?? null, event: e.id });
-    for (let page = 1; page <= 20; page++) {
-      const pa = await get('/participant/list', env, `&id_event[]=${e.id}&full=1&max=500&page=${page}`);
-      const list = pa.d?.participants || [];
-      for (const p of list) {
-        if (p.deleted === '1' || p.refund === '1' || p.deleted === true || p.refund === true) continue;
-        const o = p.owner || {}, b = p.buyer || {};
-        people.push({
-          id: String(p.id_participant), ticket: String(p.id_ticket), event: e.id,
-          first: String(o.first_name || b.acheteur_first_name || '').trim(), last: String(o.last_name || b.acheteur_last_name || '').trim(),
-          email: String(o.email || b.email_acheteur || '').trim().toLowerCase(),
-          booked: p.create_date || p.transaction_date || '', paid: !!p.paid, scanned: p.control_status?.status === '1' || !!p.control_status?.scan_date,
-        });
-      }
-      if (list.length < 500) break;
+// ---------- all events: tickets and participants (team panel, analytics, mailing audiences) ----------
+// Every event and its ticket types; refunded and deleted tickets are left out. Events more than
+// four months old no longer change: they are kept 30 days. Recent ones are asked again after 10 minutes.
+const SHOW = /ra[ií]ces|sabor|show|spectacle/i;
+const kindOfEvent = (name) => (SHOW.test(name) ? 'show' : 'training');
+async function eventData(env, e) {
+  const tickets = [], people = [];
+  const tk = await get('/tickets', env, `&id_event[]=${e.id}`);
+  for (const te of tk.d?.events || []) for (const cat of te.categories || []) for (const t of cat.tickets || []) tickets.push({ id: String(t.id), name: String(t.name || '').trim(), price: Number(t.price) || 0, event: e.id });
+  for (let page = 1; page <= 20; page++) {
+    const pa = await get('/participant/list', env, `&id_event[]=${e.id}&full=1&max=500&page=${page}`);
+    const list = pa.d?.participants || [];
+    for (const p of list) {
+      if (p.deleted === '1' || p.refund === '1' || p.deleted === true || p.refund === true) continue;
+      const o = p.owner || {}, b = p.buyer || {};
+      people.push({
+        id: String(p.id_participant), ticket: String(p.id_ticket), event: e.id,
+        first: String(o.first_name || b.acheteur_first_name || '').trim(), last: String(o.last_name || b.acheteur_last_name || '').trim(),
+        email: String(o.email || b.email_acheteur || '').trim().toLowerCase(),
+        booked: p.create_date || p.transaction_date || '', scanned: p.control_status?.status === '1' || !!p.control_status?.scan_date,
+      });
     }
+    if (list.length < 500) break;
+  }
+  return { tickets, people };
+}
+export async function history(env, fresh) {
+  const kv = env.PRIVATE;
+  if (!env.WEEZEVENT_API_KEY || !env.WEEZEVENT_USERNAME) return { connected: false, at: Date.now(), events: [], tickets: [], people: [] };
+  if (!fresh) { const c = await kv.get('weezevent:history', 'json'); if (c) return c; }
+  const ev = await get('/events', env, '&include_closed=true&include_without_sales=true&include_not_published=true');
+  if (ev.status !== 200) throw new Error(ev.d?.error?.message || `Weezevent answered ${ev.status}`);
+  const events = (ev.d?.events || []).map((e) => ({ id: e.id, name: String(e.name || '').trim(), start: e.date?.start || '', end: e.date?.end || '', kind: kindOfEvent(e.name) }))
+    .sort((a, b) => a.start.localeCompare(b.start));
+  const tickets = [], people = [];
+  const old = Date.now() - 120 * 864e5;
+  for (const e of events) {
+    const key = `weezevent:event:${e.id}`;
+    const last = Date.parse((e.end || e.start || '').replace(' ', 'T')) || Date.now();
+    let d = last < old && !fresh ? await kv.get(key, 'json') : null;
+    if (!d) { d = await eventData(env, e); if (last < old) await kv.put(key, JSON.stringify(d), { expirationTtl: 30 * 86400 }); }
+    tickets.push(...d.tickets); people.push(...d.people);
   }
   const out = { connected: true, at: Date.now(), events, tickets, people };
-  await kv.put('weezevent:season', JSON.stringify(out), { expirationTtl: 600 });
+  await kv.put('weezevent:history', JSON.stringify(out), { expirationTtl: 600 });
   return out;
+}
+// the current season: the most recent training event (what the Participants tabs open on)
+export async function season(env, fresh) {
+  const h = await history(env, fresh);
+  if (!h.connected) return h;
+  const current = [...h.events].reverse().find((e) => e.kind === 'training');
+  return { ...h, current: current?.id || null };
+}
+
+// Groups used for analytics and mailing audiences, the same in the panel and the service
+// the training a ticket is for: its month, and the year written in the name or the season's
+const MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
+function ticketMonth(name, ev) {
+  const words = String(name).toLowerCase().split(/[\s,:-]+/);
+  const m = MONTHS.indexOf(words[0]);
+  if (m < 0 || !ev?.start) return null;
+  const y0 = Number(ev.start.slice(0, 4)), m0 = Number(ev.start.slice(5, 7));
+  const written = words.find((w) => /^20\d\d$/.test(w));
+  return `${written ? Number(written) : m + 1 >= m0 ? y0 : y0 + 1}-${String(m + 1).padStart(2, '0')}`;
+}
+export function segments(h) {
+  const kind = new Map(h.events.map((e) => [e.id, e.kind]));
+  const evs = new Map(h.events.map((e) => [e.id, e]));
+  const tname = new Map(h.tickets.map((t) => [t.id, t.name]));
+  const current = [...h.events].reverse().find((e) => e.kind === 'training')?.id;
+  const by = new Map();
+  for (const p of h.people) {
+    if (!p.email) continue;
+    const x = by.get(p.email) || { trainings: new Set(), shows: new Set(), now: false };
+    const month = kind.get(p.event) === 'show' ? null : ticketMonth(tname.get(p.ticket) || '', evs.get(p.event));
+    if (kind.get(p.event) === 'show') x.shows.add(p.event); else if (month) { x.trainings.add(`${p.event}:${month}`); if (p.event === current) x.now = true; } // T-shirts and passes are not trainings; 'now' = trains this season
+    by.set(p.email, x);
+  }
+  const pick = (f) => [...by.entries()].filter(([, x]) => f(x)).map(([e]) => e);
+  return {
+    all: pick(() => true),
+    trained: pick((x) => x.trainings.size > 0),
+    lapsed: pick((x) => x.trainings.size > 0 && !x.now),
+    shows: pick((x) => x.shows.size > 0 && x.trainings.size === 0),
+    regulars: pick((x) => x.trainings.size >= 5),
+  };
 }
 
 // Add a ticket holder to the members area (the team chooses Company or Academy)
