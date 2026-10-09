@@ -436,3 +436,26 @@ button.pv-code.on { background: var(--ink); color: var(--gold); border-color: va
 .pv-code.big { margin-left: 0; font-size: 14px; padding: 3px 10px; }
 .pv-codes { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 2px; }
 @media (max-width: 480px) { .pv-views { display: grid; grid-template-columns: 1fr 1fr; width: 100%; border-radius: 14px; } }
+
+/* Composer: steps, labelled fields, photo picker, templates tab */
+.pv-step { display: grid; gap: 10px; padding: 16px 0; border-top: 1px solid var(--line); }
+.pv-step:first-child { border-top: 0; padding-top: 0; }
+.pv-step h3 { display: flex; align-items: center; gap: 8px; margin: 0; }
+.pv-num { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--ink); color: var(--gold); font-size: 13px; flex: none; }
+.pv-field { display: grid; gap: 4px; min-width: 0; }
+.pv-label { font-weight: 700; }
+.pv-hint { color: var(--muted, #6b6457); line-height: 1.45; }
+.pv-photo-fields { align-content: center; }
+.pv-photo-grid { display: grid; gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+.pv-photo-opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.pv-photo-opt { display: grid; gap: 4px; padding: 4px; border: 2px solid transparent; border-radius: 10px; background: none; cursor: pointer; text-align: left; font-size: 12px; min-width: 0; }
+.pv-photo-opt img { width: 100%; aspect-ratio: 12 / 5; object-fit: cover; border-radius: 6px; display: block; }
+.pv-photo-opt:hover { border-color: var(--line); }
+.pv-photo-opt.on { border-color: var(--ink); }
+.pv-tpl-row { display: grid; grid-template-columns: 120px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 12px; background: #fff; border: 1px solid var(--line); border-radius: 12px; }
+.pv-tpl-row img, .pv-tpl-noimg { width: 120px; aspect-ratio: 12 / 5; object-fit: cover; border-radius: 6px; display: block; background: var(--line); }
+.pv-tpl-kind { display: grid; gap: 8px; margin-top: 10px; }
+.pv-templates { display: grid; gap: 10px; }
+@media (max-width: 640px) { .pv-tpl-row { grid-template-columns: 90px minmax(0, 1fr); } .pv-tpl-row img, .pv-tpl-noimg { width: 90px; } .pv-tpl-row > .pv-compose-row { grid-column: 1 / -1; } }
+[data-mtab][hidden] { display: none !important; }
+.pv-photo-fields { justify-items: start; }

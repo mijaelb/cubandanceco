@@ -456,16 +456,21 @@ const TEMPLATES = {
       body: () => `Hello,\n\n[Write your news here.]\n\nWarm regards,\n**The ICCD team**` },
   ],
 };
-const PHOTOS = { company: 'The company in costume', stage: 'On stage with live drums', joy: 'The joy of a training', yemaya: 'Yemayá on stage', drums: 'The drummers', maestro: 'A maestro teaching' };
+const PHOTO_GROUPS = {
+  'Trainings': { joy: 'The joy of a training', weekend: 'The whole group at a weekend', together: 'Celebrating together', havana: 'Training in Havana', hall: 'A full hall dancing', maestro: 'A maestro teaching' },
+  'Costumes': { company: 'The company in costume', hats: 'Red costumes and straw hats', red: 'Changó in red', green: 'Oggún in green', yemaya: 'Yemayá in blue' },
+  'On stage': { stage: 'On stage with live drums', drums: 'The drummers', timba: 'Timba on stage', rumba: 'Dancers in red, Rome', oshun: 'Oshún on stage', ship: 'The ship scene' },
+};
+const PHOTOS = Object.assign({}, ...Object.values(PHOTO_GROUPS));
 // the photo and headline each template starts with (the team can change both)
 const LOOK = {
   reminder: { photo: 'joy', eyebrow: 'See you this weekend', headline: (t) => `${t.city} · ${t.dates}` },
   timetable: { photo: 'maestro', eyebrow: 'The timetable is out', headline: (t) => `${t.city} · ${t.dates}` },
-  thanks: { photo: 'company', eyebrow: 'Thank you', headline: (t) => `Thank you, ${t.city}!` },
+  thanks: { photo: 'weekend', eyebrow: 'Thank you', headline: (t) => `Thank you, ${t.city}!` },
   next: { photo: 'company', eyebrow: 'Next training', headline: (t) => `${t.city} · ${t.dates}` },
   videos: { photo: 'stage', eyebrow: 'Members area', headline: () => 'New videos for you' },
   news: { photo: 'drums', eyebrow: 'News', headline: () => 'News from ICCD' },
-  invite: { photo: 'joy', eyebrow: 'Stay in touch', headline: () => 'Shall we keep you posted?' },
+  invite: { photo: 'together', eyebrow: 'Stay in touch', headline: () => 'Shall we keep you posted?' },
 };
 const BUTTONS = { join: { label: 'Yes, keep me posted', join: true }, members: { label: 'Open the members area', url: 'https://cubandance.co/members/' }, tickets: { label: 'Book your training', url: TICKETS }, support: { label: 'Support us', url: 'https://cubandance.co/support/' } };
 const kindOf = (aud) => (aud.startsWith('tickets:') || aud.startsWith('segment:') ? 'participants' : aud.startsWith('members') ? 'members' : 'news');
@@ -503,6 +508,51 @@ export function mailingView(ctx) {
   };
   const label = (value) => AUDIENCE[value] || (value === 'tickets:all' ? 'Participants · this whole season' : value.startsWith('segment:unbooked:') ? `Trained this season, not booked for ${(ctx.trainings.events || []).find((e) => e.start.startsWith(value.slice(17)))?.city || 'the next training'} yet` : value.startsWith('segment:') ? SEGMENTS[value.slice(8)].label : `Participants · ${groups.find((g) => `tickets:${g.tickets.join(',')}` === value)?.label || pendingLabel || 'a training'}`);
 
+  // a field with its name and a line on what it does
+  const field = (label, hint, ...controls) => h('div', { class: 'pv-field' }, h('span', { class: 'pv-label' }, label), hint && h('small', { class: 'pv-hint' }, hint), ...controls);
+  // tabs inside the Mailing page: the sections stay in place, only shown or hidden (nothing typed is lost)
+  const MAIL_TABS = [['write', 'Write an email'], ['templates', 'Templates'], ['sent', 'Sent and scheduled'], ['subscribers', 'Subscribers']];
+  const mailTabs = h('div', { class: 'pv-views' }, MAIL_TABS.map(([k, t]) => h('button', { type: 'button', 'data-k': k, onclick: () => { mailTab = k; showMailTab(); } }, t)));
+  function showMailTab() {
+    mailTabs.querySelectorAll('button').forEach((b) => b.classList.toggle('active', b.dataset.k === mailTab));
+    wrap.querySelectorAll('[data-mtab]').forEach((s) => { s.hidden = s.dataset.mtab !== mailTab; });
+  }
+  let openTemplate = null, templatesChanged = null; // set by draw(): open a template in the Write tab; redraw the Templates tab
+  // ----- Templates tab: the team's own and the ready-made ones -----
+  function templatesTab() {
+    const own = data.templates || [];
+    const KIND_NAMES = { participants: 'For participants', members: 'For the members area', news: 'For newsletter subscribers' };
+    const row = (img, name, sub, ...buttons) => h('div', { class: 'pv-tpl-row' }, img ? h('img', { src: `${ctx.SITE}/images/email/${img}.jpg`, alt: '', loading: 'lazy' }) : h('span', { class: 'pv-tpl-noimg' }), h('span', {}, h('b', {}, name), h('br'), h('small', { class: 'muted' }, sub)), h('span', { class: 'pv-compose-row' }, ...buttons));
+    const tell = (t, bad) => { lastNote = [t, !!bad]; templatesChanged(); };
+    const rename = (t) => async (e) => {
+      const box = e.target.closest('.pv-tpl-row');
+      const input = h('input', { value: t.name, maxlength: 60, 'aria-label': 'New name' });
+      const save = h('button', { type: 'button', class: 'btn-small pv-send', onclick: async () => {
+        if (!input.value.trim()) return;
+        try { const r = await ctx.api('/news/templates', { method: 'POST', body: JSON.stringify({ ...t, name: input.value }) }); data.templates = r.templates; tell('Renamed ✓'); } catch (err) { tell(err.message, true); }
+      } }, 'Save the name');
+      box.querySelector('.pv-compose-row').replaceChildren(input, save, h('button', { type: 'button', class: 'btn-small', onclick: () => templatesChanged() }, 'Cancel'));
+      input.focus();
+    };
+    const remove = (t) => async () => {
+      if (!confirm(`Delete the template "${t.name}"? Emails already sent are not affected.`)) return;
+      try { const r = await ctx.api('/news/templates', { method: 'DELETE', body: JSON.stringify({ id: t.id }) }); data.templates = r.templates; tell('Template deleted ✓'); } catch (err) { tell(err.message, true); }
+    };
+    return h('section', { 'data-mtab': 'templates', class: 'pv-templates' },
+      lastNote[0] && h('p', { class: `pv-note${lastNote[1] ? ' bad' : ''}`, role: 'status' }, lastNote[0]),
+      h('h3', {}, 'Your team\'s templates'),
+      h('p', { class: 'pv-hint' }, 'A template keeps the photo, headline, subject, message, training box and button. {city} and {dates} are filled in with the training you choose. To make one: write an email in "Write an email", then click "Save as template". To change one: open it, change it, then "Save as template" and "Update".'),
+      own.length ? h('div', { class: 'pv-subs' }, own.map((t) => row(t.photo, t.name, t.subject,
+        h('button', { type: 'button', class: 'btn-small pv-send', onclick: () => openTemplate(`saved:${t.id}`) }, 'Open in the editor'),
+        h('button', { type: 'button', class: 'btn-small', onclick: rename(t) }, 'Rename'),
+        h('button', { type: 'button', class: 'btn-small', onclick: remove(t) }, 'Delete'))))
+        : h('p', { class: 'muted' }, 'No templates saved yet.'),
+      h('h3', {}, 'Ready-made templates'),
+      h('p', { class: 'pv-hint' }, 'These come with the panel and always fill in the next training. Open one, change what you like and save it as your own.'),
+      Object.entries(TEMPLATES).map(([kind, list]) => h('div', { class: 'pv-tpl-kind' }, h('span', { class: 'pv-label' }, KIND_NAMES[kind]),
+        h('div', { class: 'pv-subs' }, list.map((t) => row(LOOK[t.id]?.photo, t.label, t.subject({ city: '{city}', dates: '{dates}' }),
+          h('button', { type: 'button', class: 'btn-small', onclick: () => openTemplate(t.id, kind) }, 'Open in the editor')))))));
+  }
   function draw() {
     const subs = data.subscribers;
     const n = (s) => subs.filter((x) => x.status === s).length;
@@ -523,7 +573,7 @@ export function mailingView(ctx) {
       audience.value = pendingAudience.value; pendingLabel = pendingAudience.label; pendingAudience = null;
     }
     const lang = h('select', { 'aria-label': 'Language' }, h('option', { value: 'all' }, 'All languages'), Object.entries(LANG_NAMES).map(([v, t]) => h('option', { value: v }, `${t} readers only`)));
-    const subject = h('input', { placeholder: 'Subject, for example: Brussels training: the timetable is out', 'aria-label': 'Subject', maxlength: 150 });
+    const subject = h('input', { placeholder: 'For example: Brussels training: the timetable is out', 'aria-label': 'Subject', maxlength: 150 });
     const body = h('textarea', { rows: 10, 'aria-label': 'Message', placeholder: 'Write your message.\n\nA blank line starts a new paragraph. **Two stars** make words bold. Links: [the timetable](https://cubandance.co/trainings/) or just paste the address.' });
     const testTo = h('input', { type: 'email', value: remember.get('iccd-test-to', 'info@cubandance.co'), 'aria-label': 'Send the test to' });
     // ----- template, training card, reminders, button -----
@@ -534,15 +584,23 @@ export function mailingView(ctx) {
     const saveTplBtn = h('button', { type: 'button', class: 'btn-small' }, 'Save as template');
     const delTplBtn = h('button', { type: 'button', class: 'btn-small', hidden: true }, 'Delete this template');
     const saveTplBox = h('div', { class: 'pv-confirm pv-tpl', hidden: true });
-    const cardSel = h('select', { 'aria-label': 'Training details in the email' }, h('option', { value: '' }, 'No training details'), events.map((e, i) => h('option', { value: String(i) }, `Training details: ${evLabel(e)}`)));
+    const cardSel = h('select', { 'aria-label': 'Training details in the email' }, h('option', { value: '' }, 'None'), events.map((e, i) => h('option', { value: String(i) }, evLabel(e))));
     const remindersBox = h('input', { type: 'checkbox' });
-    const buttonSel = h('select', { 'aria-label': 'Button' }, h('option', { value: '' }, 'No button'), Object.entries(BUTTONS).map(([k, b]) => h('option', { value: k }, `Button: ${b.label}`)));
+    const buttonSel = h('select', { 'aria-label': 'Button' }, h('option', { value: '' }, 'None'), Object.entries(BUTTONS).map(([k, b]) => h('option', { value: k }, `"${b.label}"`)));
     const previewBox = h('div', { class: 'pv-preview', hidden: true });
-    const photoSel = h('select', { 'aria-label': 'Photo' }, Object.entries(PHOTOS).map(([k, t]) => h('option', { value: k }, `Photo: ${t}`)));
+    // the photo at the top: the chosen one, and a grid to choose another
     const photoThumb = h('img', { class: 'pv-photo-thumb', alt: '', src: `${ctx.SITE}/images/email/company.jpg` });
-    photoSel.onchange = () => { photoThumb.src = `${ctx.SITE}/images/email/${photoSel.value}.jpg`; };
-    const eyebrow = h('input', { placeholder: 'Small line above the headline, for example: Next training', 'aria-label': 'Small line above the headline', maxlength: 40 });
-    const headline = h('input', { placeholder: 'Headline under the photo, for example: Brussels · 14–15 Nov 2026', 'aria-label': 'Headline', maxlength: 70 });
+    const photoName = h('b', {}, PHOTOS.company);
+    const photoGrid = h('div', { class: 'pv-photo-grid', hidden: true }, Object.entries(PHOTO_GROUPS).map(([g, list]) => h('div', { class: 'pv-photo-group' }, h('small', { class: 'pv-hint' }, g),
+      h('div', { class: 'pv-photo-opts' }, Object.entries(list).map(([k, t]) => h('button', { type: 'button', class: 'pv-photo-opt', 'data-photo': k, title: t, onclick: () => { photoSel.value = k; photoSel.onchange(); photoGrid.hidden = true; } },
+        h('img', { src: `${ctx.SITE}/images/email/${k}.jpg`, alt: '', loading: 'lazy' }), h('span', {}, t)))))));
+    const photoSel = { value: 'company', onchange: () => {
+      photoThumb.src = `${ctx.SITE}/images/email/${photoSel.value}.jpg`; photoName.textContent = PHOTOS[photoSel.value] || '';
+      photoGrid.querySelectorAll('.pv-photo-opt').forEach((b) => b.classList.toggle('on', b.dataset.photo === photoSel.value));
+    } };
+    const photoBtn = h('button', { type: 'button', class: 'btn-small', onclick: () => { photoGrid.hidden = !photoGrid.hidden; } }, 'Choose another photo');
+    const eyebrow = h('input', { placeholder: 'For example: Next training', 'aria-label': 'Small line above the headline', maxlength: 40 });
+    const headline = h('input', { placeholder: 'For example: Brussels · 14–15 Nov 2026', 'aria-label': 'Headline', maxlength: 70 });
     // the training an audience is about: its month, matched to the calendar
     const trainingFor = (aud) => {
       const g = groups.find((x) => `tickets:${x.tickets.join(',')}` === aud);
@@ -602,7 +660,7 @@ export function mailingView(ctx) {
           const r = await ctx.api('/news/templates', { method: 'POST', body: JSON.stringify({ id, name: name.value, subject: general(subject.value), body: general(body.value), photo: photoSel.value, eyebrow: eyebrow.value, headline: general(headline.value),
             card: cardSel.value === '' ? '' : idx === trainingFor(audience.value) ? 'this' : 'upcoming', reminders: remindersBox.checked, button: buttonSel.value }) });
           data.templates = r.templates;
-          fillTemplates(); template.value = `saved:${r.id}`; delTplBtn.hidden = false;
+          templatesChanged(); template.value = `saved:${r.id}`; delTplBtn.hidden = false;
           saveTplBox.hidden = true;
           say(`Template "${name.value.trim()}" saved for the whole team ✓`);
         } catch (err) { say(err.message, true); e.target.disabled = false; }
@@ -621,9 +679,22 @@ export function mailingView(ctx) {
       if (!saved || !confirm(`Delete the template "${saved.name}"? Emails already sent are not affected.`)) return;
       try {
         const r = await ctx.api('/news/templates', { method: 'DELETE', body: JSON.stringify({ id: saved.id }) });
-        data.templates = r.templates; template.value = ''; fillTemplates();
+        data.templates = r.templates; template.value = ''; templatesChanged();
         say('Template deleted ✓');
       } catch (err) { say(err.message, true); }
+    };
+    templatesChanged = () => {
+      fillTemplates();
+      wrap.querySelector('.pv-templates')?.replaceWith(templatesTab());
+      showMailTab();
+    };
+    openTemplate = (value, kind) => {
+      if (kind && kindOf(audience.value) !== kind) {
+        const fit = [...audience.options].find((o) => kindOf(o.value) === kind && !o.value.startsWith('segment:unbooked:'));
+        if (fit) { audience.value = fit.value; audience.onchange(); }
+      }
+      template.value = value; template.onchange();
+      mailTab = 'write'; showMailTab(); scrollTo(0, 0);
     };
     const grow = (ta) => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 4 + 'px'; };
     body.addEventListener('input', () => grow(body));
@@ -790,32 +861,50 @@ export function mailingView(ctx) {
         h('span', {}, h('b', {}, n('active')), ' subscribed'), h('span', {}, h('b', {}, n('pending')), ' waiting for confirmation'), h('span', {}, h('b', {}, n('unsubscribed')), ' unsubscribed'),
         h('span', {}, h('b', {}, data.members.all), ' in the members area'),
         byLang.length > 0 && h('span', {}, byLang.map(([l, c]) => `${LANG_NAMES[l] || l} ${c}`).join(' · '))),
-      h('section', { class: 'pv-compose' },
-        h('h3', {}, 'Write an email'),
-        h('div', { class: 'pv-compose-row' }, audience, lang), reach, oldNote,
-        h('div', { class: 'pv-compose-row' }, template, saveTplBtn, delTplBtn), saveTplBox,
-        h('div', { class: 'pv-photo-row' }, photoThumb, h('div', { class: 'pv-photo-fields' }, photoSel, eyebrow, headline)),
-        subject, body,
-        h('p', { class: 'pv-reach' }, '{name} becomes each person\'s first name. {card} marks where the training details go (otherwise they come after your message). A blank line starts a new paragraph, **two stars** make words bold.'),
-        h('div', { class: 'pv-compose-row' }, cardSel, buttonSel, h('label', { class: 'pv-check-inline' }, remindersBox, ' Add the kind reminders')),
-        h('div', { class: 'pv-compose-row' }, h('label', { class: 'pv-test' }, 'Test to ', testTo), previewBtn, testBtn, scheduleBtn, sendBtn),
-        confirmBox, scheduleBox, note, previewBox),
-      data.scheduled?.length > 0 && h('section', {},
+      mailTabs,
+      h('section', { class: 'pv-compose', 'data-mtab': 'write' },
+        h('div', { class: 'pv-step' }, h('h3', {}, h('span', { class: 'pv-num' }, '1'), 'Who gets it'),
+          field('Audience', 'The group of people this email goes to.', audience),
+          field('Language', 'Only for newsletter subscribers, who chose a language when signing up.', lang),
+          reach, oldNote),
+        h('div', { class: 'pv-step' }, h('h3', {}, h('span', { class: 'pv-num' }, '2'), 'Template ', h('small', { class: 'muted' }, '(optional)')),
+          field('Start from a template', 'Fills in everything below. You can then change any of it. Templates are managed in the Templates tab.', h('div', { class: 'pv-compose-row' }, template, saveTplBtn, delTplBtn)),
+          saveTplBox),
+        h('div', { class: 'pv-step' }, h('h3', {}, h('span', { class: 'pv-num' }, '3'), 'Top of the email'),
+          field('Photo', 'The big picture people see first.', h('div', { class: 'pv-photo-row' }, photoThumb, h('div', { class: 'pv-photo-fields' }, photoName, photoBtn))),
+          photoGrid,
+          field('Small line above the headline', 'A few words in small capitals on the gold band, like a label. Optional.', eyebrow),
+          field('Headline', 'The big words on the gold band, under the photo. Leave it empty for no gold band.', headline)),
+        h('div', { class: 'pv-step' }, h('h3', {}, h('span', { class: 'pv-num' }, '4'), 'Subject and message'),
+          field('Subject', 'What people see in their inbox before opening the email.', subject),
+          field('Message', null, body),
+          h('small', { class: 'pv-hint' }, '{name} becomes each person\'s first name. {card} marks where the training box goes (otherwise it comes after your message). A blank line starts a new paragraph; **two stars** make words bold; links: [the timetable](https://cubandance.co/trainings/) or just paste the address.')),
+        h('div', { class: 'pv-step' }, h('h3', {}, h('span', { class: 'pv-num' }, '5'), 'Extras ', h('small', { class: 'muted' }, '(optional)')),
+          field('Training box', 'A box with the dates, place, map and booking button of one training.', cardSel),
+          field('Button', 'One big button at the end of the email.', buttonSel),
+          h('label', { class: 'pv-check-inline' }, remindersBox, ' Add the kind reminders (what to bring, be on time…) from the Trainings page')),
+        h('div', { class: 'pv-step' }, h('h3', {}, h('span', { class: 'pv-num' }, '6'), 'Check and send'),
+          h('small', { class: 'pv-hint' }, 'Preview it or send yourself a test first: Send and Schedule only work after that.'),
+          h('div', { class: 'pv-compose-row' }, h('label', { class: 'pv-test' }, 'Test to ', testTo), previewBtn, testBtn, scheduleBtn, sendBtn),
+          confirmBox, scheduleBox, note, previewBox)),
+      templatesTab(),
+      (data.scheduled || []).length === 0 ? '' : h('section', { 'data-mtab': 'sent' },
         h('h3', {}, 'Scheduled'),
         h('div', { class: 'pv-sent' }, data.scheduled.map((c) => h('div', { class: 'pv-sent-row' },
           h('span', {}, h('b', {}, new Date(c.at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))), h('b', {}, c.subject), h('span', {}, c.label),
           h('button', { type: 'button', class: 'btn-small', onclick: async () => { if (!confirm(`Cancel "${c.subject}"? It will not be sent.`)) return; try { await ctx.api('/news/schedule', { method: 'DELETE', body: JSON.stringify({ id: c.id }) }); say('Cancelled ✓'); await reload(); } catch (e) { say(e.message, true); } } }, 'Cancel'))))),
-      h('section', {},
+      h('section', { 'data-mtab': 'sent' },
         h('h3', {}, 'Sent'),
         data.campaigns.length ? h('div', { class: 'pv-sent' }, data.campaigns.map((c) => h('div', { class: 'pv-sent-row' },
           h('span', { class: 'muted' }, day(c.at)), h('b', {}, c.subject, c.tracked && c.sent ? h('small', { class: 'pv-result', 'data-at': String(c.at) }) : '', c.left ? h('small', { class: 'muted' }, ` · ${c.left} more in the next days`) : '', c.scheduled ? h('small', { class: 'muted' }, ' · scheduled') : '', c.error ? h('small', { class: 'pv-note bad' }, ` · not sent: ${c.error}`) : ''), h('span', {}, `${c.label || AUDIENCE[c.audience] || 'Participants'}${c.lang && c.lang !== 'all' ? ` · ${LANG_NAMES[c.lang]}` : ''}`), h('span', {}, `${c.sent} sent${c.failed ? `, ${c.failed} failed` : ''}`))))
           : h('p', { class: 'muted' }, 'Nothing sent yet.')),
-      h('section', {},
+      h('section', { 'data-mtab': 'subscribers' },
         h('div', { class: 'pv-subs-head' }, h('h3', {}, 'Subscribers'), h('button', { type: 'button', class: 'btn-small', onclick: exportCsv }, 'Export the subscribed list (CSV)')),
         h('input', { type: 'search', class: 'pv-search', placeholder: 'Search by email', oninput: (e) => { q = e.target.value.toLowerCase(); drawList(); } }),
         listEl));
     updateReach();
     fillTemplates();
+    showMailTab();
     showResults();
   }
   // "9 of 50 booked since · 7 for November": what each email achieved
@@ -849,7 +938,7 @@ function saveCsv(name, rows) {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 const MONTH_NAMES = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
-let season = null, pendingAudience = null, subsCache = null;
+let season = null, pendingAudience = null, subsCache = null, mailTab = 'write';
 const loadSeason = async (ctx, fresh) => (season && !fresh ? season : (season = await ctx.api('/weezevent/participants' + (fresh ? '?fresh=1' : ''))));
 const uniqueEmails = (people) => [...new Set(people.map((p) => p.email).filter(Boolean))];
 const cap = (w) => w[0].toUpperCase() + w.slice(1);

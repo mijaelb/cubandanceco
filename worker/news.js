@@ -94,6 +94,17 @@ export const PHOTOS = {
   yemaya: 'A dancer in a blue Yemayá costume',
   drums: 'Drummers and singers playing live',
   maestro: 'Leonardo Moya teaching a class',
+  havana: 'The company at a training in Havana',
+  together: 'Dancers celebrating together after a training',
+  weekend: 'The whole group at a training weekend',
+  hall: 'A full hall dancing at a training',
+  hats: 'Dancers in red costumes and straw hats',
+  red: 'Dancers in red Changó costumes',
+  green: 'Dancers in green Oggún costumes',
+  timba: 'Dancers performing timba on stage',
+  rumba: 'Dancers in red on stage in Rome',
+  oshun: 'Oshún dancing on stage',
+  ship: 'Dancers in white on stage, a ship on the screen behind',
 };
 const MONTHS3 = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 const HEAD = "Impact,'Arial Narrow Bold','Arial Narrow','Helvetica Neue',Arial,sans-serif"; // like the website's Anton
