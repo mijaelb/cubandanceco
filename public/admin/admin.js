@@ -50,9 +50,9 @@ const SECTIONS = [
     },
   },
   { id: 'timetable', title: 'Timetable', help: 'The class timetable of each training weekend, shown on the Trainings page.' },
-  { id: 'inbox', title: 'Members area · inbox', help: 'Recordings uploaded from the ICCD drive, waiting to be sorted.' },
-  { id: 'videos', title: 'Members area · videos', help: 'Choreographies and class recordings for company and academy dancers.' },
-  { id: 'access', title: 'Members area · access', help: 'Who can sign in to the private videos page.' },
+  { id: 'videos', group: 'Members area', title: 'Videos', help: 'Choreographies and class recordings for company and academy dancers.' },
+  { id: 'inbox', group: 'Members area', title: 'Inbox', help: 'Recordings uploaded from the ICCD drive, waiting to be sorted.' },
+  { id: 'access', group: 'Members area', title: 'Access', help: 'Who can sign in to the private videos page.' },
   { id: 'participants', title: 'Participants', help: 'Who booked which training this season, from Weezevent. Add people to the members area or email a training.' },
   { id: 'mailing', title: 'Mailing list', help: 'Newsletter subscribers from the website, and emails to the newsletter or the members-area dancers.' },
   {
@@ -647,7 +647,16 @@ function render() {
   const sec = SECTIONS.find((s) => s.id === state.section);
   statusEl = h('span', { class: 'status', role: 'status' });
   publishBtn = h('button', { class: 'publish', type: 'button', onclick: publish });
-  const nav = h('nav', {}, visibleSections().map((s) => h('button', { type: 'button', class: s.id === state.section ? 'active' : '', onclick: () => { state.section = s.id; render(); scrollTo(0, 0); } }, s.title)));
+  const go = (id) => { state.section = id; if (SECTIONS.find((s) => s.id === id).group) sessionStorage.setItem('iccd-sub', id); render(); scrollTo(0, 0); };
+  // grouped sections (the members area) are one entry in the menu, with sub-tabs on the page
+  const entries = visibleSections().filter((s, i, all) => !s.group || all.findIndex((x) => x.group === s.group) === i);
+  const nav = h('nav', {}, entries.map((s) => {
+    const inGroup = s.group && visibleSections().filter((x) => x.group === s.group);
+    const target = inGroup ? (inGroup.find((x) => x.id === sessionStorage.getItem('iccd-sub')) || s).id : s.id;
+    return h('button', { type: 'button', class: (s.group ? sec.group === s.group : s.id === state.section) ? 'active' : '', onclick: () => go(target) }, s.group || s.title);
+  }));
+  const subtabs = sec.group && h('div', { class: 'subtabs', role: 'tablist' }, visibleSections().filter((x) => x.group === sec.group).map((x) =>
+    h('button', { type: 'button', role: 'tab', 'aria-selected': String(x.id === sec.id), class: x.id === sec.id ? 'active' : '', onclick: () => go(x.id) }, x.title)));
   const body = sec.id === 'translations' ? translationsView() : sec.id === 'timetable' ? timetableView()
     : PRIVATE.includes(sec.id) ? { inbox: priv.inboxView, access: priv.accessView, videos: priv.videosView, mailing: priv.mailingView, participants: priv.participantsView }[sec.id](privateCtx())
     : fieldsEditor(state.files[sec.file].data, sec.schema);
@@ -658,7 +667,7 @@ function render() {
       statusEl, publishBtn,
       h('button', { type: 'button', class: 'link', onclick: logout }, 'Sign out')),
     h('div', { class: 'layout' }, nav,
-      h('main', {}, h('h1', {}, sec.title), sec.help && h('p', { class: 'muted' }, sec.help), body)),
+      h('main', {}, h('h1', {}, sec.group || sec.title), subtabs, sec.help && h('p', { class: 'muted' }, sec.help), body)),
     h('datalist', { id: 'image-list' }, state.images.map((p) => h('option', { value: p }))),
   );
   updateBar();

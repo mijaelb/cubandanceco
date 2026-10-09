@@ -456,6 +456,17 @@ const TEMPLATES = {
       body: () => `Hello,\n\n[Write your news here.]\n\nWarm regards,\n**The ICCD team**` },
   ],
 };
+const PHOTOS = { company: 'The company in costume', stage: 'On stage with live drums', joy: 'The joy of a training', yemaya: 'Yemayá on stage', drums: 'The drummers', maestro: 'A maestro teaching' };
+// the photo and headline each template starts with (the team can change both)
+const LOOK = {
+  reminder: { photo: 'joy', eyebrow: 'See you this weekend', headline: (t) => `${t.city} · ${t.dates}` },
+  timetable: { photo: 'maestro', eyebrow: 'The timetable is out', headline: (t) => `${t.city} · ${t.dates}` },
+  thanks: { photo: 'company', eyebrow: 'Thank you', headline: (t) => `Thank you, ${t.city}!` },
+  next: { photo: 'company', eyebrow: 'Next training', headline: (t) => `${t.city} · ${t.dates}` },
+  videos: { photo: 'stage', eyebrow: 'Members area', headline: () => 'New videos for you' },
+  news: { photo: 'drums', eyebrow: 'News', headline: () => 'News from ICCD' },
+  invite: { photo: 'joy', eyebrow: 'Stay in touch', headline: () => 'Shall we keep you posted?' },
+};
 const BUTTONS = { join: { label: 'Yes, keep me posted', join: true }, members: { label: 'Open the members area', url: 'https://cubandance.co/members/' }, tickets: { label: 'Book your training', url: TICKETS }, support: { label: 'Support us', url: 'https://cubandance.co/support/' } };
 const kindOf = (aud) => (aud.startsWith('tickets:') || aud.startsWith('segment:') ? 'participants' : aud.startsWith('members') ? 'members' : 'news');
 const remember = { get: (k, d) => { try { return localStorage.getItem(k) || d; } catch { return d; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch { /* private mode */ } } };
@@ -520,10 +531,18 @@ export function mailingView(ctx) {
     const events = [...(ctx.trainings.events || [])].sort((a, b) => a.start.localeCompare(b.start));
     const evLabel = (e) => `${e.city} · ${ctx.range(e.start, e.end)}`;
     const template = h('select', { 'aria-label': 'Template' });
+    const saveTplBtn = h('button', { type: 'button', class: 'btn-small' }, 'Save as template');
+    const delTplBtn = h('button', { type: 'button', class: 'btn-small', hidden: true }, 'Delete this template');
+    const saveTplBox = h('div', { class: 'pv-confirm pv-tpl', hidden: true });
     const cardSel = h('select', { 'aria-label': 'Training details in the email' }, h('option', { value: '' }, 'No training details'), events.map((e, i) => h('option', { value: String(i) }, `Training details: ${evLabel(e)}`)));
     const remindersBox = h('input', { type: 'checkbox' });
     const buttonSel = h('select', { 'aria-label': 'Button' }, h('option', { value: '' }, 'No button'), Object.entries(BUTTONS).map(([k, b]) => h('option', { value: k }, `Button: ${b.label}`)));
     const previewBox = h('div', { class: 'pv-preview', hidden: true });
+    const photoSel = h('select', { 'aria-label': 'Photo' }, Object.entries(PHOTOS).map(([k, t]) => h('option', { value: k }, `Photo: ${t}`)));
+    const photoThumb = h('img', { class: 'pv-photo-thumb', alt: '', src: `${ctx.SITE}/images/email/company.jpg` });
+    photoSel.onchange = () => { photoThumb.src = `${ctx.SITE}/images/email/${photoSel.value}.jpg`; };
+    const eyebrow = h('input', { placeholder: 'Small line above the headline, for example: Next training', 'aria-label': 'Small line above the headline', maxlength: 40 });
+    const headline = h('input', { placeholder: 'Headline under the photo, for example: Brussels · 14–15 Nov 2026', 'aria-label': 'Headline', maxlength: 70 });
     // the training an audience is about: its month, matched to the calendar
     const trainingFor = (aud) => {
       const g = groups.find((x) => `tickets:${x.tickets.join(',')}` === aud);
@@ -534,12 +553,25 @@ export function mailingView(ctx) {
     const nextAfter = (i) => events.findIndex((e, j) => j > i && e.start >= today) >= 0 ? events.findIndex((e, j) => j > i && e.start >= today) : events.findIndex((e) => e.start >= today);
     const fillTemplates = () => {
       const kind = kindOf(audience.value);
-      template.replaceChildren(h('option', { value: '' }, 'Start from a template…'), ...TEMPLATES[kind].map((t) => h('option', { value: t.id }, t.label)));
+      const keep = template.value;
+      template.replaceChildren(h('option', { value: '' }, 'Start from a template…'),
+        h('optgroup', { label: 'Ready-made' }, TEMPLATES[kind].map((t) => h('option', { value: t.id }, t.label))),
+        (data.templates || []).length > 0 && h('optgroup', { label: 'Saved by the team' }, data.templates.map((t) => h('option', { value: `saved:${t.id}` }, t.name))));
+      if ([...template.options].some((o) => o.value === keep)) template.value = keep;
+      delTplBtn.hidden = !template.value.startsWith('saved:');
       const own = trainingFor(audience.value);
       if (own >= 0) cardSel.value = String(own);
     };
+    // a saved template keeps {city} and {dates} where the training was named, filled in again when used
+    const savedTpl = (v) => v.startsWith('saved:') && (data.templates || []).find((x) => `saved:${x.id}` === v);
+    const fromSaved = (x) => {
+      const fill = (s) => (info) => s.replace(/\{city\}/g, info.city).replace(/\{dates\}/g, info.dates);
+      return { id: x.id, card: x.card, reminders: x.reminders, button: x.button, subject: fill(x.subject), body: fill(x.body), look: x.photo && { photo: x.photo, eyebrow: x.eyebrow, headline: fill(x.headline) } };
+    };
     template.onchange = () => {
-      const t = TEMPLATES[kindOf(audience.value)].find((x) => x.id === template.value);
+      delTplBtn.hidden = !template.value.startsWith('saved:'); saveTplBox.hidden = true;
+      const saved = savedTpl(template.value);
+      const t = saved ? fromSaved(saved) : TEMPLATES[kindOf(audience.value)].find((x) => x.id === template.value);
       if (!t) return;
       if ((subject.value.trim() || body.value.trim()) && !confirm('Replace the subject and message with this template?')) { template.value = ''; return; }
       const own = trainingFor(audience.value);
@@ -547,19 +579,67 @@ export function mailingView(ctx) {
       const ev = events[idx] || events[nextAfter(-1)] || {};
       const info = { city: ev.city || '[city]', dates: ev.start ? ctx.range(ev.start, ev.end) : '[dates]' };
       subject.value = t.subject(info); body.value = t.body(info);
+      const look = t.look || LOOK[t.id];
+      if (look) { photoSel.value = look.photo; photoSel.onchange(); eyebrow.value = look.eyebrow; headline.value = look.headline(info); }
       cardSel.value = t.card && idx >= 0 ? String(idx) : '';
       remindersBox.checked = !!t.reminders;
       buttonSel.value = t.button || '';
       updateReach();
       grow(body);
     };
+    saveTplBtn.onclick = () => {
+      if (!subject.value.trim() || !body.value.trim()) { say('Write a subject and a message first, then save them as a template.', true); return; }
+      const saved = savedTpl(template.value);
+      const name = h('input', { value: saved ? saved.name : '', placeholder: 'Name, for example: Brussels reminder', maxlength: 60, 'aria-label': 'Template name' });
+      const store = async (e, id) => {
+        if (!name.value.trim()) { name.focus(); return; }
+        e.target.disabled = true;
+        // the training named in the email becomes {city} and {dates}, so the template works for the next one too
+        const ev = events[Number(cardSel.value)];
+        const general = (s) => (ev ? s.split(ctx.range(ev.start, ev.end)).join('{dates}').split(ev.city).join('{city}') : s);
+        const idx = Number(cardSel.value);
+        try {
+          const r = await ctx.api('/news/templates', { method: 'POST', body: JSON.stringify({ id, name: name.value, subject: general(subject.value), body: general(body.value), photo: photoSel.value, eyebrow: eyebrow.value, headline: general(headline.value),
+            card: cardSel.value === '' ? '' : idx === trainingFor(audience.value) ? 'this' : 'upcoming', reminders: remindersBox.checked, button: buttonSel.value }) });
+          data.templates = r.templates;
+          fillTemplates(); template.value = `saved:${r.id}`; delTplBtn.hidden = false;
+          saveTplBox.hidden = true;
+          say(`Template "${name.value.trim()}" saved for the whole team ✓`);
+        } catch (err) { say(err.message, true); e.target.disabled = false; }
+      };
+      saveTplBox.replaceChildren(
+        h('p', {}, h('b', {}, 'Save this email as a template'), ' (subject, message, photo, headline, training details and button). The training city and dates are kept as {city} and {dates}, so the template fills them in for the next training.'),
+        h('div', { class: 'pv-confirm-buttons' }, name,
+          saved && h('button', { type: 'button', class: 'btn-small pv-send', onclick: (e) => store(e, saved.id) }, `Update "${saved.name}"`),
+          h('button', { type: 'button', class: saved ? 'btn-small' : 'btn-small pv-send', onclick: (e) => store(e) }, saved ? 'Save as a new one' : 'Save'),
+          h('button', { type: 'button', class: 'btn-small', onclick: () => { saveTplBox.hidden = true; } }, 'Cancel')));
+      saveTplBox.hidden = false;
+      name.focus();
+    };
+    delTplBtn.onclick = async () => {
+      const saved = savedTpl(template.value);
+      if (!saved || !confirm(`Delete the template "${saved.name}"? Emails already sent are not affected.`)) return;
+      try {
+        const r = await ctx.api('/news/templates', { method: 'DELETE', body: JSON.stringify({ id: saved.id }) });
+        data.templates = r.templates; template.value = ''; fillTemplates();
+        say('Template deleted ✓');
+      } catch (err) { say(err.message, true); }
+    };
     const grow = (ta) => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 4 + 'px'; };
     body.addEventListener('input', () => grow(body));
     // everything the service needs to build the email
     const extras = () => {
       const e = events[Number(cardSel.value)];
-      const card = cardSel.value !== '' && e ? { label: 'Training weekend', title: `${e.city} · ${ctx.range(e.start, e.end)}`, when: e.time || '', venue: e.venue || '', address: e.address || '', note: e.note || '', mapUrl: e.mapUrl || '', timetableUrl: `${ctx.SITE}/trainings/`, ticketUrl: kindOf(audience.value) === 'participants' && Number(cardSel.value) === trainingFor(audience.value) ? '' : e.ticketUrl || TICKETS } : null;
-      return { card, reminders: remindersBox.checked ? ctx.trainings.reminders || [] : [], button: buttonSel.value ? BUTTONS[buttonSel.value] : null };
+      const card = cardSel.value !== '' && e ? { start: e.start, end: e.end, label: 'Training weekend', title: `${e.city} · ${ctx.range(e.start, e.end)}`, when: e.time || '', venue: e.venue || '', address: e.address || '', note: e.note || '', mapUrl: e.mapUrl || '', timetableUrl: `${ctx.SITE}/trainings/`, ticketUrl: kindOf(audience.value) === 'participants' && Number(cardSel.value) === trainingFor(audience.value) ? '' : e.ticketUrl || TICKETS } : null;
+      return { card, reminders: remindersBox.checked ? ctx.trainings.reminders || [] : [], button: buttonSel.value ? BUTTONS[buttonSel.value] : null, photo: photoSel.value, eyebrow: eyebrow.value, headline: headline.value };
+    };
+    // Send and Schedule unlock only after this exact version was previewed or sent as a test
+    let checked = '';
+    const fp = () => JSON.stringify([subject.value.trim(), body.value.trim(), audience.value, lang.value, extras()]);
+    const checkedFirst = () => {
+      if (fp() === checked) return true;
+      say('First check this exact version: click Preview or Send me a test. Any change after that needs a new check.', true);
+      return false;
     };
     const previewBtn = h('button', { type: 'button', class: 'btn-small' }, 'Preview');
     previewBtn.onclick = async () => {
@@ -571,6 +651,7 @@ export function mailingView(ctx) {
           h('div', { class: 'pv-preview-head' }, h('span', {}, h('b', {}, r.subject), kindOf(audience.value) === 'news' ? '' : ' · shown with "Carla" as an example name'), h('button', { type: 'button', class: 'btn-small', onclick: () => { previewBox.hidden = true; } }, 'Close preview')),
           h('iframe', { src: r.url, title: 'Email preview', class: 'pv-preview-frame' }));
         previewBox.hidden = false;
+        checked = fp();
         previewBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
       } catch (e) { say(e.message, true); }
       previewBtn.disabled = false;
@@ -600,15 +681,28 @@ export function mailingView(ctx) {
       if (!ready()) return;
       testBtn.disabled = true; say('Sending the test…');
       remember.set('iccd-test-to', testTo.value.trim());
-      try { await ctx.api('/news/send', { method: 'POST', body: JSON.stringify({ subject: subject.value, body: body.value, test: testTo.value, audience: audience.value, ...extras() }) }); say(`Test sent to ${testTo.value}. Check how it looks before sending to everyone.`); }
+      try { await ctx.api('/news/send', { method: 'POST', body: JSON.stringify({ subject: subject.value, body: body.value, test: testTo.value, audience: audience.value, ...extras() }) }); checked = fp(); say(`Test sent to ${testTo.value}. Check how it looks before sending to everyone.`); }
       catch (e) { say(e.message, true); }
       testBtn.disabled = false;
     };
     let expect = 0;
-    async function send() {
-      confirmBox.hidden = true; sendBtn.disabled = true; say('Sending…');
+    let again = false;
+    // a last chance: the email leaves after 10 seconds unless Stop is clicked
+    function send() {
+      let left = 10;
+      const stop = h('button', { type: 'button', class: 'btn-small pv-send' }, 'Stop, don\'t send');
+      const line = h('b', {});
+      const tick = () => { line.textContent = `Sending in ${left} second${left === 1 ? '' : 's'}…`; };
+      tick();
+      const timer = setInterval(() => { left -= 1; if (left > 0) return tick(); clearInterval(timer); confirmBox.hidden = true; sendNow(); }, 1000);
+      stop.onclick = () => { clearInterval(timer); confirmBox.hidden = true; sendBtn.disabled = false; say('Stopped. Nothing was sent.'); };
+      confirmBox.replaceChildren(h('p', {}, line, ' Nothing has gone out yet.'), h('div', { class: 'pv-confirm-buttons' }, stop));
+      sendBtn.disabled = true;
+    }
+    async function sendNow() {
+      sendBtn.disabled = true; say('Sending…');
       try {
-        const r = await ctx.api('/news/send', { method: 'POST', body: JSON.stringify({ subject: subject.value, body: body.value, audience: audience.value, label: label(audience.value), lang: lang.value, expect, ...extras() }) });
+        const r = await ctx.api('/news/send', { method: 'POST', body: JSON.stringify({ subject: subject.value, body: body.value, audience: audience.value, label: label(audience.value), lang: lang.value, expect, again, ...extras() }) });
         say(`Sent to ${r.sent} ${r.sent === 1 ? 'person' : 'people'}${r.failed ? `, ${r.failed} could not be sent` : ''} ✓`);
         subject.value = body.value = '';
         sendBtn.disabled = false;
@@ -616,7 +710,7 @@ export function mailingView(ctx) {
       } catch (e) { say(e.message, true); sendBtn.disabled = false; }
     }
     scheduleBtn.onclick = () => {
-      if (!ready()) return;
+      if (!ready() || !checkedFirst()) return;
       const c = updateReach();
       if (!c) { say('Nobody to send to in this audience.', true); return; }
       const t = new Date(); t.setDate(t.getDate() + 1); t.setHours(10, 0, 0, 0);
@@ -637,16 +731,24 @@ export function mailingView(ctx) {
       scheduleBox.hidden = false; confirmBox.hidden = true;
     };
     sendBtn.onclick = () => {
-      if (!ready()) return;
+      if (!ready() || !checkedFirst()) return;
       expect = updateReach();
       if (!expect) { say('Nobody to send to in this audience.', true); return; }
+      scheduleBox.hidden = true;
       const who = `${label(audience.value)}${lang.value !== 'all' ? `, ${LANG_NAMES[lang.value]} readers` : ''}`;
+      const twin = data.campaigns.find((c) => c.sent && c.subject === subject.value.trim() && c.audience === audience.value.slice(0, 60) && c.at > Date.now() - 7 * 864e5);
+      again = false;
+      const yes = h('button', { type: 'button', class: 'btn-small pv-send', onclick: () => { again = !!twin; send(); } }, twin ? 'Yes, send it again' : 'Yes, send now');
+      // more than 10 people: type the number to confirm (a slip of the mouse cannot send it)
+      const typed = expect > 10 && h('input', { inputmode: 'numeric', class: 'pv-type-count', placeholder: `Type ${expect}`, 'aria-label': `Type ${expect} to confirm`, oninput: (e) => { yes.disabled = e.target.value.trim() !== String(expect); } });
+      if (typed) yes.disabled = true;
       confirmBox.replaceChildren(
-        h('p', {}, h('b', {}, `Send "${subject.value.trim()}" to ${expect} ${expect === 1 ? 'person' : 'people'} (${who}) now?`), ' This cannot be undone.'),
-        h('div', { class: 'pv-confirm-buttons' },
-          h('button', { type: 'button', class: 'btn-small pv-send', onclick: send }, 'Yes, send now'),
+        h('p', {}, h('b', {}, `Send "${subject.value.trim()}" to ${expect} ${expect === 1 ? 'person' : 'people'} (${who}) now?`), ' This cannot be undone.', typed ? ` To confirm, type the number of people: ${expect}.` : ''),
+        twin && h('p', { class: 'pv-note bad' }, `This email was already sent to these people on ${new Date(twin.at).toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}.`),
+        h('div', { class: 'pv-confirm-buttons' }, typed, yes,
           h('button', { type: 'button', class: 'btn-small', onclick: () => { confirmBox.hidden = true; } }, 'Cancel')));
       confirmBox.hidden = false;
+      typed ? typed.focus() : null;
     };
 
     // ----- subscribers -----
@@ -679,7 +781,9 @@ export function mailingView(ctx) {
       h('section', { class: 'pv-compose' },
         h('h3', {}, 'Write an email'),
         h('div', { class: 'pv-compose-row' }, audience, lang), reach,
-        template, subject, body,
+        h('div', { class: 'pv-compose-row' }, template, saveTplBtn, delTplBtn), saveTplBox,
+        h('div', { class: 'pv-photo-row' }, photoThumb, h('div', { class: 'pv-photo-fields' }, photoSel, eyebrow, headline)),
+        subject, body,
         h('p', { class: 'pv-reach' }, '{name} becomes each person\'s first name. {card} marks where the training details go (otherwise they come after your message). A blank line starts a new paragraph, **two stars** make words bold.'),
         h('div', { class: 'pv-compose-row' }, cardSel, buttonSel, h('label', { class: 'pv-check-inline' }, remindersBox, ' Add the kind reminders')),
         h('div', { class: 'pv-compose-row' }, h('label', { class: 'pv-test' }, 'Test to ', testTo), previewBtn, testBtn, scheduleBtn, sendBtn),

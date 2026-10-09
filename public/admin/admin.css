@@ -407,3 +407,17 @@ html:has(.pv-save) { scroll-padding-bottom: 90px; }
 .pv-event-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; text-align: left; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; font: inherit; cursor: pointer; }
 .pv-event-row:hover, .pv-person-card:hover { border-color: var(--ink); }
 @media (max-width: 640px) { .pv-person-card, .pv-person-sum { grid-template-columns: minmax(0, 1fr); } }
+
+/* Email photo and headline */
+.pv-photo-row { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 12px; align-items: start; }
+.pv-photo-thumb { width: 180px; height: 75px; object-fit: cover; border-radius: 10px; display: block; background: var(--line); }
+.pv-photo-fields { display: grid; gap: 8px; min-width: 0; }
+@media (max-width: 640px) { .pv-photo-row { grid-template-columns: minmax(0, 1fr); } .pv-photo-thumb { width: 100%; height: auto; aspect-ratio: 12 / 5; } }
+
+/* Sub-tabs inside a menu entry (the members area) */
+.subtabs { display: flex; gap: 4px; margin: 4px 0 14px; padding: 4px; background: var(--cream); border-radius: 999px; width: fit-content; max-width: 100%; overflow-x: auto; }
+.subtabs button { border: 0; background: none; padding: 8px 18px; border-radius: 999px; cursor: pointer; font-weight: 600; white-space: nowrap; color: inherit; }
+.subtabs button:hover { background: rgba(0, 0, 0, 0.05); }
+.subtabs button.active { background: var(--ink); color: var(--gold); }
+
+.pv-type-count { width: 9em; }

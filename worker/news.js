@@ -86,20 +86,43 @@ function format(body) {
     .replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g, '$1<a href="$2" style="color:#2b5b3c;">$2</a>');
   return body.split(/\n{2,}/).map((p) => `<p style="margin:0 0 16px;">${inline(p.trim()).replace(/\n/g, '<br>')}</p>`).join('');
 }
-// ---------- campaign emails: banner, logo band, message, training card, reminders, button ----------
+// ---------- campaign emails: logo bar, photo, headline band, message, training card, reminders, button ----------
+export const PHOTOS = {
+  company: 'The company in full costume',
+  stage: 'Dancers in costume with live drummers on stage',
+  joy: 'Dancers laughing at a training weekend',
+  yemaya: 'A dancer in a blue Yemayá costume',
+  drums: 'Drummers and singers playing live',
+  maestro: 'Leonardo Moya teaching a class',
+};
+const MONTHS3 = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+const HEAD = "Impact,'Arial Narrow Bold','Arial Narrow','Helvetica Neue',Arial,sans-serif"; // like the website's Anton
 const url = (u) => (/^https:\/\/[^\s"'<>]+$/.test(String(u || '')) ? String(u) : '');
-const pill = (href, label, dark) => `<a href="${href}" style="display:inline-block;margin:6px 8px 0 0;background:${dark ? '#14110d' : '#e8c95f'};color:${dark ? '#fbf1d4' : '#14110d'};text-decoration:none;font-weight:700;font-size:13px;letter-spacing:0.8px;text-transform:uppercase;padding:12px 22px;border-radius:999px;">${esc(label)}</a>`;
+const pill = (href, label, dark) => `<a href="${href}" style="display:inline-block;margin:6px 8px 0 0;background:${dark ? '#14110d' : '#e8c95f'};color:${dark ? '#fbf1d4' : '#14110d'};text-decoration:none;font-weight:700;font-size:13px;letter-spacing:1px;text-transform:uppercase;padding:13px 24px;border-radius:999px;">${esc(label)} &rarr;</a>`;
 function cardHtml(c) {
   if (!c || !c.title) return '';
-  const row = (label, value) => (value ? `<tr><td style="padding:6px 14px 6px 0;vertical-align:top;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#8a7a52;font-weight:700;white-space:nowrap;">${esc(label)}</td><td style="padding:6px 0;font-size:15px;line-height:1.5;color:#2a251e;">${value}</td></tr>` : '');
+  const row = (label, value) => (value ? `<tr><td style="padding:5px 14px 5px 0;vertical-align:top;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:#8a7a52;font-weight:700;white-space:nowrap;">${esc(label)}</td><td style="padding:5px 0;font-size:15px;line-height:1.5;color:#2a251e;">${value}</td></tr>` : '');
   const where = [c.venue && `<strong>${esc(c.venue)}</strong>`, c.address && esc(c.address), c.note && `<span style="color:#746a5a;">${esc(c.note)}</span>`].filter(Boolean).join('<br>');
-  const buttons = [url(c.mapUrl) && pill(url(c.mapUrl), 'Open in Maps', true), url(c.timetableUrl) && pill(url(c.timetableUrl), 'See the timetable'), url(c.ticketUrl) && pill(url(c.ticketUrl), 'Book your place')].filter(Boolean).join('');
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:26px 0 8px;background:#fbf1d4;border-radius:14px;">
-    <tr><td style="padding:22px 24px 24px;border-left:5px solid #e8c95f;border-radius:14px;">
-      <p style="margin:0 0 6px;font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:#2b5b3c;font-weight:700;">${esc(c.label || 'Training weekend')}</p>
-      <p style="margin:0 0 12px;font-family:'Arial Narrow','Helvetica Neue',Arial,sans-serif;font-size:24px;line-height:1.15;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:#14110d;">${esc(c.title)}</p>
-      <table role="presentation" cellpadding="0" cellspacing="0">${row('When', esc(c.when || ''))}${row('Where', where)}</table>
-      ${buttons ? `<p style="margin:12px 0 0;">${buttons}</p>` : ''}
+  const buttons = [url(c.ticketUrl) && pill(url(c.ticketUrl), 'Book your place'), url(c.mapUrl) && pill(url(c.mapUrl), 'Open in Maps', true), url(c.timetableUrl) && pill(url(c.timetableUrl), 'See the timetable', true)].filter(Boolean).join('');
+  // calendar tile: "14–15" over "NOV"
+  const d1 = /^\d{4}-\d\d-\d\d$/.test(c.start || '') ? c.start : '', d2 = /^\d{4}-\d\d-\d\d$/.test(c.end || '') ? c.end : d1;
+  const days = d1 ? (d1 === d2 ? `${+d1.slice(8)}` : d1.slice(5, 7) === d2.slice(5, 7) ? `${+d1.slice(8)}–${+d2.slice(8)}` : `${+d1.slice(8)}/${+d2.slice(8)}`) : '';
+  const mon = d1 ? (d1.slice(5, 7) === d2.slice(5, 7) ? MONTHS3[+d1.slice(5, 7) - 1] : `${MONTHS3[+d1.slice(5, 7) - 1]}/${MONTHS3[+d2.slice(5, 7) - 1]}`) : '';
+  const tile = days ? `<td class="tile" width="92" style="width:92px;padding:0 18px 0 0;vertical-align:top;">
+      <table role="presentation" width="92" cellpadding="0" cellspacing="0" style="width:92px;border-radius:12px;overflow:hidden;">
+        <tr><td align="center" style="background:#14110d;color:#e8c95f;font-size:12px;letter-spacing:2px;font-weight:700;padding:7px 0;">${mon}</td></tr>
+        <tr><td align="center" style="background:#ffffff;color:#14110d;font-family:${HEAD};font-size:30px;line-height:1;padding:12px 0 6px;">${days}</td></tr>
+        <tr><td align="center" style="background:#ffffff;color:#8a7a52;font-size:11px;letter-spacing:1px;padding:0 0 10px;">${d1.slice(0, 4)}</td></tr>
+      </table></td>` : '';
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:26px 0 8px;background:#fbf1d4;border-radius:16px;">
+    <tr><td class="card-pad" style="padding:22px 22px 24px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>${tile}
+        <td class="tile-text" style="vertical-align:top;">
+          <p style="margin:0 0 4px;font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:#2b5b3c;font-weight:700;">${esc(c.label || 'Training weekend')}</p>
+          <p style="margin:0 0 10px;font-family:${HEAD};font-size:26px;line-height:1.1;text-transform:uppercase;letter-spacing:0.5px;color:#14110d;">${esc(c.title)}</p>
+          <table role="presentation" cellpadding="0" cellspacing="0">${row('When', esc(c.when || ''))}${row('Where', where)}</table>
+        </td></tr></table>
+      ${buttons ? `<p style="margin:16px 0 0;">${buttons}</p>` : ''}
     </td></tr></table>`;
 }
 function remindersHtml(list) {
@@ -107,28 +130,40 @@ function remindersHtml(list) {
   return `<p style="margin:26px 0 10px;font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:#2b5b3c;font-weight:700;">Kind reminders</p>
     <table role="presentation" cellpadding="0" cellspacing="0">${list.map((r) => `<tr><td style="padding:3px 10px 3px 0;vertical-align:top;color:#e8c95f;font-size:18px;line-height:1.2;">&bull;</td><td style="padding:3px 0;font-size:15px;line-height:1.5;color:#2a251e;">${esc(r)}</td></tr>`).join('')}</table>`;
 }
-const campaignShell = ({ preview, body, foot }) => `<!doctype html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only"><title>ICCD</title></head>
-<body style="margin:0;padding:0;background:#f3ecdf;">
+const campaignShell = ({ preview, body, foot, photo, eyebrow, headline }) => {
+  const pic = PHOTOS[photo] ? photo : 'drums';
+  const band = headline ? `<tr><td class="px" style="background:#e8c95f;padding:22px 40px 24px;">
+      ${eyebrow ? `<p style="margin:0 0 6px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#2b5b3c;font-weight:700;">${esc(eyebrow)}</p>` : ''}
+      <p class="big" style="margin:0;font-family:${HEAD};font-size:34px;line-height:1.05;text-transform:uppercase;letter-spacing:0.5px;color:#14110d;">${esc(headline)}</p>
+    </td></tr>` : '';
+  return `<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only"><title>ICCD</title>
+<style>@media (max-width:480px){.outer{padding:12px 6px 24px!important}.px{padding-left:22px!important;padding-right:22px!important}.hide-sm{display:none!important}.card-pad{padding:18px!important}.tile,.tile-text{display:block!important;width:auto!important}.tile{padding:0 0 14px!important}.big{font-size:28px!important}}</style></head>
+<body style="margin:0;padding:0;background:#efe6d3;">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${preview}</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3ecdf;">
-<tr><td align="center" style="padding:28px 12px;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:18px;overflow:hidden;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#14110d;">
-    <tr><td style="padding:0;line-height:0;"><img src="https://cubandance.co/images/email/banner.jpg" width="600" alt="ICCD drummers and singers playing live" style="display:block;width:100%;max-width:600px;height:auto;border:0;"></td></tr>
-    <tr><td align="center" style="background:#14110d;padding:16px 20px;">
-      <table role="presentation" cellpadding="0" cellspacing="0"><tr>
-        <td style="padding-right:12px;line-height:0;"><img src="https://cubandance.co/images/logo-512.png" width="40" height="40" alt="ICCD" style="display:block;border:0;width:40px;height:40px;"></td>
-        <td style="font-size:11px;letter-spacing:1.8px;text-transform:uppercase;color:#e8c95f;font-weight:700;">International Company of Cuban Dances</td>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#efe6d3;">
+<tr><td class="outer" align="center" style="padding:28px 12px 36px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:20px;overflow:hidden;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#14110d;box-shadow:0 14px 40px rgba(20,17,13,0.12);">
+    <tr><td class="px" style="background:#14110d;padding:14px 24px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+        <td style="line-height:0;width:44px;"><img src="https://cubandance.co/images/logo-512.png" width="36" height="36" alt="ICCD" style="display:block;border:0;width:36px;height:36px;"></td>
+        <td style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#e8c95f;font-weight:700;">International Company of Cuban Dances</td>
+        <td class="hide-sm" align="right" style="font-size:11px;"><a href="https://cubandance.co" style="color:#c2b7a2;text-decoration:none;">cubandance.co</a></td>
       </tr></table>
     </td></tr>
-    <tr><td style="padding:36px 40px 30px;font-size:16px;line-height:1.65;color:#2a251e;">${body}</td></tr>
-    <tr><td align="center" style="padding:20px 40px 28px;background:#faf6ee;font-size:12px;line-height:1.7;color:#8a8070;">
-      <p style="margin:0 0 8px;"><a href="https://www.instagram.com/cuban_dance_international_co/" style="color:#14110d;font-weight:700;text-decoration:none;">Instagram</a> &nbsp;&middot;&nbsp; <a href="https://cubandance.co" style="color:#14110d;font-weight:700;text-decoration:none;">cubandance.co</a> &nbsp;&middot;&nbsp; <a href="mailto:info@cubandance.co" style="color:#14110d;font-weight:700;text-decoration:none;">info@cubandance.co</a></p>
-      ${foot}
+    <tr><td style="padding:0;line-height:0;"><img src="https://cubandance.co/images/email/${pic}.jpg" width="600" alt="${esc(PHOTOS[pic])}" style="display:block;width:100%;max-width:600px;height:auto;border:0;"></td></tr>
+    ${band}
+    <tr><td class="px" style="padding:34px 40px 30px;font-size:16px;line-height:1.65;color:#2a251e;">${body}</td></tr>
+    <tr><td class="px" align="center" style="padding:26px 40px 30px;background:#14110d;font-size:12px;line-height:1.7;color:#a99f8c;">
+      <img src="https://cubandance.co/images/logo-512.png" width="44" height="44" alt="" style="display:block;border:0;width:44px;height:44px;margin:0 auto 10px;">
+      <p style="margin:0 0 4px;font-family:${HEAD};font-size:16px;letter-spacing:1px;text-transform:uppercase;color:#ffffff;">Keep spreading love for music, dance and culture</p>
+      <p style="margin:0 0 14px;"><a href="https://www.instagram.com/cuban_dance_international_co/" style="color:#e8c95f;font-weight:700;text-decoration:none;">Instagram</a> &nbsp;&middot;&nbsp; <a href="https://cubandance.co" style="color:#e8c95f;font-weight:700;text-decoration:none;">cubandance.co</a> &nbsp;&middot;&nbsp; <a href="mailto:info@cubandance.co" style="color:#e8c95f;font-weight:700;text-decoration:none;">info@cubandance.co</a></p>
+      ${foot.replace(/color:#8a8070/g, 'color:#a99f8c')}
     </td></tr>
   </table>
 </td></tr></table>
 </body></html>`;
+};
 
 // One person's email: {name} becomes their first name ("Hi {name}," becomes "Hi," when there is none)
 async function buildMessage(env, p, o) {
@@ -145,7 +180,7 @@ async function buildMessage(env, p, o) {
   const extra = cardHtml(o.card) + remindersHtml(o.reminders);
   const text1 = format(body), marker = '<p style="margin:0 0 16px;">{card}</p>';
   const main = text1.includes(marker) ? text1.replace(marker, extra ? `<div style="margin:0 0 28px;">${extra}</div>` : '') : text1.replace(/\{card\}/g, '') + extra;
-  const html = campaignShell({ preview: esc(plain(body.replace(/\{card\}/g, '')).slice(0, 140)), body: main + btn, foot });
+  const html = campaignShell({ preview: esc(plain(body.replace(/\{card\}/g, '')).slice(0, 140)), body: main + btn, foot, photo: o.photo, eyebrow: personal(o.eyebrow || ''), headline: personal(o.headline || '') });
   const card = o.card?.title ? `\n\n${o.card.title}\n${[o.card.when, o.card.venue, o.card.address, o.card.note].filter(Boolean).join('\n')}${url(o.card.mapUrl) ? `\nMap: ${o.card.mapUrl}` : ''}${url(o.card.timetableUrl) ? `\nTimetable: ${o.card.timetableUrl}` : ''}${url(o.card.ticketUrl) ? `\nBook: ${o.card.ticketUrl}` : ''}` : '';
   const rem = o.reminders?.length ? `\n\nKind reminders:\n${o.reminders.map((r) => `- ${r}`).join('\n')}` : '';
   const btnText = o.button && btnUrl ? `\n\n${o.button.label || 'Open'}: ${btnUrl}` : '';
@@ -158,10 +193,10 @@ async function buildMessage(env, p, o) {
 // what the team may add to an email, checked and trimmed
 function extras(b) {
   const c = b.card && typeof b.card === 'object' ? b.card : null;
-  const card = c && text(c.title, 120) ? { label: text(c.label, 40), title: text(c.title, 120), when: text(c.when, 160), venue: text(c.venue, 160), address: text(c.address, 200), note: text(c.note, 200), mapUrl: url(c.mapUrl), timetableUrl: url(c.timetableUrl), ticketUrl: url(c.ticketUrl) } : null;
+  const card = c && text(c.title, 120) ? { start: text(c.start, 10), end: text(c.end, 10), label: text(c.label, 40), title: text(c.title, 120), when: text(c.when, 160), venue: text(c.venue, 160), address: text(c.address, 200), note: text(c.note, 200), mapUrl: url(c.mapUrl), timetableUrl: url(c.timetableUrl), ticketUrl: url(c.ticketUrl) } : null;
   const reminders = Array.isArray(b.reminders) ? b.reminders.map((r) => text(r, 140)).filter(Boolean).slice(0, 12) : [];
   const button = b.button?.join ? { join: true, label: text(b.button.label, 40) || 'Yes, keep me posted' } : b.button && url(b.button.url) ? { label: text(b.button.label, 40) || 'Open', url: url(b.button.url) } : null;
-  return { card, reminders, button };
+  return { card, reminders, button, photo: PHOTOS[b.photo] ? b.photo : '', eyebrow: text(b.eyebrow, 40), headline: text(b.headline, 70) };
 }
 const kindOf = (aud) => (String(aud).startsWith('tickets:') || String(aud).startsWith('segment:') ? 'participants' : String(aud).startsWith('members') ? 'members' : 'news');
 
@@ -307,6 +342,11 @@ async function sendCampaign(env, b, scheduled) {
     if (people.length > 2000) return { status: 400, body: { message: 'More than 2,000 people: ask for a bigger sending plan first.' } };
     if (Array.isArray(b.only)) { const only = new Set(b.only); people = people.filter((p) => only.has(p.email)); } // the rest of a split email
     if (!scheduled && Number(b.expect) !== people.length) return { status: 409, body: { message: `The audience changed: it now has ${people.length} people. Check and send again.`, count: people.length } };
+    if (!scheduled && !b.again) {
+      const week = Date.now() - 7 * 864e5;
+      const twin = (await kv.list({ prefix: 'campaign:' })).keys.map((k) => k.metadata).find((m) => m && m.at > week && m.sent && m.subject === subject && m.audience === text(b.audience, 60));
+      if (twin) return { status: 409, body: { message: `"${subject}" was already sent to these people on ${new Date(twin.at).toUTCString().slice(0, 16)}. Not sent again.`, duplicate: true } };
+    }
   }
   // a few emails a day stay free for sign-up confirmations and member codes
   const room = Math.max(0, DAILY(env) - (await usedToday(kv)) - 5);
@@ -358,7 +398,8 @@ export async function newsAdmin(req, env, url, reply) {
     const campaigns = camp.keys.map((k) => k.metadata).filter(Boolean).sort((a, b) => b.at - a.at).slice(0, 30);
     const scheduled = (await kv.list({ prefix: 'scheduled:' })).keys.map((k) => k.metadata).filter(Boolean).sort((a, b) => a.at - b.at);
     const members = JSON.parse((await kv.get('members')) || '[]');
-    return reply({ subscribers, campaigns, scheduled, daily: { limit: DAILY(env), used: await usedToday(kv) }, members: { all: members.length, company: members.filter((m) => m.level === 'company').length, academy: members.filter((m) => m.level === 'academy').length } });
+    const templates = JSON.parse((await kv.get('templates')) || '[]');
+    return reply({ subscribers, campaigns, scheduled, templates, daily: { limit: DAILY(env), used: await usedToday(kv) }, members: { all: members.length, company: members.filter((m) => m.level === 'company').length, academy: members.filter((m) => m.level === 'academy').length } });
   }
   if (url.pathname === '/news/admin' && req.method === 'DELETE') {
     const email = norm((await req.json().catch(() => ({}))).email);
@@ -381,6 +422,22 @@ export async function newsAdmin(req, env, url, reply) {
     const meta = { id, at, subject: text(b.subject, 150), label: text(b.label, 80) || text(b.audience, 60), lang: text(b.lang, 3) || 'all' };
     await kv.put(`scheduled:${id}`, JSON.stringify({ ...meta, payload }), { metadata: meta });
     return reply({ ok: true, ...meta });
+  }
+  // The team's own templates (saved from the composer, shared by everyone in the team)
+  if (url.pathname === '/news/templates' && (req.method === 'POST' || req.method === 'DELETE')) {
+    const b = await req.json().catch(() => ({}));
+    let list = JSON.parse((await kv.get('templates')) || '[]');
+    const id = /^[a-z0-9-]{6,40}$/.test(b.id || '') ? b.id : crypto.randomUUID().slice(0, 13);
+    list = list.filter((t) => t.id !== id);
+    if (req.method === 'POST') {
+      if (!text(b.name, 60) || !text(b.subject, 150) || !String(b.body || '').trim()) return reply({ message: 'Give the template a name, a subject and a message.' }, 400);
+      if (list.length >= 60) return reply({ message: 'There are 60 saved templates already. Delete one first.' }, 400);
+      list.push({ id, name: text(b.name, 60), subject: text(b.subject, 150), body: String(b.body).slice(0, 20000), photo: PHOTOS[b.photo] ? b.photo : '', eyebrow: text(b.eyebrow, 40), headline: text(b.headline, 70),
+        card: ['upcoming', 'this'].includes(b.card) ? b.card : '', reminders: !!b.reminders, button: text(b.button, 20), at: Date.now() });
+      list.sort((x, y) => x.name.localeCompare(y.name));
+    }
+    await kv.put('templates', JSON.stringify(list));
+    return reply({ templates: list, id });
   }
   if (url.pathname === '/news/schedule' && req.method === 'DELETE') {
     const id = text((await req.json().catch(() => ({}))).id, 80);
