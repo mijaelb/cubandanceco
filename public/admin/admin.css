@@ -395,8 +395,8 @@ html:has(.pv-save) { scroll-padding-bottom: 90px; }
 .pv-kpis > div { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 2px; }
 .pv-kpis b { font-size: 1.6rem; line-height: 1.1; }
 .pv-kpis span { font-size: 0.85rem; color: var(--muted); }
-.pv-views { display: flex; gap: 0; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; width: max-content; max-width: 100%; background: #fff; }
-.pv-views button { border: 0; background: none; padding: 9px 18px; font-weight: 700; cursor: pointer; }
+.pv-views { display: flex; gap: 0; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; width: fit-content; max-width: 100%; background: #fff; }
+.pv-views button { border: 0; background: none; padding: 9px 18px; font-weight: 700; cursor: pointer; white-space: nowrap; }
 .pv-views button.active { background: var(--ink); color: var(--gold); }
 .pv-person-card { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; align-items: center; }
 .pv-person-sum { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 12px; align-items: center; text-align: left; background: none; border: 0; padding: 0; font: inherit; cursor: pointer; min-width: 0; }
@@ -428,3 +428,11 @@ html:has(.pv-save) { scroll-padding-bottom: 90px; }
 .pv-old { display: grid; gap: 8px; justify-items: start; padding: 12px 14px; border-radius: 12px; background: #fbf1d4; border: 1px solid #e8c95f; }
 .pv-old p { margin: 0; line-height: 1.5; }
 .pv-compose [hidden] { display: none !important; }
+
+/* Promo codes (Weezevent) */
+.pv-code { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 6px; background: #fbf1d4; border: 1px solid #e8c95f; color: #14110d; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; font-family: ui-monospace, Menlo, Consolas, monospace; white-space: nowrap; }
+button.pv-code { cursor: pointer; margin: 2px 4px 2px 0; }
+button.pv-code.on { background: var(--ink); color: var(--gold); border-color: var(--ink); }
+.pv-code.big { margin-left: 0; font-size: 14px; padding: 3px 10px; }
+.pv-codes { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 2px; }
+@media (max-width: 480px) { .pv-views { display: grid; grid-template-columns: 1fr 1fr; width: 100%; border-radius: 14px; } }

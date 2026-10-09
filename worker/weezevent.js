@@ -73,6 +73,7 @@ async function eventData(env, e) {
         id: String(p.id_participant), ticket: String(p.id_ticket), event: e.id,
         first: String(o.first_name || b.acheteur_first_name || '').trim(), last: String(o.last_name || b.acheteur_last_name || '').trim(),
         email: String(o.email || b.email_acheteur || '').trim().toLowerCase(),
+        promo: String(p.promo_code || '').trim().toUpperCase(),
         booked: p.create_date || p.transaction_date || '', scanned: p.control_status?.status === '1' || !!p.control_status?.scan_date,
       });
     }
@@ -83,7 +84,7 @@ async function eventData(env, e) {
 export async function history(env, fresh) {
   const kv = env.PRIVATE;
   if (!env.WEEZEVENT_API_KEY || !env.WEEZEVENT_USERNAME) return { connected: false, at: Date.now(), events: [], tickets: [], people: [] };
-  if (!fresh) { const c = await kv.get('weezevent:history', 'json'); if (c) return c; }
+  if (!fresh) { const c = await kv.get('weezevent:history2', 'json'); if (c) return c; }
   const ev = await get('/events', env, '&include_closed=true&include_without_sales=true&include_not_published=true');
   if (ev.status !== 200) throw new Error(ev.d?.error?.message || `Weezevent answered ${ev.status}`);
   const events = (ev.d?.events || []).map((e) => ({ id: e.id, name: String(e.name || '').trim(), start: e.date?.start || '', end: e.date?.end || '', kind: kindOfEvent(e.name) }))
@@ -91,14 +92,14 @@ export async function history(env, fresh) {
   const tickets = [], people = [];
   const old = Date.now() - 120 * 864e5;
   for (const e of events) {
-    const key = `weezevent:event:${e.id}`;
+    const key = `weezevent:event2:${e.id}`;
     const last = Date.parse((e.end || e.start || '').replace(' ', 'T')) || Date.now();
     let d = last < old && !fresh ? await kv.get(key, 'json') : null;
     if (!d) { d = await eventData(env, e); if (last < old) await kv.put(key, JSON.stringify(d), { expirationTtl: 30 * 86400 }); }
     tickets.push(...d.tickets); people.push(...d.people);
   }
   const out = { connected: true, at: Date.now(), events, tickets, people };
-  await kv.put('weezevent:history', JSON.stringify(out), { expirationTtl: 600 });
+  await kv.put('weezevent:history2', JSON.stringify(out), { expirationTtl: 600 });
   return out;
 }
 // the current season: the most recent training event (what the Participants tabs open on)

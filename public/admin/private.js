@@ -895,7 +895,8 @@ function peopleIndex(s) {
     if (p.scanned) x.checkins++;
     if (when && when < x.first_at) x.first_at = when;
     if (when > x.last_at) { x.last_at = when; x.first = p.first || x.first; x.last = p.last || x.last; }
-    x.bookings.push({ when, event: e?.name || '', ticket: tname.get(p.ticket) || 'Ticket' });
+    x.bookings.push({ when, event: e?.name || '', ticket: tname.get(p.ticket) || 'Ticket', promo: p.promo || '' });
+    if (p.promo) (x.promos ||= new Set()).add(p.promo);
     by.set(p.email, x);
   }
   return [...by.values()];
@@ -953,13 +954,16 @@ export function participantsView(ctx) {
       if (!groups.length) return h('p', { class: 'muted' }, 'No bookings in this event.');
       if (!groups.some((g) => g.key === tab)) tab = (groups.find((g) => g.key !== 'other' && g.people.length) || groups[0]).key;
       const g = groups.find((x) => x.key === tab);
-      const rows = g.people.filter((p) => !q || `${p.first} ${p.last} ${p.email}`.toLowerCase().includes(q)).sort((a, b) => a.first.localeCompare(b.first));
+      const rows = g.people.filter((p) => !q || `${p.first} ${p.last} ${p.email} ${p.promo || ''}`.toLowerCase().includes(q)).sort((a, b) => a.first.localeCompare(b.first));
+      const codes = Object.entries(g.people.reduce((m, p) => (p.promo ? { ...m, [p.promo]: (m[p.promo] || 0) + 1 } : m), {})).sort((a, b) => b[1] - a[1]);
       return h('div', { class: 'pv' },
         groups.length > 1 && h('div', { class: 'pv-tabs' }, groups.map((x) => h('button', { type: 'button', class: tab === x.key ? 'active' : '', onclick: () => { tab = x.key; draw(); } }, x.label, h('small', {}, uniqueEmails(x.people).length)))),
         emailButtons(`tickets:${g.tickets.join(',')}`, `Participants · ${g.label}`, uniqueEmails(g.people)),
+        codes.length > 0 && h('p', { class: 'pv-codes' }, 'Promo codes: ', codes.map(([c, n]) => h('button', { type: 'button', class: `pv-code${q === c.toLowerCase() ? ' on' : ''}`, title: `Show the ${n} ticket${n === 1 ? '' : 's'} booked with ${c}`, onclick: () => { q = q === c.toLowerCase() ? '' : c.toLowerCase(); draw(); } }, `${c} × ${n}`)),
+          h('small', { class: 'muted' }, ` · ${g.people.length - codes.reduce((s, [, n]) => s + n, 0)} without a code`)),
         h('div', { class: 'pv-subs' }, rows.length ? rows.map((p) => h('div', { class: 'pv-part-row' },
           h('span', {}, h('b', {}, `${p.first} ${p.last}`), h('br'), h('small', { class: 'muted' }, p.email || 'no email')),
-          h('span', {}, short(p.ticketName), h('br'), h('small', { class: 'muted' }, [p.booked && `booked ${day(p.booked)}`, p.scanned && 'checked in'].filter(Boolean).join(' · '))),
+          h('span', {}, short(p.ticketName), p.promo && h('span', { class: 'pv-code' }, p.promo), h('br'), h('small', { class: 'muted' }, [p.booked && `booked ${day(p.booked)}`, p.scanned && 'checked in'].filter(Boolean).join(' · '))),
           memberCell(p))) : [h('p', { class: 'muted' }, 'Nobody found.')]));
     };
 
@@ -968,10 +972,10 @@ export function participantsView(ctx) {
       const S = SEGMENTS[seg];
       const chosen = index.filter((x) => S.test(x));
       const sorters = { trainings: (a, b) => b.trainings.size - a.trainings.size || b.last_at.localeCompare(a.last_at), recent: (a, b) => b.last_at.localeCompare(a.last_at), spent: (a, b) => b.spent - a.spent, name: (a, b) => `${a.first} ${a.last}`.localeCompare(`${b.first} ${b.last}`) };
-      const rows = chosen.filter((x) => !q || `${x.first} ${x.last} ${x.email}`.toLowerCase().includes(q)).sort(sorters[sort]);
+      const rows = chosen.filter((x) => !q || `${x.first} ${x.last} ${x.email} ${[...(x.promos || [])].join(' ')}`.toLowerCase().includes(q)).sort(sorters[sort]);
       const exportCsv = () => {
-        const lines = [['name', 'email', 'trainings', 'shows', 'first booking', 'last booking', 'spent (EUR, approx.)', 'checked in', 'member', 'newsletter'],
-          ...rows.map((x) => [`${x.first} ${x.last}`, x.email, x.trainings.size, x.shows.size, x.first_at, x.last_at, Math.round(x.spent), x.checkins, members.get(x.email)?.level || '', subscribed.has(x.email) ? 'yes' : ''])];
+        const lines = [['name', 'email', 'trainings', 'shows', 'first booking', 'last booking', 'spent (EUR, approx.)', 'checked in', 'member', 'newsletter', 'promo codes'],
+          ...rows.map((x) => [`${x.first} ${x.last}`, x.email, x.trainings.size, x.shows.size, x.first_at, x.last_at, Math.round(x.spent), x.checkins, members.get(x.email)?.level || '', subscribed.has(x.email) ? 'yes' : '', [...(x.promos || [])].join(' ')])];
         const csv = lines.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
         const a = h('a', { href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })), download: `iccd-people-${seg}.csv` }); document.body.append(a); a.click(); a.remove();
       };
@@ -990,9 +994,39 @@ export function participantsView(ctx) {
               h('span', { class: 'muted' }, `${monthYear(x.first_at)} – ${monthYear(x.last_at)}`),
               h('span', { class: 'muted' }, `about ${euro(x.spent)}`))),
           memberCell(x),
-          open === x.email && h('ul', { class: 'pv-bookings' }, x.bookings.sort((a, b) => b.when.localeCompare(a.when)).map((b) => h('li', {}, h('span', { class: 'muted' }, day(b.when)), ' ', b.event, ' · ', short(b.ticket))))))
+          open === x.email && h('ul', { class: 'pv-bookings' }, x.bookings.sort((a, b) => b.when.localeCompare(a.when)).map((b) => h('li', {}, h('span', { class: 'muted' }, day(b.when)), ' ', b.event, ' · ', short(b.ticket), b.promo && h('span', { class: 'pv-code' }, b.promo))))))
           : [h('p', { class: 'muted' }, 'Nobody found.')]),
         rows.length > 400 && h('p', { class: 'muted' }, `Showing the first 400 of ${rows.length}. Search to find someone.`));
+    };
+
+    // ----- promo codes: every code, how often and by whom -----
+    const codesPanel = () => {
+      const ev = new Map(season.events.map((e) => [e.id, e])), tname = new Map(season.tickets.map((t) => [t.id, t.name]));
+      const by = new Map();
+      for (const p of season.people) {
+        if (!p.promo) continue;
+        const c = by.get(p.promo) || { code: p.promo, tickets: [], people: new Set(), first: '9999', last: '' };
+        const when = (p.booked || '').slice(0, 10);
+        c.tickets.push({ ...p, when, eventName: ev.get(p.event)?.name || '', ticketName: tname.get(p.ticket) || 'Ticket' });
+        c.people.add(p.email || p.id);
+        if (when && when < c.first) c.first = when;
+        if (when > c.last) c.last = when;
+        by.set(p.promo, c);
+      }
+      const all = [...by.values()].filter((c) => !q || c.code.toLowerCase().includes(q) || c.tickets.some((t) => `${t.first} ${t.last} ${t.email}`.toLowerCase().includes(q))).sort((a, b) => b.last.localeCompare(a.last));
+      if (!by.size) return h('p', { class: 'muted' }, 'No promo codes used in any event yet.');
+      const total = season.people.length, used = season.people.filter((p) => p.promo).length;
+      return h('div', { class: 'pv' },
+        h('p', { class: 'muted' }, `${used} of ${total} tickets were booked with a promo code (${by.size} different codes). Newest first; open a code to see who used it.`),
+        h('div', { class: 'pv-subs' }, all.map((c) => h('div', { class: `pv-person-card${open === `code:${c.code}` ? ' open' : ''}` },
+          h('button', { type: 'button', class: 'pv-person-sum', onclick: () => { open = open === `code:${c.code}` ? null : `code:${c.code}`; draw(); } },
+            h('span', {}, h('span', { class: 'pv-code big' }, c.code)),
+            h('span', { class: 'pv-stats' },
+              h('span', {}, h('b', {}, c.tickets.length), c.tickets.length === 1 ? ' ticket' : ' tickets'),
+              h('span', {}, h('b', {}, c.people.size), c.people.size === 1 ? ' person' : ' people'),
+              h('span', { class: 'muted' }, c.first === c.last ? day(c.first) : `${day(c.first)} – ${day(c.last)}`))),
+          open === `code:${c.code}` && h('ul', { class: 'pv-bookings' }, c.tickets.sort((a, b) => b.when.localeCompare(a.when)).map((t) => h('li', {},
+            h('span', { class: 'muted' }, day(t.when)), ' ', h('b', {}, `${t.first} ${t.last}`), ` (${t.email || 'no email'}) · `, t.eventName, ' · ', short(t.ticketName))))))));
     };
 
     // ----- all events -----
@@ -1018,10 +1052,10 @@ export function participantsView(ctx) {
       h('div', { class: 'pv-levels' },
         h('span', {}, `From Weezevent: ${season.events.length} events, updated ${new Date(season.at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`),
         h('button', { type: 'button', class: 'btn-small', onclick: () => { wrap.replaceChildren(h('p', { class: 'muted' }, 'Updating from Weezevent…')); start(true); } }, 'Update now')),
-      h('div', { class: 'pv-views' }, [['season', 'This season'], ['people', 'People'], ['events', 'All events']].map(([v, t]) => h('button', { type: 'button', class: view === v ? 'active' : '', onclick: () => { view = v; tab = null; q = ''; draw(); } }, t))),
-      h('input', { type: 'search', class: 'pv-search', placeholder: 'Search by name or email', value: q, oninput: (e) => { q = e.target.value.toLowerCase(); clearTimeout(wrap.t); wrap.t = setTimeout(() => { draw(); const s = wrap.querySelector('.pv-search'); s.focus(); s.setSelectionRange(s.value.length, s.value.length); }, 250); } }),
+      h('div', { class: 'pv-views' }, [['season', 'This season'], ['people', 'People'], ['codes', 'Promo codes'], ['events', 'All events']].map(([v, t]) => h('button', { type: 'button', class: view === v ? 'active' : '', onclick: () => { view = v; tab = null; q = ''; draw(); } }, t))),
+      h('input', { type: 'search', class: 'pv-search', placeholder: 'Search by name, email or promo code', value: q, oninput: (e) => { q = e.target.value.toLowerCase(); clearTimeout(wrap.t); wrap.t = setTimeout(() => { draw(); const s = wrap.querySelector('.pv-search'); s.focus(); s.setSelectionRange(s.value.length, s.value.length); }, 250); } }),
       note,
-      view === 'season' ? eventPanel(season.current) : view === 'people' ? peoplePanel() : eventsPanel());
+      view === 'season' ? eventPanel(season.current) : view === 'people' ? peoplePanel() : view === 'codes' ? codesPanel() : eventsPanel());
   }
   return wrap;
 }
