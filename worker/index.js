@@ -133,7 +133,7 @@ export default {
     }
 
     // Mailing list: subscribers, removing someone, sending to an audience
-    if (['/news/admin', '/news/send', '/news/preview', '/news/schedule', '/news/templates'].includes(url.pathname)) {
+    if (['/news/admin', '/news/send', '/news/preview', '/news/schedule', '/news/templates', '/news/results'].includes(url.pathname)) {
       try { return (await newsAdmin(req, env, url, reply)) || reply({ message: 'Not found' }, 404); } catch (e) { return reply({ message: e.message }, 502); }
     }
 

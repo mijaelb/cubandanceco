@@ -5,7 +5,7 @@
 //     (status, language and email also as key metadata, so the list needs no extra reads)
 //     campaign:<time> = what was sent, to whom (counts only)
 
-import { history, segments } from './weezevent.js';
+import { history, segments, bookingsSince } from './weezevent.js';
 
 const LANGS = ['en', 'es', 'fr', 'it', 'de', 'nl'];
 const EMAIL = /^[^\s@<>()",;]+@[^\s@<>()",;]+\.[^\s@<>()",;]{2,}$/;
@@ -363,8 +363,9 @@ async function sendCampaign(env, b, scheduled) {
   await countSent(kv, result.sent);
   if (!b.test) {
     const at = Date.now();
-    const record = { at, subject, audience: text(b.audience, 60), label: text(b.label, 80), lang: text(b.lang, 3) || 'all', ...(scheduled ? { scheduled: true } : {}), ...(rest.length ? { left: rest.length } : {}), ...result };
-    await kv.put(`campaign:${at}`, JSON.stringify({ ...record, body }), { metadata: record });
+    const record = { at, subject, audience: text(b.audience, 60), label: text(b.label, 80), lang: text(b.lang, 3) || 'all', ...(scheduled ? { scheduled: true } : {}), ...(rest.length ? { left: rest.length } : {}), ...result, tracked: true };
+    // who got it, to see later who booked afterwards
+    await kv.put(`campaign:${at}`, JSON.stringify({ ...record, body, to: people.map((p) => p.email) }), { metadata: record });
   }
   return result.failed && !result.sent ? { status: 502, body: { message: 'Resend refused the emails. Check the sending plan and the domain.' } } : { status: 200, body: { ...result, rest } };
 }
@@ -422,6 +423,21 @@ export async function newsAdmin(req, env, url, reply) {
     const meta = { id, at, subject: text(b.subject, 150), label: text(b.label, 80) || text(b.audience, 60), lang: text(b.lang, 3) || 'all' };
     await kv.put(`scheduled:${id}`, JSON.stringify({ ...meta, payload }), { metadata: meta });
     return reply({ ok: true, ...meta });
+  }
+  // What each email achieved: of the people who got it, who booked a training or show afterwards (from Weezevent)
+  if (url.pathname === '/news/results' && req.method === 'GET') {
+    const since = Date.now() - 180 * 864e5;
+    const sent = (await kv.list({ prefix: 'campaign:' })).keys.filter((k) => k.metadata?.tracked && k.metadata.sent && k.metadata.at > since);
+    if (!sent.length) return reply({ results: {} });
+    let h;
+    try { h = await history(env); } catch (e) { return reply({ message: e.message }, 502); }
+    if (!h.connected) return reply({ results: {} });
+    const results = {};
+    for (const k of sent) {
+      const c = await kv.get(k.name, 'json');
+      if (c?.to?.length) results[c.at] = { to: c.to.length, ...bookingsSince(h, new Set(c.to), c.at) };
+    }
+    return reply({ results, at: h.at });
   }
   // The team's own templates (saved from the composer, shared by everyone in the team)
   if (url.pathname === '/news/templates' && (req.method === 'POST' || req.method === 'DELETE')) {

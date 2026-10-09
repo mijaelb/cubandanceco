@@ -657,6 +657,13 @@ export function mailingView(ctx) {
       previewBtn.disabled = false;
     };
     const reach = h('p', { class: 'pv-reach' });
+    const oldNote = h('div', { class: 'pv-old', hidden: true });
+    // a segment from the Weezevent history: how many last booked more than a year ago
+    const longAgo = (aud) => {
+      if (!season?.connected || !aud.startsWith('segment:') || aud.startsWith('segment:unbooked:')) return 0;
+      const year = new Date(Date.now() - 365 * 864e5).toISOString().slice(0, 10), skip = off();
+      return peopleIndex(season).filter((x) => SEGMENTS[aud.slice(8)].test(x) && !skip.has(x.email) && x.last_at < year).length;
+    };
     const note = h('p', { class: `pv-note${lastNote[1] ? ' bad' : ''}`, role: 'status' }, lastNote[0]);
     const confirmBox = h('div', { class: 'pv-confirm', hidden: true });
     const sendBtn = h('button', { type: 'button', class: 'btn-small pv-send' }, 'Send…');
@@ -670,6 +677,11 @@ export function mailingView(ctx) {
       if (lang.disabled) lang.value = 'all';
       const c = count(audience.value, lang.value, buttonSel.value === 'join');
       reach.textContent = `Goes to ${c} ${c === 1 ? 'person' : 'people'}. People who unsubscribed are always left out.`;
+      const old = buttonSel.value === 'join' ? 0 : longAgo(audience.value);
+      oldNote.hidden = !old;
+      if (old) oldNote.replaceChildren(
+        h('p', {}, h('b', {}, `${old} of these people last booked with us more than a year ago.`), ' The privacy rules (GDPR) allow emails to recent customers, but people we have not seen for a long time may not expect them. Write to them first with the invitation to the newsletter: only those who say yes get the announcements after that.'),
+        h('button', { type: 'button', class: 'btn-small', onclick: () => { template.value = 'invite'; template.onchange(); } }, 'Use the invitation instead'));
       return c;
     };
     audience.onchange = () => { confirmBox.hidden = true; previewBox.hidden = true; updateReach(); fillTemplates(); };
@@ -744,6 +756,7 @@ export function mailingView(ctx) {
       if (typed) yes.disabled = true;
       confirmBox.replaceChildren(
         h('p', {}, h('b', {}, `Send "${subject.value.trim()}" to ${expect} ${expect === 1 ? 'person' : 'people'} (${who}) now?`), ' This cannot be undone.', typed ? ` To confirm, type the number of people: ${expect}.` : ''),
+        !oldNote.hidden && h('p', { class: 'pv-note bad' }, `Reminder: ${longAgo(audience.value)} of them last booked more than a year ago (see the note above).`),
         twin && h('p', { class: 'pv-note bad' }, `This email was already sent to these people on ${new Date(twin.at).toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}.`),
         h('div', { class: 'pv-confirm-buttons' }, typed, yes,
           h('button', { type: 'button', class: 'btn-small', onclick: () => { confirmBox.hidden = true; } }, 'Cancel')));
@@ -780,7 +793,7 @@ export function mailingView(ctx) {
         byLang.length > 0 && h('span', {}, byLang.map(([l, c]) => `${LANG_NAMES[l] || l} ${c}`).join(' · '))),
       h('section', { class: 'pv-compose' },
         h('h3', {}, 'Write an email'),
-        h('div', { class: 'pv-compose-row' }, audience, lang), reach,
+        h('div', { class: 'pv-compose-row' }, audience, lang), reach, oldNote,
         h('div', { class: 'pv-compose-row' }, template, saveTplBtn, delTplBtn), saveTplBox,
         h('div', { class: 'pv-photo-row' }, photoThumb, h('div', { class: 'pv-photo-fields' }, photoSel, eyebrow, headline)),
         subject, body,
@@ -796,7 +809,7 @@ export function mailingView(ctx) {
       h('section', {},
         h('h3', {}, 'Sent'),
         data.campaigns.length ? h('div', { class: 'pv-sent' }, data.campaigns.map((c) => h('div', { class: 'pv-sent-row' },
-          h('span', { class: 'muted' }, day(c.at)), h('b', {}, c.subject, c.left ? h('small', { class: 'muted' }, ` · ${c.left} more in the next days`) : '', c.scheduled ? h('small', { class: 'muted' }, ' · scheduled') : '', c.error ? h('small', { class: 'pv-note bad' }, ` · not sent: ${c.error}`) : ''), h('span', {}, `${c.label || AUDIENCE[c.audience] || 'Participants'}${c.lang && c.lang !== 'all' ? ` · ${LANG_NAMES[c.lang]}` : ''}`), h('span', {}, `${c.sent} sent${c.failed ? `, ${c.failed} failed` : ''}`))))
+          h('span', { class: 'muted' }, day(c.at)), h('b', {}, c.subject, c.tracked && c.sent ? h('small', { class: 'pv-result', 'data-at': String(c.at) }) : '', c.left ? h('small', { class: 'muted' }, ` · ${c.left} more in the next days`) : '', c.scheduled ? h('small', { class: 'muted' }, ' · scheduled') : '', c.error ? h('small', { class: 'pv-note bad' }, ` · not sent: ${c.error}`) : ''), h('span', {}, `${c.label || AUDIENCE[c.audience] || 'Participants'}${c.lang && c.lang !== 'all' ? ` · ${LANG_NAMES[c.lang]}` : ''}`), h('span', {}, `${c.sent} sent${c.failed ? `, ${c.failed} failed` : ''}`))))
           : h('p', { class: 'muted' }, 'Nothing sent yet.')),
       h('section', {},
         h('div', { class: 'pv-subs-head' }, h('h3', {}, 'Subscribers'), h('button', { type: 'button', class: 'btn-small', onclick: exportCsv }, 'Export the subscribed list (CSV)')),
@@ -804,6 +817,20 @@ export function mailingView(ctx) {
         listEl));
     updateReach();
     fillTemplates();
+    showResults();
+  }
+  // "9 of 50 booked since · 7 for November": what each email achieved
+  let results = null;
+  async function showResults() {
+    if (!wrap.querySelector('.pv-result')) return;
+    try { results = (await ctx.api('/news/results')).results || {}; } catch { return; }
+    for (const el of wrap.querySelectorAll('.pv-result')) {
+      const r = results[el.dataset.at];
+      if (!r) continue;
+      const months = Object.entries(r.months).sort().map(([m, n]) => `${n} for ${MONTH_NAMES[Number(m.slice(5)) - 1].replace(/^./, (x) => x.toUpperCase())}`);
+      el.textContent = r.booked ? ` · ${r.booked} of ${r.to} booked since${months.length ? ` (${[...months, r.shows ? `${r.shows} for a show` : ''].filter(Boolean).join(', ')})` : ''}` : ` · no bookings yet from the ${r.to} people`;
+      el.classList.toggle('good', r.booked > 0);
+    }
   }
   return wrap;
 }

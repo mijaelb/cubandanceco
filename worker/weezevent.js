@@ -145,6 +145,30 @@ export function segments(h, ym) {
   };
 }
 
+// Who of these people booked after a given moment: trainings per month, and shows
+// (Weezevent writes local time in Luxembourg / Paris)
+const parisTime = (s) => {
+  const t = Date.parse(String(s).replace(' ', 'T') + 'Z');
+  if (!t) return 0;
+  const local = Date.parse(new Date(t).toLocaleString('en-US', { timeZone: 'Europe/Paris' }) + ' UTC');
+  return t - (local - t);
+};
+export function bookingsSince(h, emails, at) {
+  const kind = new Map(h.events.map((e) => [e.id, e.kind]));
+  const evs = new Map(h.events.map((e) => [e.id, e]));
+  const tname = new Map(h.tickets.map((t) => [t.id, t.name]));
+  const who = new Set(), months = {}, shows = new Set();
+  for (const p of h.people) {
+    if (!emails.has(p.email) || parisTime(p.booked) < at) continue;
+    if (kind.get(p.event) === 'show') { who.add(p.email); shows.add(p.email); continue; }
+    const m = ticketMonth(tname.get(p.ticket) || '', evs.get(p.event));
+    if (!m) continue; // T-shirts and passes
+    who.add(p.email);
+    (months[m] ||= new Set()).add(p.email);
+  }
+  return { booked: who.size, months: Object.fromEntries(Object.entries(months).map(([m, x]) => [m, x.size])), shows: shows.size };
+}
+
 // Add a ticket holder to the members area (the team chooses Company or Academy)
 export async function addMember(env, body) {
   const kv = env.PRIVATE;

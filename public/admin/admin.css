@@ -421,3 +421,10 @@ html:has(.pv-save) { scroll-padding-bottom: 90px; }
 .subtabs button.active { background: var(--ink); color: var(--gold); }
 
 .pv-type-count { width: 9em; }
+
+/* What an email achieved, and the note about old contacts */
+.pv-result { font-weight: 500; color: var(--muted, #6b6457); }
+.pv-result.good { color: #2b5b3c; font-weight: 700; }
+.pv-old { display: grid; gap: 8px; justify-items: start; padding: 12px 14px; border-radius: 12px; background: #fbf1d4; border: 1px solid #e8c95f; }
+.pv-old p { margin: 0; line-height: 1.5; }
+.pv-compose [hidden] { display: none !important; }
