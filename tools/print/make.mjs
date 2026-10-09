@@ -25,8 +25,7 @@ const HANDLE = site.instagramHandle || '';
 const SEASON = '2026–2027';
 const LEVELS = [
   { name: 'Friend', price: '€250', per: 'per season', gets: ['Your name and link on our website', 'A thank-you story on Instagram'] },
-  { name: 'Partner', price: '€750', per: 'per season', gets: ['Your logo and link on our website', 'A thank-you post and stories on Instagram', 'Thanks on stage at our shows'] },
-  { name: 'Main partner', price: '€1,500+', per: 'per season', gets: ['Everything a Partner receives', 'A training weekend or show presented by you', 'An Afro-Cuban dance workshop for your team or clients'] },
+  { name: 'Partner', price: '€750+', per: 'per season', gets: ['Your logo and link on our website', 'A thank-you post and stories on Instagram', 'Thanks on stage at our shows', 'Larger partnerships, such as a training weekend presented by you or a dance workshop for your team, shaped together'] },
 ];
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -164,7 +163,7 @@ async function sponsorship() {
   .cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7mm; margin-top: 7mm; }
   .cols h3 { font-size: 10.5pt; margin-bottom: 1.5mm; }
   .cols p { font-size: 9.5pt; color: var(--muted); }
-  .levels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5mm; margin-top: 4mm; }
+  .levels { display: grid; grid-template-columns: repeat(${LEVELS.length}, 1fr); gap: 5mm; margin-top: 4mm; }
   .level { border: 0.3mm solid rgba(20,17,13,0.18); border-radius: 4mm; padding: 6mm 5mm; display: flex; flex-direction: column; gap: 3mm; }
   .level.main { background: var(--ink); color: var(--cream); border-color: var(--ink); }
   .level .name { font-size: 8pt; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 700; color: var(--green); }
