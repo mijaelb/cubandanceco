@@ -63,7 +63,8 @@ const v = Date.now().toString(36); // new on every build, so browsers load the l
     function textLayer(pdf: any, page: HTMLElement) {
       const box = page.getBoundingClientRect(), k = W / box.width;
       const walk = document.createTreeWalker(page, NodeFilter.SHOW_TEXT, {
-        acceptNode: (n) => (n.textContent!.trim() && !n.parentElement!.closest('.pattern, svg') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT),
+        // links are left out: on phones a tap on hidden text selects it instead of opening the link
+        acceptNode: (n) => (n.textContent!.trim() && !n.parentElement!.closest('.pattern, svg, a[href]') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT),
       });
       pdf.setFont('helvetica', 'normal');
       for (let n = walk.nextNode() as Text | null; n; n = walk.nextNode() as Text | null) {
@@ -103,10 +104,16 @@ const v = Date.now().toString(36); // new on every build, so browsers load the l
         pdf.addImage(canvas.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, W, H, undefined, 'FAST');
         textLayer(pdf, page);
         // keep the links: tickets, maps, WhatsApp, Instagram, email
-        const box = page.getBoundingClientRect(), k = W / box.width;
+        // A bit larger than the text (easier to tap), at least 44 px high, kept inside the page.
+        // jsPDF writes a link's box top edge first; phones (iOS, Android, WhatsApp) need it bottom edge
+        // first or the link cannot be tapped, so the box is given from its bottom with a negative height.
+        const box = page.getBoundingClientRect(), k = W / box.width, PAD = 6;
         page.querySelectorAll<HTMLAnchorElement>('a[href]').forEach((a) => {
           const r = a.getBoundingClientRect();
-          pdf.link((r.left - box.left) * k, (r.top - box.top) * k, r.width * k, r.height * k, { url: a.href });
+          let x = (r.left - box.left) * k - PAD, y = (r.top - box.top) * k - PAD, w = r.width * k + 2 * PAD, hgt = r.height * k + 2 * PAD;
+          if (hgt < 44) { y -= (44 - hgt) / 2; hgt = 44; }
+          x = Math.max(0, x); y = Math.max(0, y); w = Math.min(W - x, w); hgt = Math.min(H - y, hgt);
+          pdf.link(x, y + hgt, w, -hgt, { url: a.href });
         });
       }
       return new File([pdf.output('blob')], `${name()}.pdf`, { type: 'application/pdf' });
