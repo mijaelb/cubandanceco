@@ -11,7 +11,7 @@
 
 import { members } from './members.js';
 import { inbox } from './bunny.js';
-import { helpers, readHelper, readTeamPerson, helperMay } from './helpers.js';
+import { helpers, readHelper, readTeamPerson, helperMay, teamCodesSet } from './helpers.js';
 import { webhook, setup as stripeSetup, donationProgress } from './stripe.js';
 import { createRequest, readRequest, signRequest, fullRecord } from './sign.js';
 import { newsPublic, newsAdmin, oneClick, previewPage, runScheduled } from './news.js';
@@ -75,8 +75,8 @@ export default {
     // Members area (its own sign-in with email codes)
     if (url.pathname.startsWith('/m/')) return (await members(req, env, url, reply, teamOk, () => readHelper(req, env))) || reply({ message: 'Not found' }, 404);
 
-    // Video helpers: sign in with an email code (public), and the team's list of helpers
-    if (url.pathname === '/h/code' || url.pathname === '/h/verify' || url.pathname === '/helpers') {
+    // Team members and video helpers: sign in with email + their access code (public), and the team's lists
+    if (url.pathname === '/h/login' || url.pathname === '/h/mode' || url.pathname === '/helpers' || url.pathname === '/helpers/code') {
       return (await helpers(req, env, url, reply, teamOk)) || reply({ message: 'Not found' }, 404);
     }
 
@@ -87,6 +87,8 @@ export default {
 
     // Sign in with the team password -> signed session valid for a few hours
     if (url.pathname === '/login' && req.method === 'POST') {
+      // after the switch to personal sign-in (a team member has an access code), the password alone is not enough
+      if (await teamCodesSet(env)) return reply({ message: 'Sign in with your email, your access code and the team password.' }, 403);
       const { password = '' } = await req.json().catch(() => ({}));
       if (!env.TEAM_PASSWORD || !(await same(password, env.TEAM_PASSWORD))) {
         await sleep(1500); // slows down guessing

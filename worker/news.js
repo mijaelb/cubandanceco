@@ -407,7 +407,7 @@ async function sendCampaign(env, b, scheduled) {
     const at = Date.now();
     const record = { at, subject, audience: text(b.audience, 60), label: text(b.label, 80), lang: text(b.lang, 3) || 'all', ...(scheduled ? { scheduled: true } : {}), ...(rest.length ? { left: rest.length } : {}), ...result, tracked: true };
     // who got it, to see later who booked afterwards
-    await kv.put(`campaign:${at}`, JSON.stringify({ ...record, body, to: people.map((p) => p.email) }), { metadata: record });
+    await kv.put(`campaign:${at}-${crypto.randomUUID().slice(0, 6)}`, JSON.stringify({ ...record, body, to: people.map((p) => p.email) }), { metadata: record });
   }
   return result.failed && !result.sent ? { status: 502, body: { message: 'Resend refused the emails. Check the sending plan and the domain.' } } : { status: 200, body: { ...result, rest } };
 }
@@ -427,7 +427,7 @@ export async function runScheduled(env) {
         const meta = { id, at: next.getTime(), subject: item.subject, label: `${item.label.replace(/ \(continued\)$/, '')} (continued)`, lang: item.lang, left: r.body.rest.length };
         await kv.put(`scheduled:${id}`, JSON.stringify({ ...meta, payload: { ...item.payload, only: r.body.rest } }), { metadata: meta });
       }
-      if (r.status !== 200) await kv.put(`campaign:${Date.now()}`, JSON.stringify({ subject: item.subject, error: r.body.message }), { metadata: { at: Date.now(), subject: item.subject, label: item.label, sent: 0, failed: 0, error: r.body.message, scheduled: true } });
+      if (r.status !== 200) await kv.put(`campaign:${Date.now()}-${crypto.randomUUID().slice(0, 6)}`, JSON.stringify({ subject: item.subject, error: r.body.message }), { metadata: { at: Date.now(), subject: item.subject, label: item.label, sent: 0, failed: 0, error: r.body.message, scheduled: true } });
     }
   }
 }

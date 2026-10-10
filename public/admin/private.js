@@ -336,45 +336,90 @@ export function videosView(ctx) {
   return wrap;
 }
 
-// ---------- Team access: team members and video helpers, each with their own email code ----------
+// ---------- Team access: team members and video helpers, each with an access code the team chooses ----------
+// a code that is easy to read out and type: three short words and a number, e.g. "rumba-sol-tambor-47"
+const WORDS = ['rumba', 'son', 'mambo', 'clave', 'conga', 'bata', 'tambor', 'sol', 'mar', 'luna', 'palma', 'cafe', 'salsa', 'timba', 'guiro', 'maraca', 'bongo', 'canto', 'baile', 'ritmo', 'fuego', 'agua', 'brisa', 'monte'];
+const newCode = () => { const r = crypto.getRandomValues(new Uint32Array(4)); return `${WORDS[r[0] % WORDS.length]}-${WORDS[r[1] % WORDS.length]}-${WORDS[r[2] % WORDS.length]}-${10 + (r[3] % 90)}`; };
 export function helpersView(ctx) {
   const { h, icon, iconBtn } = ctx;
   const wrap = h('div', { class: 'pv' }, h('p', { class: 'muted' }, 'Loading…'));
   const lists = { team: [], helpers: [] };
-  const note = h('p', { class: 'pv-flash', role: 'status' });
-  const save = async (which, next, okText) => {
-    try { Object.assign(lists, await ctx.api('/helpers', { method: 'PUT', body: JSON.stringify({ [which]: next }) })); note.textContent = okText; note.classList.remove('error'); draw(); }
-    catch (e) { note.textContent = '⚠ ' + e.message; note.classList.add('error'); }
+  const note = h('div', { class: 'pv-flash', role: 'status' });
+  const say = (t, bad) => { note.replaceChildren(t); note.classList.toggle('error', !!bad); };
+  // the code is shown once, to pass on (it is not kept in readable form)
+  const showCode = (who, code) => {
+    const copy = h('button', { type: 'button', class: 'btn-small', onclick: async () => { try { await navigator.clipboard.writeText(code); copy.textContent = 'Copied ✓'; } catch { copy.textContent = 'Select it and copy'; } } }, 'Copy');
+    note.replaceChildren(h('div', { class: 'pv-code-once' }, h('span', {}, `Access code for ${who}: `), h('code', {}, code), copy,
+      h('small', { class: 'muted' }, 'Pass it on now: it is not shown again. If it gets lost, set a new one.')));
+    note.classList.remove('error');
   };
-  const section = (which, title, about, added) => {
+  const put = async (which, next) => Object.assign(lists, await ctx.api('/helpers', { method: 'PUT', body: JSON.stringify({ [which]: next }) }));
+  const setCode = async (which, email, code) => Object.assign(lists, await ctx.api('/helpers/code', { method: 'POST', body: JSON.stringify({ list: which === 'team' ? 'team' : 'helper', email, code }) }));
+  const codeInput = (value = '') => h('input', { value, placeholder: 'Access code (at least 6 characters)', 'aria-label': 'Access code', autocomplete: 'off', spellcheck: false });
+  const section = (which, title, about) => {
     const name = h('input', { placeholder: 'Name', 'aria-label': `Name (${title})` });
     const email = h('input', { type: 'email', placeholder: 'name@example.com', 'aria-label': `Email (${title})` });
+    const code = codeInput(newCode());
+    code.setAttribute('aria-label', `Access code (${title})`);
     const list = lists[which];
+    // someone already in the members area (e.g. a company member): one click fills in the name and email
+    const fromMembers = (cache?.members || []).filter((m) => !list.some((p) => p.email === m.email.toLowerCase()))
+      .sort((a, b) => (a.name || a.email).localeCompare(b.name || b.email));
+    const pickMember = fromMembers.length > 0 && h('select', { 'aria-label': `Pick from the members area (${title})`, onchange: (e) => {
+      const m = fromMembers.find((x) => x.email === e.target.value);
+      if (m) { name.value = m.name || ''; email.value = m.email; code.focus(); }
+    } }, h('option', { value: '' }, 'Pick from the members area…'), fromMembers.map((m) => h('option', { value: m.email }, `${m.name || m.email} · ${m.level === 'academy' ? 'Academy' : 'Company'}${m.blocked ? ' (blocked)' : ''}`)));
+    const row = (p) => {
+      const tools = h('span', { class: 'pv-compose-row' },
+        h('small', { class: p.hasCode ? 'pv-sub on' : 'pv-sub warn' }, p.hasCode ? `Code set ${p.codeSet}` : 'No code yet: cannot sign in'),
+        h('button', { type: 'button', class: 'btn-small', onclick: () => {
+          const input = codeInput(newCode());
+          tools.replaceChildren(input,
+            h('button', { type: 'button', class: 'btn-small', onclick: () => { input.value = newCode(); } }, 'Generate'),
+            h('button', { type: 'button', class: 'btn-small pv-send', onclick: async () => {
+              const c = input.value.trim();
+              if (c.length < 6) return say('⚠ Choose a code of at least 6 characters.', true);
+              try { await setCode(which, p.email, c); draw(); showCode(p.name || p.email, c); } catch (e) { say('⚠ ' + e.message, true); }
+            } }, 'Save the code'),
+            h('button', { type: 'button', class: 'btn-small', onclick: draw }, 'Cancel'));
+          input.select();
+        } }, p.hasCode ? 'New code' : 'Set a code'),
+        iconBtn('trash', `Remove ${p.name || p.email}`, async () => {
+          if (!confirm(`Remove ${p.name || p.email}? They can no longer sign in.`)) return;
+          try { await put(which, list.filter((x) => x !== p)); draw(); say(`${p.name || p.email} removed ✓`); } catch (e) { say('⚠ ' + e.message, true); }
+        }, { class: 'danger' }));
+      return h('div', { class: 'pv-helper' }, h('b', {}, p.name || p.email), h('span', { class: 'muted' }, p.email), tools);
+    };
     return h('section', { class: 'pv-access' },
       h('h3', {}, title, h('small', { class: 'muted' }, ` ${list.length}`)),
       h('p', { class: 'pv-hint' }, about),
-      h('form', { class: 'pv-add', onsubmit: (e) => {
+      pickMember,
+      h('form', { class: 'pv-add pv-add-access', onsubmit: async (e) => {
         e.preventDefault();
-        const mail = email.value.trim().toLowerCase();
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(mail)) { note.textContent = '⚠ Check the email address.'; note.classList.add('error'); return; }
-        if (list.some((p) => p.email === mail)) { note.textContent = `⚠ ${mail} is already on this list.`; note.classList.add('error'); return; }
-        save(which, [...list, { name: name.value.trim(), email: mail }], `${name.value.trim() || mail} ${added} ✓`);
-      } }, name, email, h('button', { type: 'submit', class: 'btn-small' }, icon('plus'), 'Add')),
-      h('div', { class: 'pv-people' }, list.length ? list.map((p) => h('div', { class: 'pv-helper' },
-        h('b', {}, p.name || p.email), h('span', { class: 'muted' }, p.email), h('small', { class: 'muted' }, `since ${p.added || ''}`),
-        iconBtn('trash', `Remove ${p.name || p.email}`, () => { if (confirm(`Remove ${p.name || p.email}? Their email code stops working at once.`)) save(which, list.filter((x) => x !== p), `${p.name || p.email} removed ✓`); }, { class: 'danger' })))
-        : h('p', { class: 'muted' }, 'Nobody yet.')));
+        const mail = email.value.trim().toLowerCase(), c = code.value.trim();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(mail)) return say('⚠ Check the email address.', true);
+        if (list.some((p) => p.email === mail)) return say(`⚠ ${mail} is already on this list.`, true);
+        if (c && c.length < 6) return say('⚠ Choose a code of at least 6 characters (or leave it empty for now).', true);
+        try {
+          await put(which, [...list, { name: name.value.trim(), email: mail }]);
+          if (c) await setCode(which, mail, c);
+          draw();
+          if (c) showCode(name.value.trim() || mail, c); else say(`${name.value.trim() || mail} added ✓ Set their code when you are ready.`);
+        } catch (err) { say('⚠ ' + err.message, true); }
+      } }, name, email, code, h('button', { type: 'button', class: 'btn-small', onclick: () => { code.value = newCode(); } }, 'Generate'), h('button', { type: 'submit', class: 'btn-small pv-send' }, icon('plus'), 'Add')),
+      h('div', { class: 'pv-people' }, list.length ? list.map(row) : h('p', { class: 'muted' }, 'Nobody yet.')));
   };
   function draw() {
     wrap.replaceChildren(
       h('div', { class: 'pv-old' },
-        h('p', {}, h('b', {}, 'How they sign in: '), `open cubandance.co/admin, choose "Sign in with an email code" and type their email. They get a code by email and stay signed in for 12 hours. Removing someone here locks them out at once.`),
-        h('p', {}, 'The team password keeps working too.')),
+        h('p', {}, h('b', {}, 'How they sign in: '), 'open cubandance.co/admin and type their email and the access code you give them here. Team members also type the team password. They stay signed in for 12 hours.'),
+        h('p', {}, h('b', {}, 'Important: '), 'as soon as one team member has an access code, the team password alone no longer opens the panel. Give a code to everyone in the team who needs access (your GitHub-key sign-in always works).'),
+        h('p', {}, 'Codes are kept only in scrambled form: copy a code when you set it. A new code, or removing someone, locks the old one out at once.')),
       note,
-      section('team', 'Team members', 'Everything in the team panel, the same as the team password: trainings, timetables, members area, participants, mailing list.', 'can now sign in to the team area'),
-      section('helpers', 'Video helpers', 'Only the video tools: watch the recordings, sort them into class recordings or choreographies, keep them out, flag them to delete (the team deletes). No members, emails or participants.', 'can now sign in to sort the videos'));
+      section('team', 'Team members', 'Everything in the team panel, the same as the team password: trainings, timetables, members area, participants, mailing list.'),
+      section('helpers', 'Video helpers', 'Only the video tools: watch the recordings, sort them into class recordings or choreographies, keep them out, flag them to delete (the team deletes). No members, emails or participants.'));
   }
-  ctx.api('/helpers').then((d) => { Object.assign(lists, { team: d.team || [], helpers: d.helpers || [] }); draw(); }).catch((e) => wrap.replaceChildren(h('p', { class: 'error' }, e.message)));
+  Promise.all([ctx.api('/helpers'), load(ctx).catch(() => null)]).then(([d]) => { Object.assign(lists, { team: d.team || [], helpers: d.helpers || [] }); draw(); }).catch((e) => wrap.replaceChildren(h('p', { class: 'error' }, e.message)));
   return wrap;
 }
 

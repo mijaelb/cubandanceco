@@ -502,3 +502,12 @@ button.pv-code.on { background: var(--ink); color: var(--gold); border-color: va
 
 .pv-access { display: grid; gap: 8px; margin-top: 18px; }
 .pv-access h3 { margin: 0; }
+
+.pv-add-access { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1.2fr) auto auto; }
+@media (max-width: 760px) { .pv-add-access { grid-template-columns: minmax(0, 1fr) auto auto; } .pv-add-access input { grid-column: 1 / -1; } }
+.pv-helper { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) auto; }
+.pv-helper .pv-compose-row { justify-content: flex-end; }
+.pv-code-once { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 12px 14px; background: #fbf1d4; border: 1px solid #e8c95f; border-radius: 12px; color: #14110d; }
+.pv-code-once code { font: 700 1.1rem ui-monospace, Menlo, Consolas, monospace; background: #fff; padding: 4px 10px; border-radius: 8px; user-select: all; }
+.pv-code-once small { flex-basis: 100%; }
+.pv-access > select { max-width: 420px; }

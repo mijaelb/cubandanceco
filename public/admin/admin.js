@@ -53,7 +53,7 @@ const SECTIONS = [
   { id: 'access', group: 'Members area', title: 'Members', help: 'Company and academy members: who can sign in to the videos, their photo on the website and how often they came lately.' },
   { id: 'videos', group: 'Members area', title: 'Videos', help: 'Choreographies and class recordings for company and academy dancers.' },
   { id: 'inbox', group: 'Members area', title: 'Inbox', help: 'Recordings uploaded from the ICCD drive, waiting to be sorted.' },
-  { id: 'helpers', group: 'Members area', title: 'Team access', help: 'Who can sign in with their own email code: team members (everything, like the team password) and video helpers (sorting the videos only).' },
+  { id: 'helpers', group: 'Members area', title: 'Team access', help: 'Who can sign in with their email and a personal access code: team members (everything, like the team password) and video helpers (sorting the videos only).' },
   { id: 'participants', title: 'Participants', help: 'Who booked which training this season, from Weezevent. Add people to the members area or email a training.' },
   { id: 'mailing', title: 'Mailing list', help: 'Newsletter subscribers from the website, and emails to the newsletter or the members-area dancers.' },
   {
@@ -740,39 +740,39 @@ function loginView(error) {
         h('li', {}, 'Set an expiration date (e.g. 90 days), generate, and paste the token here.'),
         h('li', {}, 'Only use "Remember me" on your own device. Never share the token.'))));
 
-  // video helpers: a code sent to their email (the team adds them under Members area → Video helpers)
-  const helperEmail = h('input', { type: 'email', id: 'helpermail', autocomplete: 'email', required: true, placeholder: 'name@example.com' });
-  const helperCode = h('input', { id: 'helpercode', inputmode: 'numeric', autocomplete: 'one-time-code', maxlength: 6, placeholder: '6-digit code' });
-  const helperNote = h('p', { class: 'muted' }, 'For team members and video helpers: type your email and we send you a code.');
+  // personal sign-in: email + the access code chosen by the team; team members also type the team password
+  const helperEmail = h('input', { type: 'email', id: 'helpermail', autocomplete: 'username', required: true, placeholder: 'name@example.com' });
+  const helperCode = h('input', { type: 'password', id: 'helpercode', autocomplete: 'current-password', required: true });
+  const helperPass = h('input', { type: 'password', id: 'helperpass', autocomplete: 'off' });
+  const helperNote = h('p', { class: 'muted' }, 'Your access code is given to you by the team. Video helpers leave the team password empty.');
   const helperForm = TEAM_API && h('form', { class: 'login-part', onsubmit: async (e) => {
     e.preventDefault();
-    const btn = e.target.querySelector('button[type=submit]'); btn.disabled = true;
+    const btn = e.target.querySelector('button[type=submit]'); btn.disabled = true; btn.textContent = 'Signing in…';
     try {
-      if (helperCode.hidden) {
-        await team('/h/code', { method: 'POST', body: JSON.stringify({ email: helperEmail.value }) });
-        helperCode.hidden = false; helperCode.required = true; helperCode.focus();
-        helperNote.textContent = `If ${helperEmail.value.trim()} is on the team or video helpers list, a code is on its way. Check your inbox (and spam).`;
-        btn.textContent = 'Sign in with the code'; btn.disabled = false;
-        return;
-      }
-      const r = await team('/h/verify', { method: 'POST', body: JSON.stringify({ email: helperEmail.value, code: helperCode.value }) });
+      const r = await team('/h/login', { method: 'POST', body: JSON.stringify({ email: helperEmail.value, code: helperCode.value, password: helperPass.value }) });
       state.team = r.token; state.token = ''; state.role = r.role === 'team' ? 'team' : 'helper';
       sessionStorage.setItem('iccd-team', r.token); sessionStorage.setItem('iccd-role', state.role);
       if (state.role === 'helper' && !HELPER_SECTIONS.includes(state.section)) state.section = 'inbox';
+      if (state.role === 'team' && !TEAM_SECTIONS.includes(state.section)) state.section = 'timetable';
       await start();
-    } catch (err) { helperNote.textContent = err.message; helperNote.classList.add('error'); btn.disabled = false; }
+    } catch (err) { helperNote.textContent = err.message; helperNote.classList.add('error'); btn.disabled = false; btn.textContent = 'Sign in'; }
   } },
-    h('label', { for: 'helpermail' }, 'Email'), helperEmail, helperCode,
-    h('button', { type: 'submit', class: 'publish ready' }, 'Send me a code'), helperNote);
-  helperCode.hidden = true;
+    h('label', { for: 'helpermail' }, 'Email'), helperEmail,
+    h('label', { for: 'helpercode' }, 'Your access code'), helperCode,
+    h('label', { for: 'helperpass' }, 'Team password (team members)'), helperPass,
+    h('button', { type: 'submit', class: 'publish ready' }, 'Sign in'), helperNote);
 
-  app.replaceChildren(h('div', { class: 'login' },
+  // Before the switch to personal sign-in, the team password comes first and the email sign-in below;
+  // after it (a team member has an access code), only the email sign-in (the service decides)
+  const layout = (passwordOnly) => app.replaceChildren(h('div', { class: 'login' },
     h('img', { src: SITE + '/images/logo.svg', alt: '', width: 96, height: 96 }),
     h('h1', {}, 'ICCD admin'),
     error && h('p', { class: 'error' }, error),
-    teamForm || ghForm,
-    helperForm && h('details', { class: 'owner' }, h('summary', {}, 'Sign in with an email code'), helperForm),
+    passwordOnly ? teamForm : helperForm || ghForm,
+    passwordOnly && h('details', { class: 'owner' }, h('summary', {}, 'Sign in with your email and access code'), helperForm),
     teamForm && h('details', { class: 'owner' }, h('summary', {}, 'Full admin (GitHub key)'), ghForm)));
+  layout(false);
+  if (TEAM_API) team('/h/mode').then((m) => { if (m.passwordOnly) layout(true); }).catch(() => {});
 }
 
 // helpers handed to private.js
