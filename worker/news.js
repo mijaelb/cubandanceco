@@ -78,13 +78,44 @@ const shell = ({ preview, body, foot }) => `<!doctype html>
 const button = (href, label) => `<p style="margin:26px 0 6px;"><a href="${href}" style="display:inline-block;background:#e8c95f;color:#14110d;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:1px;text-transform:uppercase;padding:14px 28px;border-radius:999px;">${esc(label)} &rarr;</a></p>`;
 
 // The team writes plain text: blank line = new paragraph, **bold**, [text](https://link), bare links.
+// A paragraph starting with "## " is a section title, "### " a box with a title, "> " a highlighted quote;
+// a line "-> [Label](https://…)" is a button (several in a row sit side by side).
 // Everything is escaped first, so nothing typed can become HTML.
+const HEAD_FONT = "Impact,'Arial Narrow Bold','Arial Narrow','Helvetica Neue',Arial,sans-serif";
 function format(body) {
   const inline = (s) => esc(s)
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" style="color:#2b5b3c;font-weight:700;">$1</a>')
     .replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g, '$1<a href="$2" style="color:#2b5b3c;">$2</a>');
-  return body.split(/\n{2,}/).map((p) => `<p style="margin:0 0 16px;">${inline(p.trim()).replace(/\n/g, '<br>')}</p>`).join('');
+  const PILL = /^->\s*\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)\s*$/;
+  // lines of one paragraph: text lines joined with <br>, button lines grouped into one row
+  const lines = (list, size = '') => {
+    const out = [];
+    let text = [], pills = [];
+    const flush = () => {
+      if (text.length) out.push(`<p style="margin:0 0 ${pills.length ? 10 : 16}px;${size}">${text.map(inline).join('<br>')}</p>`);
+      if (pills.length) out.push(`<p style="margin:4px 0 16px;">${pills.map(([l, u]) => pill(u, l)).join('')}</p>`);
+      text = []; pills = [];
+    };
+    for (const l of list) {
+      const m = l.trim().match(PILL);
+      if (m) { pills.push([m[1], m[2]]); continue; }
+      if (pills.length) flush();
+      text.push(l.trim());
+    }
+    flush();
+    return out.join('');
+  };
+  return String(body).replace(/\r\n?/g, '\n').split(/\n{2,}/).map((p) => {
+    const ls = p.trim().split('\n');
+    const first = ls[0];
+    if (first.startsWith('## ')) return `<p style="margin:34px 0 14px;padding-top:20px;border-top:2px solid #e8c95f;font-family:${HEAD_FONT};font-size:24px;line-height:1.1;text-transform:uppercase;letter-spacing:0.5px;color:#14110d;">${inline(first.slice(3))}</p>${lines(ls.slice(1))}`;
+    if (first.startsWith('### ')) return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 14px;background:#fbf6e9;border:1px solid #eadfc6;border-radius:14px;"><tr><td style="padding:18px 20px 4px;">
+      <p style="margin:0 0 8px;font-size:17px;font-weight:700;color:#14110d;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#e8c95f;margin-right:8px;"></span>${inline(first.slice(4))}</p>${lines(ls.slice(1), 'font-size:15px;line-height:1.6;')}</td></tr></table>`;
+    if (first.startsWith('> ')) return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:6px 0 22px;"><tr><td style="border-left:4px solid #e8c95f;background:#fbf1d4;border-radius:0 12px 12px 0;padding:16px 22px;font-size:19px;line-height:1.5;font-weight:700;color:#14110d;">${ls.map((l) => inline(l.replace(/^>\s?/, ''))).join('<br>')}</td></tr></table>`;
+    if (ls.length === 1 && !PILL.test(first.trim())) return `<p style="margin:0 0 16px;">${inline(first.trim())}</p>`; // a plain paragraph (and the {card} marker) stays as before
+    return lines(ls);
+  }).join('');
 }
 // ---------- campaign emails: logo bar, photo, headline band, message, training card, reminders, button ----------
 export const PHOTOS = {
@@ -211,7 +242,7 @@ function extras(b) {
 }
 const kindOf = (aud) => (String(aud).startsWith('tickets:') || String(aud).startsWith('segment:') ? 'participants' : String(aud).startsWith('members') ? 'members' : 'news');
 
-const plain = (body) => body.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '$1 ($2)');
+const plain = (body) => body.replace(/^#{2,3} /gm, '').replace(/^> ?/gm, '').replace(/^-> ?/gm, '').replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '$1 ($2)');
 
 async function resend(env, messages) {
   // one call per 100 emails (Resend's batch limit)

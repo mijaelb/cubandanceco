@@ -944,7 +944,7 @@ export function mailingView(ctx) {
         h('div', { class: 'pv-step' }, h('h3', {}, h('span', { class: 'pv-num' }, '4'), 'Subject and message'),
           field('Subject', 'What people see in their inbox before opening the email.', subject),
           field('Message', null, body),
-          h('small', { class: 'pv-hint' }, '{name} becomes each person\'s first name. {card} marks where the training box goes (otherwise it comes after your message). A blank line starts a new paragraph; **two stars** make words bold; links: [the timetable](https://cubandance.co/trainings/) or just paste the address.')),
+          h('small', { class: 'pv-hint' }, '{name} becomes each person\'s first name. {card} marks where the training box goes (otherwise it comes after your message). A blank line starts a new paragraph; **two stars** make words bold; links: [the timetable](https://cubandance.co/trainings/) or just paste the address. To organise a longer email: a paragraph starting with ## is a section title, ### a box with a title, > a highlighted quote, and a line -> [Book now](https://…) is a button.')),
         h('div', { class: 'pv-step' }, h('h3', {}, h('span', { class: 'pv-num' }, '5'), 'Extras ', h('small', { class: 'muted' }, '(optional)')),
           field('Training box', 'A box with the dates, place, map and booking button of one training.', cardSel),
           field('Button', 'One big button at the end of the email.', buttonSel),
