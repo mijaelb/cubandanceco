@@ -572,6 +572,23 @@ export function mailingView(ctx) {
     if (invite) return membersEmails(aud).filter((e) => !skip.has(e)).length;
     return { members: data.members.all, 'members:company': data.members.company, 'members:academy': data.members.academy }[aud];
   };
+  const audiencePeople = (aud) => {
+    const first = (p) => String(p.first || p.name || '').trim().split(/\s+/)[0] || '';
+    const full = (p) => (p.first !== undefined ? `${p.first} ${p.last || ''}` : p.name || '').trim();
+    let list = [];
+    if (aud === 'newsletter') list = data.subscribers.filter((s) => s.status === 'active').map((s) => ({ email: s.email, name: '', first: '' }));
+    else if (aud.startsWith('members')) list = (cache?.members || []).filter((m) => !m.blocked && (aud === 'members' || m.level === aud.split(':')[1])).map((m) => ({ email: m.email.toLowerCase(), name: m.name, first: first(m) }));
+    else if (season?.connected) {
+      const by = new Map(peopleIndex(season).map((x) => [x.email, x]));
+      let emails = [];
+      if (aud.startsWith('tickets:')) { const ids = new Set(aud.slice(8).split(',')); emails = uniqueEmails(season.people.filter((p) => (ids.has('all') ? p.event === season.current : ids.has(p.ticket)))); }
+      else if (aud.startsWith('segment:') && !aud.startsWith('segment:unbooked:')) emails = peopleIndex(season).filter((x) => SEGMENTS[aud.slice(8)].test(x)).map((x) => x.email);
+      else if (aud.startsWith('segment:unbooked:')) emails = peopleIndex(season).filter((x) => x.now).map((x) => x.email);
+      list = emails.map((e) => by.get(e)).filter(Boolean).map((x) => ({ email: x.email, name: full(x), first: first(x) }));
+    }
+    const skip = off();
+    return list.filter((p) => p.email && !skip.has(p.email)).sort((a, b) => (a.name || a.email).localeCompare(b.name || b.email));
+  };
   const label = (value) => AUDIENCE[value] || (value === 'tickets:all' ? 'Participants · this whole season' : value.startsWith('segment:unbooked:') ? `Trained this season, not booked for ${(ctx.trainings.events || []).find((e) => e.start.startsWith(value.slice(17)))?.city || 'the next training'} yet` : value.startsWith('segment:') ? SEGMENTS[value.slice(8)].label : `Participants · ${groups.find((g) => `tickets:${g.tickets.join(',')}` === value)?.label || pendingLabel || 'a training'}`);
 
   // a field with its name and a line on what it does
@@ -641,7 +658,21 @@ export function mailingView(ctx) {
     const lang = h('select', { 'aria-label': 'Language' }, h('option', { value: 'all' }, 'All languages'), Object.entries(LANG_NAMES).map(([v, t]) => h('option', { value: v }, `${t} readers only`)));
     const subject = h('input', { placeholder: 'For example: Brussels training: the timetable is out', 'aria-label': 'Subject', maxlength: 150 });
     const body = h('textarea', { rows: 10, 'aria-label': 'Message', placeholder: 'Write your message.\n\nA blank line starts a new paragraph. **Two stars** make words bold. Links: [the timetable](https://cubandance.co/trainings/) or just paste the address.' });
-    const testTo = h('input', { type: 'email', value: remember.get('iccd-test-to', 'info@cubandance.co'), 'aria-label': 'Send the test to' });
+    const testTo = h('input', { type: 'email', value: remember.get('iccd-test-to', 'info@cubandance.co'), 'aria-label': 'Send the test to', list: 'pv-test-people', autocomplete: 'off' });
+    // a test can also go to one person of the audience (pick them by name): it then greets them by their first name
+    const testPeople = h('datalist', { id: 'pv-test-people' });
+    const testWho = h('small', { class: 'pv-hint' });
+    const fillTestPeople = () => {
+      const list = audiencePeople(audience.value);
+      testPeople.replaceChildren(...list.slice(0, 500).map((p) => h('option', { value: p.email }, p.name || p.email)));
+      showTestWho();
+    };
+    const testPerson = () => audiencePeople(audience.value).find((p) => p.email === testTo.value.trim().toLowerCase());
+    const showTestWho = () => {
+      const p = testPerson();
+      testWho.textContent = p ? `The test goes to ${p.name || p.email}, from this audience${p.first ? `, and greets them as "${p.first}"` : ''}. The subject starts with [Test].` : 'Your own address, or start typing a name or email to send the test to one person of this audience.';
+    };
+    testTo.addEventListener('input', showTestWho);
     // ----- template, training card, reminders, button -----
     const today = new Date().toISOString().slice(0, 10);
     const events = [...(ctx.trainings.events || [])].sort((a, b) => a.start.localeCompare(b.start));
@@ -821,7 +852,7 @@ export function mailingView(ctx) {
         h('button', { type: 'button', class: 'btn-small', onclick: () => { template.value = 'invite'; template.onchange(); } }, 'Use the invitation instead'));
       return c;
     };
-    audience.onchange = () => { confirmBox.hidden = true; previewBox.hidden = true; updateReach(); fillTemplates(); };
+    audience.onchange = () => { confirmBox.hidden = true; previewBox.hidden = true; updateReach(); fillTemplates(); fillTestPeople(); };
     buttonSel.onchange = () => { confirmBox.hidden = true; updateReach(); };
     lang.onchange = () => { confirmBox.hidden = true; updateReach(); };
     const say = (t, bad) => { lastNote = [t, !!bad]; note.textContent = t; note.classList.toggle('bad', !!bad); };
@@ -829,8 +860,9 @@ export function mailingView(ctx) {
     testBtn.onclick = async () => {
       if (!ready()) return;
       testBtn.disabled = true; say('Sending the test…');
-      remember.set('iccd-test-to', testTo.value.trim());
-      try { await ctx.api('/news/send', { method: 'POST', body: JSON.stringify({ subject: subject.value, body: body.value, test: testTo.value, audience: audience.value, ...extras() }) }); checked = fp(); say(`Test sent to ${testTo.value}. Check how it looks before sending to everyone.`); }
+      const who = testPerson();
+      if (!who) remember.set('iccd-test-to', testTo.value.trim()); // remember your own address, not a participant's
+      try { await ctx.api('/news/send', { method: 'POST', body: JSON.stringify({ subject: subject.value, body: body.value, test: testTo.value, testName: who?.first || '', audience: audience.value, ...extras() }) }); checked = fp(); say(`Test sent to ${who?.name ? `${who.name} (${testTo.value.trim()})` : testTo.value}. Check how it looks before sending to everyone.`); }
       catch (e) { say(e.message, true); }
       testBtn.disabled = false;
     };
@@ -950,8 +982,9 @@ export function mailingView(ctx) {
           field('Button', 'One big button at the end of the email.', buttonSel),
           h('label', { class: 'pv-check-inline' }, remindersBox, ' Add the kind reminders (what to bring, be on time…) from the Trainings page')),
         h('div', { class: 'pv-step' }, h('h3', {}, h('span', { class: 'pv-num' }, '6'), 'Check and send'),
-          h('small', { class: 'pv-hint' }, 'Preview it or send yourself a test first: Send and Schedule only work after that.'),
+          h('small', { class: 'pv-hint' }, 'Preview it or send a test first: Send and Schedule only work after that.'),
           h('div', { class: 'pv-compose-row' }, h('label', { class: 'pv-test' }, 'Test to ', testTo), previewBtn, testBtn, scheduleBtn, sendBtn),
+          testWho, testPeople,
           confirmBox, scheduleBox, note, previewBox)),
       templatesTab(),
       (data.scheduled || []).length === 0 ? '' : h('section', { 'data-mtab': 'sent' },
@@ -970,6 +1003,7 @@ export function mailingView(ctx) {
         listEl));
     updateReach();
     fillTemplates();
+    fillTestPeople();
     showMailTab();
     showResults();
   }
