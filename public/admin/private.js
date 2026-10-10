@@ -336,37 +336,45 @@ export function videosView(ctx) {
   return wrap;
 }
 
-// ---------- Video helpers: who may sort the recordings (saved at once in the members service) ----------
+// ---------- Team access: team members and video helpers, each with their own email code ----------
 export function helpersView(ctx) {
   const { h, icon, iconBtn } = ctx;
   const wrap = h('div', { class: 'pv' }, h('p', { class: 'muted' }, 'Loading…'));
-  let list = [];
+  const lists = { team: [], helpers: [] };
   const note = h('p', { class: 'pv-flash', role: 'status' });
-  const save = async (next, okText) => {
-    try { list = (await ctx.api('/helpers', { method: 'PUT', body: JSON.stringify({ helpers: next }) })).helpers; note.textContent = okText; note.classList.remove('error'); draw(); }
+  const save = async (which, next, okText) => {
+    try { Object.assign(lists, await ctx.api('/helpers', { method: 'PUT', body: JSON.stringify({ [which]: next }) })); note.textContent = okText; note.classList.remove('error'); draw(); }
     catch (e) { note.textContent = '⚠ ' + e.message; note.classList.add('error'); }
   };
-  function draw() {
-    const name = h('input', { placeholder: 'Name', 'aria-label': 'Name' });
-    const email = h('input', { type: 'email', placeholder: 'name@example.com', 'aria-label': 'Email' });
-    wrap.replaceChildren(
-      h('div', { class: 'pv-old' },
-        h('p', {}, h('b', {}, 'What helpers can do: '), 'watch the recordings, give them names, add them to class recordings or choreographies, keep them out, and flag them to delete (you delete them).'),
-        h('p', {}, h('b', {}, 'How they sign in: '), `open ${ctx.SITE}/admin/, choose "Video helpers (email code)" and enter their email. They stay signed in for 12 hours. Removing someone here locks them out at once.`)),
+  const section = (which, title, about, added) => {
+    const name = h('input', { placeholder: 'Name', 'aria-label': `Name (${title})` });
+    const email = h('input', { type: 'email', placeholder: 'name@example.com', 'aria-label': `Email (${title})` });
+    const list = lists[which];
+    return h('section', { class: 'pv-access' },
+      h('h3', {}, title, h('small', { class: 'muted' }, ` ${list.length}`)),
+      h('p', { class: 'pv-hint' }, about),
       h('form', { class: 'pv-add', onsubmit: (e) => {
         e.preventDefault();
         const mail = email.value.trim().toLowerCase();
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(mail)) { note.textContent = '⚠ Check the email address.'; note.classList.add('error'); return; }
-        if (list.some((p) => p.email === mail)) { note.textContent = `⚠ ${mail} is already a helper.`; note.classList.add('error'); return; }
-        save([...list, { name: name.value.trim(), email: mail }], `${name.value.trim() || mail} can now sign in to sort the videos ✓`);
-      } }, name, email, h('button', { type: 'submit', class: 'btn-small' }, icon('plus'), 'Add helper')),
-      note,
+        if (list.some((p) => p.email === mail)) { note.textContent = `⚠ ${mail} is already on this list.`; note.classList.add('error'); return; }
+        save(which, [...list, { name: name.value.trim(), email: mail }], `${name.value.trim() || mail} ${added} ✓`);
+      } }, name, email, h('button', { type: 'submit', class: 'btn-small' }, icon('plus'), 'Add')),
       h('div', { class: 'pv-people' }, list.length ? list.map((p) => h('div', { class: 'pv-helper' },
         h('b', {}, p.name || p.email), h('span', { class: 'muted' }, p.email), h('small', { class: 'muted' }, `since ${p.added || ''}`),
-        iconBtn('trash', `Remove ${p.name || p.email}`, () => { if (confirm(`Remove ${p.name || p.email}? They can no longer sign in to sort the videos.`)) save(list.filter((x) => x !== p), `${p.name || p.email} removed ✓`); }, { class: 'danger' })))
-        : h('p', { class: 'muted' }, 'No helpers yet.')));
+        iconBtn('trash', `Remove ${p.name || p.email}`, () => { if (confirm(`Remove ${p.name || p.email}? Their email code stops working at once.`)) save(which, list.filter((x) => x !== p), `${p.name || p.email} removed ✓`); }, { class: 'danger' })))
+        : h('p', { class: 'muted' }, 'Nobody yet.')));
+  };
+  function draw() {
+    wrap.replaceChildren(
+      h('div', { class: 'pv-old' },
+        h('p', {}, h('b', {}, 'How they sign in: '), `open cubandance.co/admin, choose "Sign in with an email code" and type their email. They get a code by email and stay signed in for 12 hours. Removing someone here locks them out at once.`),
+        h('p', {}, 'The team password keeps working too.')),
+      note,
+      section('team', 'Team members', 'Everything in the team panel, the same as the team password: trainings, timetables, members area, participants, mailing list.', 'can now sign in to the team area'),
+      section('helpers', 'Video helpers', 'Only the video tools: watch the recordings, sort them into class recordings or choreographies, keep them out, flag them to delete (the team deletes). No members, emails or participants.', 'can now sign in to sort the videos'));
   }
-  ctx.api('/helpers').then((d) => { list = d.helpers || []; draw(); }).catch((e) => wrap.replaceChildren(h('p', { class: 'error' }, e.message)));
+  ctx.api('/helpers').then((d) => { Object.assign(lists, { team: d.team || [], helpers: d.helpers || [] }); draw(); }).catch((e) => wrap.replaceChildren(h('p', { class: 'error' }, e.message)));
   return wrap;
 }
 

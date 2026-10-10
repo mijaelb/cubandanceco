@@ -53,7 +53,7 @@ const SECTIONS = [
   { id: 'access', group: 'Members area', title: 'Members', help: 'Company and academy members: who can sign in to the videos, their photo on the website and how often they came lately.' },
   { id: 'videos', group: 'Members area', title: 'Videos', help: 'Choreographies and class recordings for company and academy dancers.' },
   { id: 'inbox', group: 'Members area', title: 'Inbox', help: 'Recordings uploaded from the ICCD drive, waiting to be sorted.' },
-  { id: 'helpers', group: 'Members area', title: 'Video helpers', help: 'People who help sort the videos. They sign in with a code sent to their email and see only the Inbox and Videos: no members, emails or participants, and they cannot delete recordings.' },
+  { id: 'helpers', group: 'Members area', title: 'Team access', help: 'Who can sign in with their own email code: team members (everything, like the team password) and video helpers (sorting the videos only).' },
   { id: 'participants', title: 'Participants', help: 'Who booked which training this season, from Weezevent. Add people to the members area or email a training.' },
   { id: 'mailing', title: 'Mailing list', help: 'Newsletter subscribers from the website, and emails to the newsletter or the members-area dancers.' },
   {
@@ -743,7 +743,7 @@ function loginView(error) {
   // video helpers: a code sent to their email (the team adds them under Members area → Video helpers)
   const helperEmail = h('input', { type: 'email', id: 'helpermail', autocomplete: 'email', required: true, placeholder: 'name@example.com' });
   const helperCode = h('input', { id: 'helpercode', inputmode: 'numeric', autocomplete: 'one-time-code', maxlength: 6, placeholder: '6-digit code' });
-  const helperNote = h('p', { class: 'muted' }, 'Helping to sort the videos? Sign in with your email: we send you a code.');
+  const helperNote = h('p', { class: 'muted' }, 'For team members and video helpers: type your email and we send you a code.');
   const helperForm = TEAM_API && h('form', { class: 'login-part', onsubmit: async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector('button[type=submit]'); btn.disabled = true;
@@ -751,14 +751,14 @@ function loginView(error) {
       if (helperCode.hidden) {
         await team('/h/code', { method: 'POST', body: JSON.stringify({ email: helperEmail.value }) });
         helperCode.hidden = false; helperCode.required = true; helperCode.focus();
-        helperNote.textContent = `If ${helperEmail.value.trim()} is on the list of video helpers, a code is on its way. Check your inbox (and spam).`;
-        btn.textContent = 'Open the video tools'; btn.disabled = false;
+        helperNote.textContent = `If ${helperEmail.value.trim()} is on the team or video helpers list, a code is on its way. Check your inbox (and spam).`;
+        btn.textContent = 'Sign in with the code'; btn.disabled = false;
         return;
       }
       const r = await team('/h/verify', { method: 'POST', body: JSON.stringify({ email: helperEmail.value, code: helperCode.value }) });
-      state.team = r.token; state.token = ''; state.role = 'helper';
-      sessionStorage.setItem('iccd-team', r.token); sessionStorage.setItem('iccd-role', 'helper');
-      if (!HELPER_SECTIONS.includes(state.section)) state.section = 'inbox';
+      state.team = r.token; state.token = ''; state.role = r.role === 'team' ? 'team' : 'helper';
+      sessionStorage.setItem('iccd-team', r.token); sessionStorage.setItem('iccd-role', state.role);
+      if (state.role === 'helper' && !HELPER_SECTIONS.includes(state.section)) state.section = 'inbox';
       await start();
     } catch (err) { helperNote.textContent = err.message; helperNote.classList.add('error'); btn.disabled = false; }
   } },
@@ -771,7 +771,7 @@ function loginView(error) {
     h('h1', {}, 'ICCD admin'),
     error && h('p', { class: 'error' }, error),
     teamForm || ghForm,
-    helperForm && h('details', { class: 'owner' }, h('summary', {}, 'Video helpers (email code)'), helperForm),
+    helperForm && h('details', { class: 'owner' }, h('summary', {}, 'Sign in with an email code'), helperForm),
     teamForm && h('details', { class: 'owner' }, h('summary', {}, 'Full admin (GitHub key)'), ghForm)));
 }
 

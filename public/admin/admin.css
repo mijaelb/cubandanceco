@@ -499,3 +499,6 @@ button.pv-code.on { background: var(--ink); color: var(--gold); border-color: va
 .pv-sort-done { padding: 20px; border: 1px solid var(--line); border-radius: 12px; background: #fff; display: grid; gap: 10px; justify-items: start; }
 @media (max-width: 900px) { .pv-sort-main { grid-template-columns: minmax(0, 1fr); } .pv-sort-player { position: static; } }
 .pv-sort-actions select { width: auto; flex: 0 1 auto; max-width: 100%; }
+
+.pv-access { display: grid; gap: 8px; margin-top: 18px; }
+.pv-access h3 { margin: 0; }

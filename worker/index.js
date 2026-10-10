@@ -11,7 +11,7 @@
 
 import { members } from './members.js';
 import { inbox } from './bunny.js';
-import { helpers, readHelper, helperMay } from './helpers.js';
+import { helpers, readHelper, readTeamPerson, helperMay } from './helpers.js';
 import { webhook, setup as stripeSetup, donationProgress } from './stripe.js';
 import { createRequest, readRequest, signRequest, fullRecord } from './sign.js';
 import { newsPublic, newsAdmin, oneClick, previewPage, runScheduled } from './news.js';
@@ -64,8 +64,11 @@ export default {
     if (!ORIGINS.includes(origin)) return reply({ message: 'Forbidden' }, 403);
 
     const session = async () => `${String(Date.now() + SESSION_HOURS * 3600e3)}`;
+    // the team: the shared team password session, or a team member's personal email-code session
     const teamOk = async () => {
-      const [exp = '', sig = ''] = (req.headers.get('Authorization') || '').replace(/^Bearer /, '').split('.');
+      const auth = (req.headers.get('Authorization') || '').replace(/^Bearer /, '');
+      if (auth.startsWith('t.')) return !!(await readTeamPerson(req, env));
+      const [exp = '', sig = ''] = auth.split('.');
       return !!exp && Number(exp) >= Date.now() && (await same(sig, await sign(exp, env.SESSION_SECRET)));
     };
 
