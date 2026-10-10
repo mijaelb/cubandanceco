@@ -69,7 +69,9 @@ export default {
       const auth = (req.headers.get('Authorization') || '').replace(/^Bearer /, '');
       if (auth.startsWith('t.')) return !!(await readTeamPerson(req, env));
       const [exp = '', sig = ''] = auth.split('.');
-      return !!exp && Number(exp) >= Date.now() && (await same(sig, await sign(exp, env.SESSION_SECRET)));
+      if (!exp || Number(exp) < Date.now() || !(await same(sig, await sign(exp, env.SESSION_SECRET)))) return false;
+      // a team-password session: valid until the switch to personal sign-in, then no longer (at once)
+      return !(await teamCodesSet(env));
     };
 
     // Members area (its own sign-in with email codes)

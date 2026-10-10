@@ -347,10 +347,11 @@ export function helpersView(ctx) {
   const note = h('div', { class: 'pv-flash', role: 'status' });
   const say = (t, bad) => { note.replaceChildren(t); note.classList.toggle('error', !!bad); };
   // the code is shown once, to pass on (it is not kept in readable form)
-  const showCode = (who, code) => {
+  const showCode = (who, code, which) => {
     const copy = h('button', { type: 'button', class: 'btn-small', onclick: async () => { try { await navigator.clipboard.writeText(code); copy.textContent = 'Copied ✓'; } catch { copy.textContent = 'Select it and copy'; } } }, 'Copy');
     note.replaceChildren(h('div', { class: 'pv-code-once' }, h('span', {}, `Access code for ${who}: `), h('code', {}, code), copy,
-      h('small', { class: 'muted' }, 'Pass it on now: it is not shown again. If it gets lost, set a new one.')));
+      h('small', { class: 'muted' }, 'Pass it on now: it is not shown again. If it gets lost, set a new one.'),
+      which === 'team' && h('small', {}, h('b', {}, 'From now on, the team password alone no longer signs in. '), 'If you signed in with it, sign out and sign in again with your email, your access code and the team password.')));
     note.classList.remove('error');
   };
   const put = async (which, next) => Object.assign(lists, await ctx.api('/helpers', { method: 'PUT', body: JSON.stringify({ [which]: next }) }));
@@ -379,7 +380,7 @@ export function helpersView(ctx) {
             h('button', { type: 'button', class: 'btn-small pv-send', onclick: async () => {
               const c = input.value.trim();
               if (c.length < 6) return say('⚠ Choose a code of at least 6 characters.', true);
-              try { await setCode(which, p.email, c); draw(); showCode(p.name || p.email, c); } catch (e) { say('⚠ ' + e.message, true); }
+              try { await setCode(which, p.email, c); draw(); showCode(p.name || p.email, c, which); } catch (e) { say('⚠ ' + e.message, true); }
             } }, 'Save the code'),
             h('button', { type: 'button', class: 'btn-small', onclick: draw }, 'Cancel'));
           input.select();
@@ -404,7 +405,7 @@ export function helpersView(ctx) {
           await put(which, [...list, { name: name.value.trim(), email: mail }]);
           if (c) await setCode(which, mail, c);
           draw();
-          if (c) showCode(name.value.trim() || mail, c); else say(`${name.value.trim() || mail} added ✓ Set their code when you are ready.`);
+          if (c) showCode(name.value.trim() || mail, c, which); else say(`${name.value.trim() || mail} added ✓ Set their code when you are ready.`);
         } catch (err) { say('⚠ ' + err.message, true); }
       } }, name, email, code, h('button', { type: 'button', class: 'btn-small', onclick: () => { code.value = newCode(); } }, 'Generate'), h('button', { type: 'submit', class: 'btn-small pv-send' }, icon('plus'), 'Add')),
       h('div', { class: 'pv-people' }, list.length ? list.map(row) : h('p', { class: 'muted' }, 'Nobody yet.')));
