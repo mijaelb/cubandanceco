@@ -258,7 +258,7 @@ async function audience(env, name, l, invite) {
   else if (name.startsWith('members')) {
     const level = name.split(':')[1];
     const members = JSON.parse((await kv.get('members')) || '[]');
-    list = members.filter((m) => !level || m.level === level).map((m) => ({ email: m.email, name: m.name, kind: 'members' }));
+    list = members.filter((m) => !m.blocked && (!level || m.level === level)).map((m) => ({ email: m.email, name: m.name, kind: 'members' }));
   } else if (name.startsWith('tickets:')) {
     // participants with one of these Weezevent ticket types (a training, or the whole season)
     const ids = new Set(name.slice(8).split(',').filter(Boolean));
@@ -409,7 +409,7 @@ export async function newsAdmin(req, env, url, reply) {
     const camp = await kv.list({ prefix: 'campaign:' });
     const campaigns = camp.keys.map((k) => k.metadata).filter(Boolean).sort((a, b) => b.at - a.at).slice(0, 30);
     const scheduled = (await kv.list({ prefix: 'scheduled:' })).keys.map((k) => k.metadata).filter(Boolean).sort((a, b) => a.at - b.at);
-    const members = JSON.parse((await kv.get('members')) || '[]');
+    const members = JSON.parse((await kv.get('members')) || '[]').filter((m) => !m.blocked);
     const templates = JSON.parse((await kv.get('templates')) || '[]');
     return reply({ subscribers, campaigns, scheduled, templates, daily: { limit: DAILY(env), used: await usedToday(kv) }, members: { all: members.length, company: members.filter((m) => m.level === 'company').length, academy: members.filter((m) => m.level === 'academy').length } });
   }

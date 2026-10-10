@@ -469,3 +469,7 @@ button.pv-code.on { background: var(--ink); color: var(--gold); border-color: va
 .pv-person-meta select { width: auto; flex: 0 1 340px; min-width: 0; }
 .pv-compose-row .pv-search { flex: 1 1 260px; width: auto; margin: 0; }
 .pv-compose-row > select[aria-label="Show"] { width: auto; flex: 0 1 auto; }
+
+/* A blocked member: still on the list, greyed */
+.pv-person.blocked > input, .pv-person.blocked > select, .pv-person.blocked .pv-avatar { opacity: 0.5; }
+.pv-person-meta .btn-small { margin: 0 0 0 auto; }

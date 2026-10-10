@@ -165,13 +165,13 @@ export function accessView(ctx) {
     };
     const drawList = () => {
       const paying = cache.members.filter((p) => !p.free && ['active', 'trialing', 'past_due'].includes(cache.subs[p.email]?.status)).length;
-      levels.replaceChildren(...Object.entries(LEVEL).map(([l, text]) => h('span', {}, h('b', {}, cache.members.filter((p) => p.level === l).length), ' ', text)), h('span', {}, h('b', {}, paying), ' subscribed to class recordings'), h('span', {}, h('b', {}, cache.members.filter((p) => p.free).length), ' with free access'));
+      levels.replaceChildren(...Object.entries(LEVEL).map(([l, text]) => h('span', {}, h('b', {}, cache.members.filter((p) => p.level === l && !p.blocked).length), ' ', text)), h('span', {}, h('b', {}, cache.members.filter((p) => p.blocked).length), ' blocked'), h('span', {}, h('b', {}, paying), ' subscribed to class recordings'), h('span', {}, h('b', {}, cache.members.filter((p) => p.free).length), ' with free access'));
       const came = (p) => (act ? act.of(p) : null);
       // fewer than 3 weekends so far (start of the records): the need shrinks with them
       const needs = (p) => Math.min(ACTIVE_NEEDS[p.level], act ? act.last.length : 0);
       const quiet = (p) => came(p) !== null && came(p) < needs(p);
       const shown = cache.members.map((p, i) => [p, i]).filter(([p]) => (!q || `${p.name} ${p.email}`.toLowerCase().includes(q))
-        && (show === 'all' || (show === 'quiet' ? quiet(p) || came(p) === null : show === 'nosite' ? p.level === 'company' && !sitePerson(ctx, p) : p.level === show)));
+        && (show === 'all' || (show === 'blocked' ? p.blocked : show === 'quiet' ? quiet(p) || came(p) === null : show === 'nosite' ? p.level === 'company' && !sitePerson(ctx, p) : p.level === show)));
       const monthsText = act ? act.last.map((m) => cap(MONTH_NAMES[Number(m.slice(5)) - 1])).join(', ') : '';
       // a second line per person: website photo (company), and how often they came lately
       const meta = (p) => {
@@ -182,9 +182,16 @@ export function accessView(ctx) {
         const n = came(p);
         const badge = !act || !act.last.length ? null : n === null ? h('span', { class: 'pv-sub' }, 'No Weezevent bookings with this email')
           : h('span', { class: `pv-sub ${n >= needs(p) ? 'on' : 'warn'}`, title: `Training weekends: ${monthsText}` }, `${n >= needs(p) ? 'Active' : 'Not active lately'} · came ${n} of the last ${act.last.length} (${monthsText})`);
-        return h('div', { class: 'pv-person-meta' }, avatar(ctx, p), pick || h('span', { class: 'pv-sub' }, 'Academy · not on the website'), badge);
+        const sub = cache.subs[p.email];
+        const block = h('button', { type: 'button', class: `btn-small${p.blocked ? ' pv-send' : ''}`, onclick: () => {
+          if (p.blocked) { delete p.blocked; changed(); drawList(); return; }
+          const paying = sub && ['active', 'trialing', 'past_due'].includes(sub.status);
+          if (!confirm(`Block ${p.name || p.email}? They stay on the list but cannot sign in or watch videos until you unblock them.${paying ? '\n\nThey still have a paid subscription for the class recordings: cancel it in Stripe if they should not pay while blocked.' : ''}`)) return;
+          p.blocked = true; changed(); drawList();
+        } }, p.blocked ? 'Unblock' : 'Block access');
+        return h('div', { class: 'pv-person-meta' }, avatar(ctx, p), p.blocked && h('span', { class: 'pv-sub warn' }, 'Blocked · cannot sign in'), pick || h('span', { class: 'pv-sub' }, 'Academy · not on the website'), badge, block);
       };
-      listEl.replaceChildren(...(shown.length ? shown.map(([p, i]) => h('div', { class: 'pv-person' },
+      listEl.replaceChildren(...(shown.length ? shown.map(([p, i]) => h('div', { class: `pv-person${p.blocked ? ' blocked' : ''}` },
         h('input', { value: p.name, placeholder: 'Name', 'aria-label': 'Name', list: 'pv-names', oninput: (e) => { p.name = e.target.value; changed(); } }),
         h('input', { type: 'email', value: p.email, placeholder: 'name@example.com', 'aria-label': 'Email', oninput: (e) => { p.email = e.target.value.trim(); changed(); } }),
         h('select', { 'aria-label': 'Level', onchange: (e) => { p.level = e.target.value; changed(); drawList(); } },
@@ -210,7 +217,7 @@ export function accessView(ctx) {
     };
     drawList();
     wrap.replaceChildren(
-      h('p', { class: 'muted' }, 'People on this list can open ', h('a', { href: SITE + '/members/', target: '_blank', rel: 'noopener' }, 'cubandance.co/members'), ' and sign in with a code sent to their email. Removing someone locks them out straight away.'),
+      h('p', { class: 'muted' }, 'People on this list can open ', h('a', { href: SITE + '/members/', target: '_blank', rel: 'noopener' }, 'cubandance.co/members'), ' and sign in with a code sent to their email. Block access locks someone out straight away but keeps them on the list, so you can unblock them later; the bin removes them completely.'),
       levels,
       h('form', { class: 'pv-add', onsubmit: add }, name, email, level, h('button', { type: 'submit', class: 'btn-small' }, icon('plus'), 'Add')),
       err,
@@ -218,7 +225,7 @@ export function accessView(ctx) {
       h('div', { class: 'pv-compose-row' },
         h('input', { type: 'search', class: 'pv-search', placeholder: 'Search by name or email', value: q, oninput: (e) => { q = e.target.value.toLowerCase(); drawList(); } }),
         h('select', { 'aria-label': 'Show', onchange: (e) => { show = e.target.value; drawList(); } },
-          [['all', 'Everyone'], ['company', 'Company members'], ['academy', 'Academy members'], ['quiet', 'Not active lately'], ['nosite', 'Company, no website photo']].map(([v, t]) => h('option', { value: v, selected: show === v }, t)))),
+          [['all', 'Everyone'], ['company', 'Company members'], ['academy', 'Academy members'], ['quiet', 'Not active lately'], ['blocked', 'Blocked'], ['nosite', 'Company, no website photo']].map(([v, t]) => h('option', { value: v, selected: show === v }, t)))),
       listEl,
       h('datalist', { id: 'pv-names' }, names.map((n) => h('option', { value: n }))),
       bar.el);
@@ -548,7 +555,7 @@ export function mailingView(ctx) {
   // who an audience reaches, as far as the panel can tell (the service counts again before sending)
   const off = () => new Set(data.subscribers.filter((s) => s.status === 'unsubscribed').map((s) => s.email));
   // members' emails per audience (the panel's copy of the member list)
-  const membersEmails = (aud) => (cache?.members || []).filter((m) => aud === 'members' || m.level === aud.split(':')[1]).map((m) => m.email.toLowerCase());
+  const membersEmails = (aud) => (cache?.members || []).filter((m) => !m.blocked && (aud === 'members' || m.level === aud.split(':')[1])).map((m) => m.email.toLowerCase());
   const count = (aud, lang, invite) => {
     if (aud === 'newsletter') return data.subscribers.filter((s) => s.status === 'active' && (lang === 'all' || s.lang === lang)).length;
     const skip = invite ? new Set([...off(), ...data.subscribers.filter((s) => s.status === 'active').map((s) => s.email)]) : off();
@@ -1087,7 +1094,7 @@ export function participantsView(ctx) {
     const index = peopleIndex(season);
     const note = h('p', { class: `pv-note${message[1] ? ' bad' : ''}`, role: 'status' }, message[0]);
     const say = (t, bad) => { message = [t, !!bad]; note.textContent = t; note.classList.toggle('bad', !!bad); };
-    const badges = (email) => [members.has(email) && h('span', { class: 'pv-badge on' }, members.get(email).level === 'academy' ? 'Academy member' : 'Company member'), subscribed.has(email) && h('span', { class: 'pv-badge' }, 'Newsletter')];
+    const badges = (email) => [members.has(email) && h('span', { class: 'pv-badge on' }, `${members.get(email).level === 'academy' ? 'Academy member' : 'Company member'}${members.get(email).blocked ? ' (blocked)' : ''}`), subscribed.has(email) && h('span', { class: 'pv-badge' }, 'Newsletter')];
     const memberCell = (p) => {
       if (members.has(p.email)) return h('span', { class: 'pv-badges' }, avatar(ctx, members.get(p.email)), ...badges(p.email));
       if (!p.email) return h('span', { class: 'muted' }, 'No email');

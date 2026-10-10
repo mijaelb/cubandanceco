@@ -51,8 +51,8 @@ async function readMember(req, env) {
   try {
     const { e, x } = JSON.parse(unb64url(payload));
     if (x < Date.now()) return null;
-    // looked up again every time, so removing someone from the list locks them out at once
-    return (await getJSON(env.PRIVATE, 'members', [])).find((p) => p.email === e) || null;
+    // looked up again every time, so removing or blocking someone locks them out at once
+    return (await getJSON(env.PRIVATE, 'members', [])).find((p) => p.email === e && !p.blocked) || null;
   } catch { return null; }
 }
 
@@ -128,7 +128,7 @@ function cleanMembers(list) {
     seen.add(email);
     const level = LEVELS.includes(p.level) ? p.level : 'company';
     // site: the name under which a company member appears on the website (people.json), for the photo
-    return { name: text(p.name, 80), email, level, ...(p.free ? { free: true } : {}), ...(level === 'company' && text(p.site, 80) ? { site: text(p.site, 80) } : {}) };
+    return { name: text(p.name, 80), email, level, ...(p.free ? { free: true } : {}), ...(p.blocked ? { blocked: true } : {}), ...(level === 'company' && text(p.site, 80) ? { site: text(p.site, 80) } : {}) };
   });
 }
 function cleanLibrary(items) {
@@ -158,7 +158,7 @@ export async function members(req, env, url, reply, teamOk) {
     if (await limited(kv, `rl:ip:${ip}`, 10, 3600) || await limited(kv, `rl:mail:${await sha(email)}`, 3, 900)) {
       return reply({ message: 'Too many codes requested. Please wait a few minutes and try again.' }, 429);
     }
-    const person = (await getJSON(kv, 'members', [])).find((p) => p.email === email);
+    const person = (await getJSON(kv, 'members', [])).find((p) => p.email === email && !p.blocked);
     if (person) {
       const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1e6).padStart(6, '0');
       await kv.put(`code:${await sha(email)}`, JSON.stringify({ h: await hmac('code:' + code, env.SESSION_SECRET), tries: 0 }), { expirationTtl: CODE_MINUTES * 60 });
@@ -174,7 +174,7 @@ export async function members(req, env, url, reply, teamOk) {
     const saved = await getJSON(kv, key, null);
     if (saved && saved.tries < 5 && code.length === 6 && (await same(saved.h, await hmac('code:' + code, env.SESSION_SECRET)))) {
       await kv.delete(key);
-      const person = (await getJSON(kv, 'members', [])).find((p) => p.email === email);
+      const person = (await getJSON(kv, 'members', [])).find((p) => p.email === email && !p.blocked);
       if (person) return reply({ token: await memberToken(email, env.SESSION_SECRET), name: person.name, level: person.level });
     }
     if (saved) {
