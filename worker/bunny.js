@@ -35,7 +35,7 @@ async function marks(kv, prefix) {
 }
 
 // Team routes (the caller has already checked the team session)
-export async function inbox(req, env, url, reply) {
+export async function inbox(req, env, url, reply, who = 'team') {
   if (!env.BUNNY_API_KEY) return reply({ message: 'Bunny Stream is not connected yet.' }, 503);
   const kv = env.PRIVATE;
   const body = req.method === 'POST' ? await req.json().catch(() => ({})) : {};
@@ -80,7 +80,7 @@ export async function inbox(req, env, url, reply) {
   // Flag for deletion: the team reviews before anything is deleted (saved at once, shared by all)
   if (url.pathname === '/bunny/flag' && req.method === 'POST') {
     if (!body.flagged) { await kv.delete(`flag:${guid}`); return reply({ ok: true, flag: null }); }
-    const flag = { reason: String(body.reason || '').trim().slice(0, 120), at: new Date().toISOString() };
+    const flag = { reason: String(body.reason || '').trim().slice(0, 120), at: new Date().toISOString(), by: String(who).slice(0, 80) };
     await kv.put(`flag:${guid}`, '1', { metadata: flag });
     return reply({ ok: true, flag });
   }

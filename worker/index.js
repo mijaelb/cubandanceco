@@ -11,6 +11,7 @@
 
 import { members } from './members.js';
 import { inbox } from './bunny.js';
+import { helpers, readHelper, helperMay } from './helpers.js';
 import { webhook, setup as stripeSetup, donationProgress } from './stripe.js';
 import { createRequest, readRequest, signRequest, fullRecord } from './sign.js';
 import { newsPublic, newsAdmin, oneClick, previewPage, runScheduled } from './news.js';
@@ -69,7 +70,12 @@ export default {
     };
 
     // Members area (its own sign-in with email codes)
-    if (url.pathname.startsWith('/m/')) return (await members(req, env, url, reply, teamOk)) || reply({ message: 'Not found' }, 404);
+    if (url.pathname.startsWith('/m/')) return (await members(req, env, url, reply, teamOk, () => readHelper(req, env))) || reply({ message: 'Not found' }, 404);
+
+    // Video helpers: sign in with an email code (public), and the team's list of helpers
+    if (url.pathname === '/h/code' || url.pathname === '/h/verify' || url.pathname === '/helpers') {
+      return (await helpers(req, env, url, reply, teamOk)) || reply({ message: 'Not found' }, 404);
+    }
 
     const github = (path, init = {}) => fetch(`https://api.github.com/repos/${env.REPO}${path}`, {
       ...init,
@@ -116,8 +122,14 @@ export default {
     if (signPath && req.method === 'GET') { const r = await readRequest(env, signPath[1]); return r ? reply(r) : reply({ message: 'This link is not valid.' }, 404); }
     if (signPath && req.method === 'POST') { const r = await signRequest(env, signPath[1], await req.json().catch(() => ({})), req); return reply(r.body, r.status); }
 
-    // Everything else needs a valid session
-    if (!(await teamOk())) return reply({ message: 'Please sign in again' }, 401);
+    // Everything else needs a valid session: the team, or a video helper for the video tools only
+    let who = 'team';
+    if (!(await teamOk())) {
+      const helper = await readHelper(req, env);
+      if (!helper) return reply({ message: 'Please sign in again' }, 401);
+      if (!helperMay(req.method, url.pathname)) return reply({ message: 'Video helpers can only sort the videos.' }, 403);
+      who = helper.name || helper.email;
+    }
 
     // Weezevent: this season's participants (team only), and adding one to the members area
     if (url.pathname === '/weezevent/participants' && req.method === 'GET') {
@@ -152,7 +164,7 @@ export default {
 
     // Recordings uploaded to Bunny Stream (team inbox)
     if (url.pathname.startsWith('/bunny/')) {
-      try { return (await inbox(req, env, url, reply)) || reply({ message: 'Not found' }, 404); } catch (e) { return reply({ message: e.message }, 502); }
+      try { return (await inbox(req, env, url, reply, who)) || reply({ message: 'Not found' }, 404); } catch (e) { return reply({ message: e.message }, 502); }
     }
 
     if (url.pathname === '/file' && req.method === 'GET') {

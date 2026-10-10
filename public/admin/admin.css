@@ -473,3 +473,29 @@ button.pv-code.on { background: var(--ink); color: var(--gold); border-color: va
 /* A blocked member: still on the list, greyed */
 .pv-person.blocked > input, .pv-person.blocked > select, .pv-person.blocked .pv-avatar { opacity: 0.5; }
 .pv-person-meta .btn-small { margin: 0 0 0 auto; }
+
+/* Video helpers list */
+.pv-helper { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) auto auto; gap: 10px; align-items: center; padding: 8px 6px; border-bottom: 1px solid var(--line); }
+@media (max-width: 640px) { .pv-helper { grid-template-columns: minmax(0, 1fr) auto; } .pv-helper > .muted { grid-column: 1 / -1; } }
+
+/* Inbox: sort one by one */
+.pv-sort { display: grid; gap: 12px; }
+.pv-sort-head { display: grid; gap: 6px; }
+.pv-progress { height: 8px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.pv-progress span { display: block; height: 100%; background: var(--gold, #e8c95f); }
+.pv-sort-main { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.pv-sort-player { aspect-ratio: 16 / 9; background: #14110d; border-radius: 12px; overflow: hidden; display: grid; place-items: center; position: sticky; top: 72px; }
+.pv-sort-player iframe { width: 100%; height: 100%; border: 0; }
+.pv-sort-player .muted { color: #c2b7a2; }
+.pv-sort-side { display: grid; gap: 12px; min-width: 0; }
+.pv-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.pv-chip { border: 1.5px solid var(--line); background: #fff; border-radius: 999px; padding: 5px 12px; cursor: pointer; font-weight: 600; font-size: 0.9rem; }
+.pv-chip:hover { border-color: var(--ink); }
+.pv-chip.on { background: var(--ink); color: var(--gold); border-color: var(--ink); }
+.pv-chip.sugg { border-color: var(--gold, #e8c95f); background: #fbf1d4; }
+.pv-chip.sugg.on { background: var(--ink); color: var(--gold); }
+.pv-sort-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pv-sort-actions .btn-small { margin: 0; }
+.pv-sort-done { padding: 20px; border: 1px solid var(--line); border-radius: 12px; background: #fff; display: grid; gap: 10px; justify-items: start; }
+@media (max-width: 900px) { .pv-sort-main { grid-template-columns: minmax(0, 1fr); } .pv-sort-player { position: static; } }
+.pv-sort-actions select { width: auto; flex: 0 1 auto; max-width: 100%; }

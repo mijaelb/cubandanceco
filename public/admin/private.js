@@ -336,6 +336,40 @@ export function videosView(ctx) {
   return wrap;
 }
 
+// ---------- Video helpers: who may sort the recordings (saved at once in the members service) ----------
+export function helpersView(ctx) {
+  const { h, icon, iconBtn } = ctx;
+  const wrap = h('div', { class: 'pv' }, h('p', { class: 'muted' }, 'Loading…'));
+  let list = [];
+  const note = h('p', { class: 'pv-flash', role: 'status' });
+  const save = async (next, okText) => {
+    try { list = (await ctx.api('/helpers', { method: 'PUT', body: JSON.stringify({ helpers: next }) })).helpers; note.textContent = okText; note.classList.remove('error'); draw(); }
+    catch (e) { note.textContent = '⚠ ' + e.message; note.classList.add('error'); }
+  };
+  function draw() {
+    const name = h('input', { placeholder: 'Name', 'aria-label': 'Name' });
+    const email = h('input', { type: 'email', placeholder: 'name@example.com', 'aria-label': 'Email' });
+    wrap.replaceChildren(
+      h('div', { class: 'pv-old' },
+        h('p', {}, h('b', {}, 'What helpers can do: '), 'watch the recordings, give them names, add them to class recordings or choreographies, keep them out, and flag them to delete (you delete them).'),
+        h('p', {}, h('b', {}, 'How they sign in: '), `open ${ctx.SITE}/admin/, choose "Video helpers (email code)" and enter their email. They stay signed in for 12 hours. Removing someone here locks them out at once.`)),
+      h('form', { class: 'pv-add', onsubmit: (e) => {
+        e.preventDefault();
+        const mail = email.value.trim().toLowerCase();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(mail)) { note.textContent = '⚠ Check the email address.'; note.classList.add('error'); return; }
+        if (list.some((p) => p.email === mail)) { note.textContent = `⚠ ${mail} is already a helper.`; note.classList.add('error'); return; }
+        save([...list, { name: name.value.trim(), email: mail }], `${name.value.trim() || mail} can now sign in to sort the videos ✓`);
+      } }, name, email, h('button', { type: 'submit', class: 'btn-small' }, icon('plus'), 'Add helper')),
+      note,
+      h('div', { class: 'pv-people' }, list.length ? list.map((p) => h('div', { class: 'pv-helper' },
+        h('b', {}, p.name || p.email), h('span', { class: 'muted' }, p.email), h('small', { class: 'muted' }, `since ${p.added || ''}`),
+        iconBtn('trash', `Remove ${p.name || p.email}`, () => { if (confirm(`Remove ${p.name || p.email}? They can no longer sign in to sort the videos.`)) save(list.filter((x) => x !== p), `${p.name || p.email} removed ✓`); }, { class: 'danger' })))
+        : h('p', { class: 'muted' }, 'No helpers yet.')));
+  }
+  ctx.api('/helpers').then((d) => { list = d.helpers || []; draw(); }).catch((e) => wrap.replaceChildren(h('p', { class: 'error' }, e.message)));
+  return wrap;
+}
+
 // ---------- Inbox: the recordings uploaded from the ICCD drive ----------
 const KIND = { todo: 'To sort', members: 'In the members area', kept: 'Kept out', flagged: 'Flagged to delete', all: 'All' };
 const REASONS = ['Bad sound', 'Bad picture', 'Duplicate', 'Not useful', 'Too short'];
@@ -411,11 +445,11 @@ export function inboxView(ctx) {
             : !used.length && h('button', { type: 'button', class: 'btn-small', title: 'Keep the video in the archive, not for members', onclick: () => act(async () => { await ctx.api('/bunny/keep', { method: 'POST', body: JSON.stringify({ guid: v.guid, kept: true }) }); v.kept = true; }, 'Kept out ✓') }, 'Keep out'),
           v.flag ? [
             h('button', { type: 'button', class: 'btn-small', onclick: () => act(() => setFlag(v, false), 'Unflagged') }, 'Unflag'),
-            h('button', { type: 'button', class: 'btn-small pv-danger', onclick: () => { if (confirm(`Delete "${v.title}" from Bunny Stream? This cannot be undone. (The original stays on the ICCD drive.)`)) act(() => remove(v), 'Deleted'); } }, icon('trash'), 'Delete now'),
+            ctx.role !== 'helper' && h('button', { type: 'button', class: 'btn-small pv-danger', onclick: () => { if (confirm(`Delete "${v.title}" from Bunny Stream? This cannot be undone. (The original stays on the ICCD drive.)`)) act(() => remove(v), 'Deleted'); } }, icon('trash'), 'Delete now'),
           ] : h('select', { class: 'pv-flag', 'aria-label': 'Flag to delete', onchange: (e) => { const r = e.target.value; if (r !== '-') act(() => setFlag(v, true, r), 'Flagged to delete'); } },
             h('option', { value: '-' }, 'Flag to delete…'), h('option', { value: '' }, 'Flag (no reason)'), REASONS.map((r) => h('option', { value: r }, r))),
           note),
-        v.flag && h('p', { class: 'pv-flagged' }, icon('trash'), ` Flagged to delete${v.flag.reason ? ' · ' + v.flag.reason : ''}${v.flag.at ? ' · ' + new Date(v.flag.at).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '') : ''}`, used.length ? ' · also in the members area, deleting removes it there' : '')));
+        v.flag && h('p', { class: 'pv-flagged' }, icon('trash'), ` Flagged to delete${v.flag.reason ? ' · ' + v.flag.reason : ''}${v.flag.by && v.flag.by !== 'team' ? ' · by ' + v.flag.by : ''}${v.flag.at ? ' · ' + new Date(v.flag.at).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '') : ''}`, used.length ? ' · also in the members area, deleting removes it there' : '')));
   }
 
   // flags are saved at once in the members service, so the whole team sees them
@@ -442,6 +476,140 @@ export function inboxView(ctx) {
     draw();
   }
 
+
+  // ---------- Sort one by one: watch, tap the dance and teacher, one button, the next one opens ----------
+  let mode = 'one', cur = null, last = null, academy = false;
+  const pick = { dance: '', teachers: [], part: '' };
+  const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const partName = (v) => pick.part.trim() || (v.recorded ? `${DAYS[new Date(v.recorded.slice(0, 10) + 'T12:00:00').getDay()]} ${v.recorded.slice(11, 16)}` : '');
+  // the class on the timetable at the time of the recording (when the weekend's timetable is known)
+  const fromTimetable = (v) => {
+    if (!v.recorded) return [];
+    const day = `${v.recorded.slice(8, 10)}/${v.recorded.slice(5, 7)}`, t = v.recorded.slice(11, 16);
+    const mins = (s) => { const [hh, mm] = s.split(':').map(Number); return hh * 60 + mm; };
+    const out = [];
+    for (const e of ctx.trainings.events || []) for (const d of e.schedule || []) {
+      if (d.date !== day || !e.start.startsWith(v.recorded.slice(0, 4))) continue;
+      for (const s of d.slots) {
+        const [a, b] = s.time.split(/\s*[–-]\s*/);
+        if (s.isBreak || !a || !b || mins(t) < mins(a) - 10 || mins(t) > mins(b)) continue;
+        for (const c of s.classes || []) out.push({ dance: (c.title || '').replace(/^Ensayo\s+/i, '').trim(), teachers: (c.teacher || '').split(/\s*&\s*/).filter(Boolean), rehearsal: /^Ensayo\s/i.test(c.title || '') });
+      }
+    }
+    return out;
+  };
+  // saves the library; if someone else saved in the meantime, loads theirs and adds again
+  async function commit(apply) {
+    apply(cache.items);
+    try { await saveItems(ctx); }
+    catch (e) {
+      if (!/changed the videos in the meantime/.test(e.message)) throw e;
+      await load(ctx, true); apply(cache.items); await saveItems(ctx);
+    }
+  }
+  const named = (v) => [pick.dance, pick.teachers.join(' & ')].filter(Boolean).join(' · ');
+  async function renameInArchive(v) {
+    const name = named(v);
+    if (!name || v.title.startsWith(name)) return;
+    try { const r = await ctx.api('/bunny/rename', { method: 'POST', body: JSON.stringify({ guid: v.guid, title: `${name} · ${v.title}` }) }); v.title = r.title; } catch { /* the name in the archive is a nicety */ }
+  }
+  // each recording starts clean ("Same as the last one" brings the last choice back in one tap)
+  const advance = () => { last = { dance: pick.dance, teachers: [...pick.teachers] }; pick.dance = ''; pick.teachers = []; pick.part = ''; cur = null; draw(); };
+  const sortAct = async (fn, okText) => {
+    try { await fn(); flash.textContent = okText; flash.classList.remove('error'); advance(); }
+    catch (e) { flash.textContent = '⚠ ' + e.message; flash.classList.add('error'); }
+  };
+  function sorter() {
+    const queue = videos.filter((v) => kindOf(v) === 'todo' && v.status === 4 && (!training || v.training === training))
+      .sort((a, b) => b.training.localeCompare(a.training) || (a.recorded || '').localeCompare(b.recorded || ''));
+    if (!queue.length) {
+      const next = [...new Set(videos.filter((v) => kindOf(v) === 'todo' && v.status === 4).map((v) => v.training))].sort().reverse()[0];
+      return h('div', { class: 'pv-sort-done' }, h('p', {}, h('b', {}, training ? `${training}: everything is sorted.` : 'Everything is sorted.')),
+        next && h('button', { type: 'button', class: 'btn-small pv-send', onclick: () => { training = next; draw(); } }, `Next weekend: ${next}`));
+    }
+    const v = queue.find((x) => x.guid === cur) || queue[0];
+    cur = v.guid;
+    const folder = videos.filter((x) => x.training === v.training);
+    const done = folder.filter((x) => kindOf(x) !== 'todo').length;
+    const w = weekendOf(v.training, v.recorded);
+    const sugg = fromTimetable(v);
+    if (!pick.dance && sugg.length === 1) { pick.dance = sugg[0].dance; pick.teachers = [...sugg[0].teachers]; }
+    const player = h('div', { class: 'pv-sort-player' }, h('p', { class: 'muted' }, 'Loading the video…'));
+    ctx.api(`/bunny/play?guid=${v.guid}`).then(({ url }) => player.replaceChildren(h('iframe', { src: `${url}&autoplay=false&preload=true`, allow: 'autoplay; fullscreen; picture-in-picture', allowfullscreen: true, title: v.title })))
+      .catch((e) => player.replaceChildren(h('p', { class: 'error' }, e.message)));
+    const chips = (list, isOn, toggle) => h('div', { class: 'pv-chips' }, list.map((x) => h('button', { type: 'button', class: `pv-chip${isOn(x) ? ' on' : ''}`, onclick: () => { toggle(x); drawSide(); } }, x)));
+    // the side panel is redrawn on each tap; the player stays (the video keeps playing)
+    const side = h('div', { class: 'pv-sort-side' });
+    const drawSide = () => {
+    const dances = [...new Set([...(pick.dance ? [pick.dance] : []), ...ctx.lists.titles])];
+    const teachers = [...new Set([...pick.teachers, ...ctx.lists.teachers])];
+    const name = named(v);
+    const choreos = cache.items.filter((it) => it.type === 'choreography').sort((a, b) => a.title.localeCompare(b.title));
+    const toChoreo = h('select', { 'aria-label': 'Add to a choreography', onchange: (e) => {
+      const val = e.target.value; e.target.value = '';
+      if (!val) return;
+      sortAct(async () => {
+        await commit((items) => {
+          let it = val === 'new' ? null : items.find((x) => x.id === val);
+          if (!it) { it = { id: crypto.randomUUID().slice(0, 8), type: 'choreography', title: pick.dance || v.title, dance: pick.dance, teacher: pick.teachers.join(' & '), training: w.label, date: '', academy, notes: '', added: new Date().toISOString().slice(0, 10), videos: [] }; items.push(it); }
+          if (!it.videos.some((x) => x.id === v.guid)) it.videos.push({ id: v.guid, title: pick.part.trim(), src: 'bunny' });
+        });
+        await renameInArchive(v);
+      }, `Added to the choreography: ${v.title} ✓`);
+    } }, h('option', { value: '' }, 'Choreography…'), h('option', { value: 'new' }, `+ New choreography${pick.dance ? `: ${pick.dance}` : ''}`), choreos.map((c) => h('option', { value: c.id }, c.title || '(no title)')));
+    const asClass = () => {
+      if (!pick.dance) { flash.textContent = '⚠ Choose the dance first (or type it).'; flash.classList.add('error'); return; }
+      sortAct(async () => {
+        const teacher = pick.teachers.join(' & ');
+        await commit((items) => {
+          // the parts of one class at one weekend stay together in one item
+          let it = items.find((x) => x.type === 'class' && x.training === w.label && x.dance === pick.dance && x.teacher === teacher);
+          if (!it) { it = { id: crypto.randomUUID().slice(0, 8), type: 'class', title: pick.dance, dance: pick.dance, teacher, training: w.label, date: (v.recorded || w.date || '').slice(0, 10), academy, notes: '', added: new Date().toISOString().slice(0, 10), videos: [] }; items.push(it); }
+          if (!it.videos.some((x) => x.id === v.guid)) it.videos.push({ id: v.guid, title: partName(v), src: 'bunny' });
+          it.videos.sort((a, b) => a.title.localeCompare(b.title));
+        });
+        await renameInArchive(v);
+      }, `Class recording: ${name} (${w.label}) ✓`);
+    };
+    const keepOut = () => sortAct(async () => { await ctx.api('/bunny/keep', { method: 'POST', body: JSON.stringify({ guid: v.guid, kept: true }) }); v.kept = true; }, `Kept out: ${v.title} ✓`);
+    const flagIt = (reason) => sortAct(async () => { await setFlag(v, true, reason); }, `Flagged to delete: ${v.title} ✓`);
+    const skip = () => { const i = queue.indexOf(v); cur = (queue[i + 1] || queue[0]).guid; pick.dance = ''; pick.teachers = []; pick.part = ''; draw(); };
+    sorter.keys = (e) => {
+      if (mode !== 'one' || view !== 'todo' || /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName) || e.ctrlKey || e.metaKey || e.altKey) return;
+      const k = e.key.toLowerCase();
+      if (k === 'enter') { e.preventDefault(); asClass(); } else if (k === 'k') keepOut(); else if (k === 'arrowright' || k === 's') skip();
+    };
+    side.replaceChildren(...[
+          h('p', { class: 'pv-rec-meta' }, h('b', {}, v.title), h('br'), [when(v.recorded), fmt(v.length || 0), w.label].filter(Boolean).join(' · ')),
+          sugg.length > 0 && h('div', { class: 'pv-field' }, h('span', { class: 'pv-label' }, 'On the timetable at that time'),
+            h('div', { class: 'pv-chips' }, sugg.map((s) => h('button', { type: 'button', class: `pv-chip sugg${pick.dance === s.dance && pick.teachers.join() === s.teachers.join() ? ' on' : ''}`, onclick: () => { pick.dance = s.dance; pick.teachers = [...s.teachers]; drawSide(); } }, `${s.dance}${s.teachers.length ? ' · ' + s.teachers.join(' & ') : ''}${s.rehearsal ? ' (rehearsal)' : ''}`)))),
+          last && (last.dance !== pick.dance || last.teachers.join() !== pick.teachers.join()) && h('button', { type: 'button', class: 'btn-small', onclick: () => { pick.dance = last.dance; pick.teachers = [...last.teachers]; drawSide(); } }, `Same as the last one: ${[last.dance, last.teachers.join(' & ')].filter(Boolean).join(' · ')}`),
+          h('div', { class: 'pv-field' }, h('span', { class: 'pv-label' }, 'Dance or class'),
+            chips(dances, (x) => pick.dance === x, (x) => { pick.dance = pick.dance === x ? '' : x; }),
+            h('input', { placeholder: 'Or type it', value: dances.includes(pick.dance) ? '' : pick.dance, 'aria-label': 'Dance or class', onchange: (e) => { pick.dance = e.target.value.trim(); drawSide(); } })),
+          h('div', { class: 'pv-field' }, h('span', { class: 'pv-label' }, 'Teacher ', h('small', { class: 'muted' }, '(tap one or more)')),
+            chips(teachers, (x) => pick.teachers.includes(x), (x) => { pick.teachers = pick.teachers.includes(x) ? pick.teachers.filter((y) => y !== x) : [...pick.teachers, x]; })),
+          h('div', { class: 'pv-field' }, h('span', { class: 'pv-label' }, 'Part ', h('small', { class: 'muted' }, '(optional, e.g. "Warm-up" or "Part 2")')),
+            h('input', { value: pick.part, placeholder: partName(v) || 'Part 1', 'aria-label': 'Part', oninput: (e) => { pick.part = e.target.value; } })),
+          h('label', { class: 'pv-check' }, h('input', { type: 'checkbox', checked: academy, onchange: (e) => { academy = e.target.checked; } }), ' Also for Academy dancers'),
+          h('div', { class: 'pv-sort-actions' },
+            h('button', { type: 'button', class: 'btn-small pv-send', onclick: asClass, title: 'Enter' }, icon('plus'), name ? `Class recording: ${name}` : 'Class recording'),
+            toChoreo,
+            h('button', { type: 'button', class: 'btn-small', onclick: keepOut, title: 'K' }, 'Keep out'),
+            h('select', { class: 'pv-flag', 'aria-label': 'Flag to delete', onchange: (e) => { const r = e.target.value; e.target.value = '-'; if (r !== '-') flagIt(r); } },
+              h('option', { value: '-' }, 'Flag to delete…'), h('option', { value: '' }, 'Flag (no reason)'), REASONS.map((r) => h('option', { value: r }, r))),
+            h('button', { type: 'button', class: 'btn-small', onclick: skip, title: 'S or →' }, 'Skip →')),
+          h('small', { class: 'muted' }, 'Keys: Enter = class recording · K = keep out · S or → = skip. Parts of the same class at the same weekend are put together automatically.')].filter((x) => x != null && x !== false));
+    };
+    drawSide();
+    return h('div', { class: 'pv-sort' },
+      h('div', { class: 'pv-sort-head' },
+        h('div', {}, h('b', {}, v.training), h('small', { class: 'muted' }, ` · ${done} of ${folder.length} sorted · ${queue.length} to go${training ? '' : ' in all weekends'}`)),
+        h('div', { class: 'pv-progress' }, Object.assign(h('span', {}), { style: `width:${Math.round((done / folder.length) * 100)}%` }))),
+      h('div', { class: 'pv-sort-main' }, player, side));
+  }
+  addEventListener('keydown', (e) => { if (wrap.isConnected) sorter.keys?.(e); });
+
   const listBox = h('div', {});
   function drawList() {
     const shown = videos.filter((v) => (view === 'all' || kindOf(v) === view) && (!training || v.training === training) && (!q || `${v.title} ${v.training}`.toLowerCase().includes(q)));
@@ -454,18 +622,21 @@ export function inboxView(ctx) {
   function draw() {
     const counts = Object.fromEntries(Object.keys(KIND).map((k) => [k, videos.filter((v) => k === 'all' || kindOf(v) === k).length]));
     const folders = [...new Set(videos.map((v) => v.training))].sort().reverse();
-    drawList();
-    wrap.replaceChildren(
-      h('p', { class: 'muted' }, 'Watch each recording, give it a clear name, then add it to the members area, keep it out, or flag it to delete. Flags are saved at once and seen by the whole team. The originals always stay on the ICCD drive.'),
-      flash,
+    const one = mode === 'one' && view === 'todo';
+    if (!one) drawList();
+    // what is on screen, in order: what to look at (tabs), which weekend, how (one by one or a list), then the work
+    wrap.replaceChildren(...[
+      h('p', { class: 'muted' }, 'Watch each recording, then add it to the members area, keep it out, or flag it to delete. Flags are saved at once and seen by the whole team. The originals always stay on the ICCD drive.'),
       h('div', { class: 'pv-tabs' }, Object.entries(KIND).map(([k, label]) => h('button', { type: 'button', class: view === k ? 'active' : '', onclick: () => { view = k; draw(); } }, label, h('small', {}, counts[k])))),
       h('div', { class: 'pv-tools' },
-        h('select', { 'aria-label': 'Training weekend', onchange: (e) => { training = e.target.value; drawList(); } }, h('option', { value: '' }, 'All training weekends'), folders.map((f) => h('option', { value: f, selected: f === training }, f))),
-        h('input', { type: 'search', class: 'pv-search', placeholder: 'Search', value: q, oninput: (e) => { q = e.target.value.toLowerCase(); drawList(); } }),
+        h('select', { 'aria-label': 'Training weekend', onchange: (e) => { training = e.target.value; cur = null; draw(); } }, h('option', { value: '' }, 'All training weekends'), folders.map((f) => h('option', { value: f, selected: f === training }, f))),
+        !one && h('input', { type: 'search', class: 'pv-search', placeholder: 'Search', value: q, oninput: (e) => { q = e.target.value.toLowerCase(); drawList(); } }),
+        view === 'todo' && h('div', { class: 'pv-views' }, [['one', 'Sort one by one'], ['list', 'List']].map(([k, t]) => h('button', { type: 'button', class: mode === k ? 'active' : '', onclick: () => { mode = k; draw(); } }, t))),
         h('button', { type: 'button', class: 'btn-small', onclick: refresh }, 'Refresh'),
-        view === 'flagged' && counts.flagged > 0 && h('button', { type: 'button', class: 'btn-small pv-danger', onclick: removeAllFlagged }, icon('trash'), `Delete all ${counts.flagged} flagged`)),
-      view === 'flagged' && h('p', { class: 'muted' }, 'Recordings the team flagged. Check them once more: unflag what should stay, delete the rest.'),
-      listBox);
+        view === 'flagged' && counts.flagged > 0 && ctx.role !== 'helper' && h('button', { type: 'button', class: 'btn-small pv-danger', onclick: removeAllFlagged }, icon('trash'), `Delete all ${counts.flagged} flagged`)),
+      view === 'flagged' && h('p', { class: 'muted' }, ctx.role === 'helper' ? 'Recordings flagged to delete. The team checks them and deletes them.' : 'Recordings the team flagged. Check them once more: unflag what should stay, delete the rest.'),
+      flash,
+      one ? sorter() : listBox].filter((x) => x != null && x !== false));
   }
   refresh();
   return wrap;

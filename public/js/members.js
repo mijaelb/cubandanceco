@@ -86,7 +86,7 @@ function codeStep(error, note) {
 
 // ---------- Library ----------
 let data = null;
-const view = { q: '', teacher: '' };
+const view = { q: '', teacher: '', dance: '', training: '' };
 
 async function open() {
   const token = saved.get(KEY);
@@ -150,16 +150,18 @@ const thumb = (v) => v.thumb || `https://i.ytimg.com/vi/${v.id}/hqdefault.jpg`;
 const match = (it) => {
   const q = view.q.toLowerCase();
   return (!view.teacher || it.teacher.split(/\s*&\s*/).includes(view.teacher)) &&
+    (!view.dance || it.dance === view.dance) && (!view.training || it.training === view.training) &&
     (!q || [it.title, it.dance, it.teacher, it.training, ...it.videos.map((v) => v.title)].join(' ').toLowerCase().includes(q));
 };
 const count = (n) => `${n} ${n === 1 ? W.video : W.videos}`;
+const isNew = (it) => !!it.added && Date.now() - new Date(it.added + 'T12:00:00').getTime() < 21 * 864e5;
 
 function card(it) {
   const first = it.videos[0];
   return h('a', { class: 'm-item', href: `#v-${it.id}` },
     h('div', { class: 'm-thumb' }, first?.thumb || first?.id ? h('img', { src: thumb(first), alt: '', loading: 'lazy', width: 480, height: 360 }) : null,
       it.locked && h('span', { class: 'm-lock', title: W['Class recordings are for subscribers'] }, lockIcon()),
-      it.free && data.classes && !data.classes.open && h('span', { class: 'm-free' }, W.Free), h('span', { class: 'm-count' }, count(it.videos.length))),
+      it.free && data.classes && !data.classes.open && h('span', { class: 'm-free' }, W.Free), isNew(it) && h('span', { class: 'm-new' }, W.New), h('span', { class: 'm-count' }, count(it.videos.length))),
     h('div', { class: 'm-body' },
       h('b', {}, it.title),
       h('span', {}, [it.dance !== it.title && it.dance, it.teacher].filter(Boolean).join(' · ')),
@@ -172,6 +174,14 @@ function listView(tab) {
   const search = h('input', { type: 'search', placeholder: W.Search, value: view.q, 'aria-label': W.Search, oninput: (e) => { view.q = e.target.value; redraw(); } });
   const who = h('select', { 'aria-label': W['All teachers'], onchange: (e) => { view.teacher = e.target.value; redraw(); } },
     h('option', { value: '' }, W['All teachers']), teachers.map((n) => h('option', { value: n, selected: n === view.teacher || null }, n)));
+  const dances = [...new Set(items.map((it) => it.dance).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  const byDance = h('select', { 'aria-label': W['All dances'], onchange: (e) => { view.dance = e.target.value; redraw(); } },
+    h('option', { value: '' }, W['All dances']), dances.map((n) => h('option', { value: n, selected: n === view.dance || null }, n)));
+  const weekends = [...new Map(items.filter((it) => it.training).sort((a, b) => (b.date || '').localeCompare(a.date || '')).map((it) => [it.training, it])).keys()];
+  const byWeekend = h('select', { 'aria-label': W['All training weekends'], onchange: (e) => { view.training = e.target.value; redraw(); } },
+    h('option', { value: '' }, W['All training weekends']), weekends.map((n) => h('option', { value: n, selected: n === view.training || null }, n)));
+  if (view.dance && !dances.includes(view.dance)) view.dance = '';
+  if (view.training && !weekends.includes(view.training)) view.training = '';
   const results = h('div', {});
   const redraw = () => {
     const list = items.filter(match);
@@ -185,7 +195,8 @@ function listView(tab) {
     results.replaceChildren(...[...groups].map(([g, list]) => h('section', { class: 'm-group' }, h('h3', { class: 'display' }, g), h('div', { class: 'm-grid' }, list.map(card)))));
   };
   redraw();
-  return [tab === 'class' && data.classes && !data.classes.open ? paywall() : null, h('div', { class: 'm-tools' }, search, teachers.length > 1 && who), results];
+  return [tab === 'class' && data.classes && !data.classes.open ? paywall() : null,
+    h('div', { class: 'm-tools' }, search, dances.length > 1 && byDance, teachers.length > 1 && who, tab === 'class' && weekends.length > 1 && byWeekend), results];
 }
 
 function detailView(it) {

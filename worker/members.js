@@ -31,6 +31,7 @@ async function same(a, b) {
   return crypto.subtle.timingSafeEqual(x, y);
 }
 const getJSON = async (kv, key, fallback) => JSON.parse((await kv.get(key)) || 'null') ?? fallback;
+export { hmac, same, limited, sha, b64url, unb64url, getJSON }; // also used by helpers.js
 
 // Counts requests per key in a time window (KV is eventually consistent: good enough to slow down abuse)
 async function limited(kv, key, max, seconds) {
@@ -139,6 +140,7 @@ function cleanLibrary(items) {
     title: text(it.title, 120), dance: text(it.dance, 80), teacher: text(it.teacher, 120),
     training: text(it.training, 80), date: /^\d{4}-\d{2}-\d{2}$/.test(it.date) ? it.date : '',
     academy: !!it.academy, notes: text(it.notes, 2000), ...(it.type === 'class' && it.free ? { free: true } : {}),
+    ...(/^\d{4}-\d{2}-\d{2}$/.test(it.added) ? { added: it.added } : {}),
     // YouTube ids, or Bunny Stream videos (src: 'bunny', id = the video's guid)
     videos: (Array.isArray(it.videos) ? it.videos : []).slice(0, 50)
       .filter((v) => (v.src === 'bunny' ? GUID.test(v.id) : YT.test(v.id)))
@@ -146,7 +148,7 @@ function cleanLibrary(items) {
   }));
 }
 
-export async function members(req, env, url, reply, teamOk) {
+export async function members(req, env, url, reply, teamOk, helperOk) {
   const kv = env.PRIVATE;
   const ip = req.headers.get('CF-Connecting-IP') || 'unknown';
   const body = req.method === 'GET' ? {} : await req.json().catch(() => ({}));
@@ -219,7 +221,13 @@ export async function members(req, env, url, reply, teamOk) {
 
   // 4. Team: read and save the member list and the library
   if (url.pathname === '/m/admin') {
-    if (!(await teamOk())) return reply({ message: 'Please sign in again' }, 401);
+    const team = await teamOk(), helper = team ? null : await helperOk?.();
+    if (!team && !helper) return reply({ message: 'Please sign in again' }, 401);
+    if (req.method === 'GET' && helper) { // video helpers: the library, no members
+      const lib = await getJSON(kv, 'library', { items: [], rev: 0 });
+      return reply({ members: [], items: lib.items || [], rev: lib.rev || 0, membersRev: 0, cdn: env.BUNNY_CDN || '', subs: {}, role: 'helper' });
+    }
+    if (req.method === 'PUT' && helper && body.members) return reply({ message: 'Video helpers can change the videos only.' }, 403);
     if (req.method === 'GET') {
       const lib = await getJSON(kv, 'library', { items: [], rev: 0 });
       return reply({ members: await getJSON(kv, 'members', []), items: lib.items || [], rev: lib.rev || 0, membersRev: Number(await kv.get('members-rev')) || 0, cdn: env.BUNNY_CDN || '', subs: await allSubs(kv) });

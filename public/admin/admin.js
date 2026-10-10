@@ -53,6 +53,7 @@ const SECTIONS = [
   { id: 'access', group: 'Members area', title: 'Members', help: 'Company and academy members: who can sign in to the videos, their photo on the website and how often they came lately.' },
   { id: 'videos', group: 'Members area', title: 'Videos', help: 'Choreographies and class recordings for company and academy dancers.' },
   { id: 'inbox', group: 'Members area', title: 'Inbox', help: 'Recordings uploaded from the ICCD drive, waiting to be sorted.' },
+  { id: 'helpers', group: 'Members area', title: 'Video helpers', help: 'People who help sort the videos. They sign in with a code sent to their email and see only the Inbox and Videos: no members, emails or participants, and they cannot delete recordings.' },
   { id: 'participants', title: 'Participants', help: 'Who booked which training this season, from Weezevent. Add people to the members area or email a training.' },
   { id: 'mailing', title: 'Mailing list', help: 'Newsletter subscribers from the website, and emails to the newsletter or the members-area dancers.' },
   {
@@ -136,12 +137,14 @@ const store = (remember) => (remember ? localStorage : sessionStorage);
 // Team mode: organisers sign in with a shared team password through a small gateway
 // (worker/index.js) that holds the GitHub key. They can only edit trainings and timetables.
 const TEAM_API = document.body.dataset.teamApi || '';
-const TEAM_SECTIONS = ['trainings', 'timetable', 'inbox', 'videos', 'access', 'participants', 'mailing'];
+const TEAM_SECTIONS = ['trainings', 'timetable', 'inbox', 'videos', 'access', 'helpers', 'participants', 'mailing'];
+const HELPER_SECTIONS = ['inbox', 'videos']; // video helpers: sorting the recordings only
 // The members area (private.js) is saved in the members service, not on GitHub
-const PRIVATE = ['inbox', 'access', 'videos', 'participants', 'mailing'];
+const PRIVATE = ['inbox', 'access', 'videos', 'helpers', 'participants', 'mailing'];
 let priv = null; // the private.js module, loaded on start
 const state = {
   team: sessionStorage.getItem('iccd-team') || '',
+  role: sessionStorage.getItem('iccd-role') || 'team', // 'helper' for video helpers
   priv: sessionStorage.getItem('iccd-priv') || '', // owner session for the members area
   token: sessionStorage.getItem('iccd-token') || localStorage.getItem('iccd-token') || '',
   repo: localStorage.getItem('iccd-repo') || document.body.dataset.repo || '',
@@ -186,7 +189,7 @@ async function team(path, opts = {}) {
   if (!r.ok) throw new Error(d.message || `${r.status}`);
   return d;
 }
-const visibleSections = () => (state.team ? SECTIONS.filter((s) => TEAM_SECTIONS.includes(s.id)) : SECTIONS);
+const visibleSections = () => (state.team ? SECTIONS.filter((s) => (state.role === 'helper' ? HELPER_SECTIONS : TEAM_SECTIONS).includes(s.id)) : SECTIONS);
 const post = (p, body, method = 'POST') => gh(repo(p), { method, body: JSON.stringify(body) });
 
 async function loadFile(path, fallback) {
@@ -658,13 +661,13 @@ function render() {
   const subtabs = sec.group && h('div', { class: 'subtabs', role: 'tablist' }, visibleSections().filter((x) => x.group === sec.group).map((x) =>
     h('button', { type: 'button', role: 'tab', 'aria-selected': String(x.id === sec.id), class: x.id === sec.id ? 'active' : '', onclick: () => go(x.id) }, x.title)));
   const body = sec.id === 'translations' ? translationsView() : sec.id === 'timetable' ? timetableView()
-    : PRIVATE.includes(sec.id) ? { inbox: priv.inboxView, access: priv.accessView, videos: priv.videosView, mailing: priv.mailingView, participants: priv.participantsView }[sec.id](privateCtx())
+    : PRIVATE.includes(sec.id) ? { inbox: priv.inboxView, access: priv.accessView, videos: priv.videosView, helpers: priv.helpersView, mailing: priv.mailingView, participants: priv.participantsView }[sec.id](privateCtx())
     : fieldsEditor(state.files[sec.file].data, sec.schema);
   if (location.hash.slice(1) !== state.section) history.replaceState(null, '', '#' + state.section);
   app.replaceChildren(
     h('header', { class: 'bar' },
-      h('a', { class: 'brand', href: SITE + '/', target: '_blank', rel: 'noopener' }, h('img', { src: SITE + '/images/logo.svg', alt: '' }), h('span', {}, state.team ? 'ICCD team editor' : 'ICCD admin')),
-      statusEl, publishBtn,
+      h('a', { class: 'brand', href: SITE + '/', target: '_blank', rel: 'noopener' }, h('img', { src: SITE + '/images/logo.svg', alt: '' }), h('span', {}, state.role === 'helper' ? 'ICCD video tools' : state.team ? 'ICCD team editor' : 'ICCD admin')),
+      statusEl, state.role !== 'helper' && publishBtn,
       h('button', { type: 'button', class: 'link', onclick: logout }, 'Sign out')),
     h('div', { class: 'layout' }, nav,
       h('main', {}, h('h1', {}, sec.group || sec.title), subtabs, sec.help && h('p', { class: 'muted' }, sec.help), body)),
@@ -678,6 +681,8 @@ function logout() {
   sessionStorage.removeItem('iccd-token');
   localStorage.removeItem('iccd-token');
   sessionStorage.removeItem('iccd-team');
+  sessionStorage.removeItem('iccd-role');
+  state.role = 'team';
   sessionStorage.removeItem('iccd-priv');
   state.priv = '';
   state.token = '';
@@ -694,8 +699,8 @@ function loginView(error) {
     const btn = e.target.querySelector('button'); btn.disabled = true; btn.textContent = 'Signing in…';
     try {
       const { token } = await team('/login', { method: 'POST', body: JSON.stringify({ password: pass.value }) });
-      state.team = token; state.token = '';
-      sessionStorage.setItem('iccd-team', token);
+      state.team = token; state.token = ''; state.role = 'team';
+      sessionStorage.setItem('iccd-team', token); sessionStorage.setItem('iccd-role', 'team');
       if (!TEAM_SECTIONS.includes(state.section)) state.section = 'timetable';
       await start();
     } catch (err) { loginView(err.message); }
@@ -735,11 +740,38 @@ function loginView(error) {
         h('li', {}, 'Set an expiration date (e.g. 90 days), generate, and paste the token here.'),
         h('li', {}, 'Only use "Remember me" on your own device. Never share the token.'))));
 
+  // video helpers: a code sent to their email (the team adds them under Members area → Video helpers)
+  const helperEmail = h('input', { type: 'email', id: 'helpermail', autocomplete: 'email', required: true, placeholder: 'name@example.com' });
+  const helperCode = h('input', { id: 'helpercode', inputmode: 'numeric', autocomplete: 'one-time-code', maxlength: 6, placeholder: '6-digit code' });
+  const helperNote = h('p', { class: 'muted' }, 'Helping to sort the videos? Sign in with your email: we send you a code.');
+  const helperForm = TEAM_API && h('form', { class: 'login-part', onsubmit: async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type=submit]'); btn.disabled = true;
+    try {
+      if (helperCode.hidden) {
+        await team('/h/code', { method: 'POST', body: JSON.stringify({ email: helperEmail.value }) });
+        helperCode.hidden = false; helperCode.required = true; helperCode.focus();
+        helperNote.textContent = `If ${helperEmail.value.trim()} is on the list of video helpers, a code is on its way. Check your inbox (and spam).`;
+        btn.textContent = 'Open the video tools'; btn.disabled = false;
+        return;
+      }
+      const r = await team('/h/verify', { method: 'POST', body: JSON.stringify({ email: helperEmail.value, code: helperCode.value }) });
+      state.team = r.token; state.token = ''; state.role = 'helper';
+      sessionStorage.setItem('iccd-team', r.token); sessionStorage.setItem('iccd-role', 'helper');
+      if (!HELPER_SECTIONS.includes(state.section)) state.section = 'inbox';
+      await start();
+    } catch (err) { helperNote.textContent = err.message; helperNote.classList.add('error'); btn.disabled = false; }
+  } },
+    h('label', { for: 'helpermail' }, 'Email'), helperEmail, helperCode,
+    h('button', { type: 'submit', class: 'publish ready' }, 'Send me a code'), helperNote);
+  helperCode.hidden = true;
+
   app.replaceChildren(h('div', { class: 'login' },
     h('img', { src: SITE + '/images/logo.svg', alt: '', width: 96, height: 96 }),
     h('h1', {}, 'ICCD admin'),
     error && h('p', { class: 'error' }, error),
     teamForm || ghForm,
+    helperForm && h('details', { class: 'owner' }, h('summary', {}, 'Video helpers (email code)'), helperForm),
     teamForm && h('details', { class: 'owner' }, h('summary', {}, 'Full admin (GitHub key)'), ghForm)));
 }
 
@@ -749,7 +781,7 @@ const range = (a, b = a) => { const [y, m, d] = a.split('-').map(Number), [, m2,
 function privateCtx() {
   const trainings = state.files['src/data/trainings.json'].data;
   return {
-    h, icon, iconBtn, SITE, range, trainings, lists: pickLists(trainings.events),
+    h, icon, iconBtn, SITE, range, trainings, lists: pickLists(trainings.events), role: state.role,
     go: (id) => { state.section = id; render(); scrollTo(0, 0); },
     people: state.files['src/data/people.json']?.data || {},
     api: async (path, opts = {}) => {
