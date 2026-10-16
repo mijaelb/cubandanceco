@@ -20,6 +20,15 @@ export async function paywallFor(env, email) {
   return ((await env.PRIVATE.get('stripe-testers', 'json')) || []).includes(email);
 }
 
+// Sanctions: no checkout from Cuba, Iran, North Korea, Syria or Crimea / Donetsk / Luhansk.
+// Cloudflare looks up the visitor's IP address (req.cf); an unknown location is let through.
+const BLOCKED_COUNTRIES = ['CU', 'IR', 'KP', 'SY'];
+const BLOCKED_UA_REGIONS = ['43', '40', '14', '09']; // Crimea, Sevastopol, Donetsk, Luhansk (ISO 3166-2:UA)
+export function restricted(req) {
+  const { country, regionCode } = req.cf || {};
+  return BLOCKED_COUNTRIES.includes(country) || (country === 'UA' && BLOCKED_UA_REGIONS.includes(regionCode));
+}
+
 const enc = new TextEncoder();
 const hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
 const form = (obj, prefix = '') => Object.entries(obj).flatMap(([k, v]) => {

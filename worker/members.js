@@ -6,7 +6,7 @@
 // Needs: KV binding PRIVATE, secret RESEND_API_KEY, var MAIL_FROM, secret SESSION_SECRET.
 
 import { GUID, playUrl, thumbUrl } from './bunny.js';
-import { subscribe, portal, getSub, canWatchClasses, priceInfo, allSubs, paywallFor } from './stripe.js';
+import { subscribe, portal, getSub, canWatchClasses, priceInfo, allSubs, paywallFor, restricted } from './stripe.js';
 
 const DAYS = 7; // how long a member stays signed in on a device
 const CODE_MINUTES = 10;
@@ -214,6 +214,7 @@ export async function members(req, env, url, reply, teamOk, helperOk) {
     const person = await readMember(req, env);
     if (!person) return reply({ message: 'Please sign in again.' }, 401);
     if (!env.STRIPE_SECRET_KEY) return reply({ message: 'Payments are not set up yet.' }, 503);
+    if (url.pathname === '/m/subscribe' && restricted(req)) return reply({ message: 'Subscriptions are not available in your region.' }, 403); // sanctions: before any Stripe call
     try {
       return reply({ url: url.pathname === '/m/subscribe' ? await subscribe(env, person, text(body.lang, 2)) : await portal(env, person, text(body.lang, 2)) });
     } catch (e) { return reply({ message: e.message }, 502); }
