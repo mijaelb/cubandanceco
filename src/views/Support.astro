@@ -16,6 +16,7 @@ const live = donateLive();
 const euro = (n: number) => new Intl.NumberFormat(locale(lang), { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 const monthly = (d.monthly || []).filter((m: any) => m.url && Number(m.amount));
 const API = 'https://iccd-team-editor.iccd-cubandance.workers.dev';
+const go = (u: string) => `${API}/donate/go?u=${encodeURIComponent(u)}`; // sanctions check first, then Stripe
 const c = d.campaign || {};
 const goal = Number(c.goal) || 0, extra = Number(c.extra) || 0;
 const today = new Date().toISOString().slice(0, 10);
@@ -51,7 +52,7 @@ const ways = [
             <h3 class="display">{t('Give monthly')}</h3>
             <div class="give-amounts">
               {monthly.map((m: any) => (
-                <a class="give-amount" href={m.url} rel="noopener"><strong>{euro(Number(m.amount))}</strong><span>{t('per month')}</span></a>
+                <a class="give-amount" href={go(m.url)} rel="noopener"><strong>{euro(Number(m.amount))}</strong><span>{t('per month')}</span></a>
               ))}
             </div>
             <p class="give-note">{t('To change or stop a monthly donation, write to us at')} <a href={`mailto:${site.links.email}`}>{site.links.email}</a>.</p>
@@ -61,7 +62,7 @@ const ways = [
           <div class="give-card paper reveal">
             <h3 class="display">{t('Give once')}</h3>
             <p>{t('Choose your own amount, from €5. Any gift helps.')}</p>
-            <a class="btn btn-dark" href={d.once} rel="noopener">{t('Choose an amount')}</a>
+            <a class="btn btn-dark" href={go(d.once)} rel="noopener">{t('Choose an amount')}</a>
           </div>
         )}
       </div>

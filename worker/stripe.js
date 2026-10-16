@@ -29,6 +29,21 @@ export function restricted(req) {
   return BLOCKED_COUNTRIES.includes(country) || (country === 'UA' && BLOCKED_UA_REGIONS.includes(regionCode));
 }
 
+// The donate buttons come here first: the same check, then on to the Stripe payment link.
+// Only Stripe payment links are followed, so this cannot be used to send people elsewhere.
+const PAYMENT_LINK = /^https:\/\/(donate|buy)\.stripe\.com\/[A-Za-z0-9_]+$/;
+export function donateRedirect(req, url) {
+  const to = url.searchParams.get('u') || '';
+  if (!PAYMENT_LINK.test(to)) return new Response('Not found', { status: 404 });
+  if (restricted(req)) {
+    const page = '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Not available</title>'
+      + '<body style="font-family:system-ui,sans-serif;max-width:32rem;margin:15vh auto;padding:0 1rem;line-height:1.5">'
+      + '<h1 style="font-size:1.4rem">Donations are not available in your region.</h1><p><a href="https://cubandance.co/">Back to cubandance.co</a></p>';
+    return new Response(page, { status: 403, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
+  }
+  return new Response(null, { status: 302, headers: { Location: to, 'Cache-Control': 'no-store' } });
+}
+
 const enc = new TextEncoder();
 const hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
 const form = (obj, prefix = '') => Object.entries(obj).flatMap(([k, v]) => {

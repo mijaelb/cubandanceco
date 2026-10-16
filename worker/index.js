@@ -12,7 +12,7 @@
 import { members } from './members.js';
 import { inbox } from './bunny.js';
 import { helpers, readHelper, readTeamPerson, helperMay, teamCodesSet } from './helpers.js';
-import { webhook, setup as stripeSetup, donationProgress } from './stripe.js';
+import { webhook, setup as stripeSetup, donationProgress, donateRedirect } from './stripe.js';
 import { createRequest, readRequest, signRequest, fullRecord } from './sign.js';
 import { newsPublic, newsAdmin, oneClick, previewPage, runScheduled } from './news.js';
 import { probe as weezeventProbe, season as weezeventSeason, addMember as weezeventAddMember } from './weezevent.js';
@@ -56,6 +56,8 @@ export default {
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
     // Stripe reports subscription changes here (server to server, checked by its signature)
     if (url.pathname === '/stripe/webhook' && req.method === 'POST') return env.STRIPE_SECRET_KEY ? webhook(req, env) : new Response('Not set up', { status: 503 });
+    // Donate buttons (a plain link, without an Origin): country check, then on to Stripe
+    if (url.pathname === '/donate/go' && req.method === 'GET') return donateRedirect(req, url);
     // Mail apps' one-click unsubscribe comes from the mail provider, without an Origin
     if (url.pathname === '/news/one-click' && req.method === 'POST') return oneClick(req, env, url);
     // Email previews open in the team panel's frame (a GET without Origin; random address, 15 minutes)
