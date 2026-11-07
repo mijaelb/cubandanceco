@@ -278,13 +278,67 @@
       "country": "Belgium",
       "countryCode": "BE",
       "note": "",
-      "badge": "",
-      "time": "Saturday 1 pm – Sunday 5 pm",
+      "badge": "Show on Saturday night",
+      "time": "Saturday 12 pm – Sunday 5 pm",
       "venue": "Camina Dance School",
       "address": "Chaussée de Boondael 277, 1050 Ixelles, Belgium",
       "mapUrl": "",
       "ticketUrl": "",
-      "schedule": [],
+      "schedule": [
+        {
+          "day": "Saturday",
+          "date": "14/11",
+          "slots": [
+            {
+              "time": "12:00 - 13:30",
+              "isBreak": false,
+              "classes": [
+                {
+                  "title": "Tecnica",
+                  "teacher": "Neyi",
+                  "liveMusic": false,
+                  "companyOnly": false
+                }
+              ]
+            },
+            {
+              "time": "13:30 -14:30",
+              "isBreak": false,
+              "classes": [
+                {
+                  "title": "Vodu",
+                  "teacher": "Juan Carlos",
+                  "liveMusic": true,
+                  "companyOnly": false
+                }
+              ]
+            },
+            {
+              "time": "14:30 - 15:15",
+              "isBreak": true,
+              "classes": []
+            },
+            {
+              "time": "15:15 - 16:15",
+              "isBreak": false,
+              "classes": [
+                {
+                  "title": "Ensayo Chango y Oya",
+                  "teacher": "Mijael & Noelle",
+                  "liveMusic": true,
+                  "companyOnly": true
+                },
+                {
+                  "title": "Elegua",
+                  "teacher": "Sergio",
+                  "liveMusic": false,
+                  "companyOnly": false
+                }
+              ]
+            }
+          ]
+        }
+      ],
       "scheduleDraft": true
     },
     {
