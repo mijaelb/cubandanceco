@@ -269,7 +269,8 @@
             }
           ]
         }
-      ]
+      ],
+      "scheduleDraft": true
     },
     {
       "start": "2026-11-14",
@@ -294,7 +295,7 @@
               "isBreak": false,
               "classes": [
                 {
-                  "title": "Tecnica",
+                  "title": "Técnica",
                   "teacher": "Neyi",
                   "liveMusic": false,
                   "companyOnly": false
@@ -331,6 +332,126 @@
                 {
                   "title": "Elegua",
                   "teacher": "Sergio",
+                  "liveMusic": false,
+                  "companyOnly": false
+                }
+              ]
+            },
+            {
+              "time": "16:20 – 17:20",
+              "isBreak": false,
+              "classes": [
+                {
+                  "title": "Ensayo Elegua",
+                  "teacher": "Sergio",
+                  "liveMusic": true,
+                  "companyOnly": true
+                },
+                {
+                  "title": "Cabaret",
+                  "teacher": "Neyi",
+                  "liveMusic": false,
+                  "companyOnly": false
+                }
+              ]
+            },
+            {
+              "time": "17:25 – 18:25",
+              "isBreak": false,
+              "classes": [
+                {
+                  "title": "Ensayo Rumba",
+                  "teacher": "Sergio",
+                  "liveMusic": false,
+                  "companyOnly": true
+                },
+                {
+                  "title": "Guaguancó",
+                  "teacher": "Juan Carlos",
+                  "liveMusic": true,
+                  "companyOnly": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "day": "Sunday",
+          "date": "15/11",
+          "slots": [
+            {
+              "time": "11:00 – 12:15",
+              "isBreak": false,
+              "classes": [
+                {
+                  "title": "Técnica",
+                  "teacher": "Neyi",
+                  "liveMusic": false,
+                  "companyOnly": false
+                }
+              ]
+            },
+            {
+              "time": "12:20 – 13:20",
+              "isBreak": false,
+              "classes": [
+                {
+                  "title": "Congo Layé",
+                  "teacher": "Juan Carlos",
+                  "liveMusic": false,
+                  "companyOnly": false
+                }
+              ]
+            },
+            {
+              "time": "13:25 – 14:25",
+              "isBreak": false,
+              "classes": [
+                {
+                  "title": "Chachalokafun Variations",
+                  "teacher": "Sergio",
+                  "liveMusic": false,
+                  "companyOnly": false
+                }
+              ]
+            },
+            {
+              "time": "14:30 – 15:30",
+              "isBreak": true,
+              "classes": [
+                {
+                  "title": "",
+                  "teacher": "",
+                  "liveMusic": false,
+                  "companyOnly": false
+                }
+              ]
+            },
+            {
+              "time": "15:35 – 16:35",
+              "isBreak": false,
+              "classes": [
+                {
+                  "title": "Petro",
+                  "teacher": "Juan Carlos",
+                  "liveMusic": true,
+                  "companyOnly": true
+                },
+                {
+                  "title": "Yemaya",
+                  "teacher": "Sergio",
+                  "liveMusic": false,
+                  "companyOnly": false
+                }
+              ]
+            },
+            {
+              "time": "16:40 – 17:40",
+              "isBreak": false,
+              "classes": [
+                {
+                  "title": "Cabaret",
+                  "teacher": "Neyi",
                   "liveMusic": false,
                   "companyOnly": false
                 }
