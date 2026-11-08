@@ -11,14 +11,11 @@
   ],
   "scheduleNote": "We usually start on Saturday around midday and finish on Sunday around 5 pm. The full timetable is published a week before each training.",
   "reminders": [
+    "Guaguancò Workshop, Party and Show on Saturday night @Bischoffsheimlaan 38B, 1000 Brussel. Workshop + Party: €20 - Party only: €10. You can purchase your ticket online (Weezevent) or at the entrance of the Party.",
     "Arrive 10 minutes early",
-    "Leave your belongings in the changing room",
-    "Take off outdoor shoes before entering the studio",
-    "Keep to the lines set by the teachers",
-    "Eat before class",
-    "Wear training clothes",
-    "Bring your skirts, heels and other accessories",
-    "Bring water",
+    "Keep to the lines set by the teacher and Direction",
+    "Eat before class and bring water",
+    "Wear training clothes, Bring your skirts, heels and other accessories",
     "The timetable may change"
   ],
   "events": [
@@ -279,12 +276,12 @@
       "country": "Belgium",
       "countryCode": "BE",
       "note": "",
-      "badge": "Show on Saturday night",
-      "time": "Saturday 12 pm – Sunday 5 pm",
+      "badge": "Workshop, Show and Party on Saturday Night",
+      "time": "Saturday 12 pm – Sunday 5.30 pm",
       "venue": "Camina Dance School",
       "address": "Chaussée de Boondael 277, 1050 Ixelles, Belgium",
-      "mapUrl": "",
-      "ticketUrl": "",
+      "mapUrl": "https://maps.app.goo.gl/4PLo4YveBVNaWXHz6",
+      "ticketUrl": "https://my.weezevent.com/iccd-training-2026-2027?_gl=1*11e3deg*_gcl_au*MTMxMjI5Nzc5Mi4xNzkyNTc1MDE2LjE0NjcyNDA0MzYuMTc5MjU3NTAyMi4xNzkyNTc1MDIzLjEzOTYzMDczNjQuMTc5MjU3NTAyMi4xNzkyNTc1MDIz*_ga*NDMzMzAwOTg3LjE3MjcwMTg5MzE.*_ga_39H9VBFX7G*czE3OTQxNDYzMDckbzExNCRnMSR0MTc5NDE0NjMxOCRqNDkkbDAkaDE5NTAwNTc4NA..",
       "schedule": [
         {
           "day": "Saturday",
@@ -342,15 +339,15 @@
               "isBreak": false,
               "classes": [
                 {
-                  "title": "Ensayo Elegua",
+                  "title": "Ensayo Elegguá",
                   "teacher": "Sergio",
-                  "liveMusic": true,
+                  "liveMusic": false,
                   "companyOnly": true
                 },
                 {
-                  "title": "Cabaret",
-                  "teacher": "Neyi",
-                  "liveMusic": false,
+                  "title": "Gagà",
+                  "teacher": "Juan Carlos",
+                  "liveMusic": true,
                   "companyOnly": false
                 }
               ]
@@ -362,13 +359,13 @@
                 {
                   "title": "Ensayo Rumba",
                   "teacher": "Sergio",
-                  "liveMusic": false,
+                  "liveMusic": true,
                   "companyOnly": true
                 },
                 {
-                  "title": "Guaguancó",
-                  "teacher": "Juan Carlos",
-                  "liveMusic": true,
+                  "title": "Cabaret",
+                  "teacher": "Neyi",
+                  "liveMusic": false,
                   "companyOnly": false
                 }
               ]
@@ -396,9 +393,9 @@
               "isBreak": false,
               "classes": [
                 {
-                  "title": "Congo Layé",
-                  "teacher": "Juan Carlos",
-                  "liveMusic": false,
+                  "title": "Chachalokafun Variations",
+                  "teacher": "Sergio",
+                  "liveMusic": true,
                   "companyOnly": false
                 }
               ]
@@ -408,9 +405,9 @@
               "isBreak": false,
               "classes": [
                 {
-                  "title": "Chachalokafun Variations",
-                  "teacher": "Sergio",
-                  "liveMusic": false,
+                  "title": "Congo Layé",
+                  "teacher": "Juan Carlos",
+                  "liveMusic": true,
                   "companyOnly": false
                 }
               ]
@@ -428,7 +425,19 @@
               ]
             },
             {
-              "time": "15:35 – 16:35",
+              "time": "15:30 – 16:30",
+              "isBreak": false,
+              "classes": [
+                {
+                  "title": "Cabaret",
+                  "teacher": "Neyi",
+                  "liveMusic": false,
+                  "companyOnly": false
+                }
+              ]
+            },
+            {
+              "time": "16:35 – 17:35",
               "isBreak": false,
               "classes": [
                 {
@@ -438,20 +447,8 @@
                   "companyOnly": true
                 },
                 {
-                  "title": "Yemaya",
+                  "title": "Columbia",
                   "teacher": "Sergio",
-                  "liveMusic": false,
-                  "companyOnly": false
-                }
-              ]
-            },
-            {
-              "time": "16:40 – 17:40",
-              "isBreak": false,
-              "classes": [
-                {
-                  "title": "Cabaret",
-                  "teacher": "Neyi",
                   "liveMusic": false,
                   "companyOnly": false
                 }
