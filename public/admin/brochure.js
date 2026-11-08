@@ -19,7 +19,11 @@ function h(tag, attrs = {}, ...kids) {
 }
 // conga drum = live music
 const DRUM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="4.6" rx="5.6" ry="1.9"/><path d="M6.4 4.6c-1.3 3.4-1.2 7.4.3 11l1.8 5.4h7l1.8-5.4c1.5-3.6 1.6-7.6.3-11"/><path d="M6.3 7.2c3.8 1.6 7.6 1.6 11.4 0" stroke-width="1.3"/><path d="M8.4 8.3v2.6M12 8.8v2.6M15.6 8.3v2.6" stroke-width="1.3"/><path d="M8.6 18.6c2.3.6 4.5.6 6.8 0" stroke-width="1.3"/></svg>';
-const drum = () => { const t = document.createElement('template'); t.innerHTML = DRUM; const svg = t.content.firstChild; svg.setAttribute('class', 'drum'); return svg; };
+// link arrow, drawn: the ↗ character turns into a blue emoji on many phones and computers
+const ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8.5 7H17v8.5"/></svg>';
+const icon = (markup, cls) => { const t = document.createElement('template'); t.innerHTML = markup; const svg = t.content.firstChild; svg.setAttribute('class', cls); return svg; };
+const drum = () => icon(DRUM, 'drum');
+const arrow = () => icon(ARROW, 'arrow');
 const tag = () => h('span', { class: 'tag' }, 'ICCD');
 const logo = () => h('img', { class: 'logo', src: LOGO, alt: '' });
 const pattern = (...rows) => h('div', { class: 'pattern', 'aria-hidden': 'true' }, rows.map((r) => h('span', {}, r)));
@@ -57,7 +61,7 @@ function info(ev, reminders) {
       h('h3', {}, 'Training location'),
       h('p', {}, ev.venue), h('p', {}, where),
       ev.time && h('p', { class: 'when' }, ev.time),
-      ev.mapUrl ? h('a', { class: 'maps', href: ev.mapUrl }, h('span', {}, 'Open in Maps'), ' ↗') : h('div', { style: 'height:56px' }),
+      ev.mapUrl ? h('a', { class: 'maps', href: ev.mapUrl }, h('span', {}, 'Open in Maps'), arrow()) : h('div', { style: 'height:56px' }),
       maestros(ev).length > 0 && h('h3', {}, 'Maestros'),
       maestros(ev).length > 0 && h('p', { class: 'maestros' }, maestros(ev).join(' · ')),
       reminders?.length && h('h3', {}, 'Kind reminders'),
@@ -131,7 +135,7 @@ function closing(ev) {
         WHATSAPP && h('li', {}, h('b', {}, 'WhatsApp'), h('div', {}, h('a', { href: WHATSAPP }, 'Join the ICCD group'))),
         HANDLE && h('li', {}, h('b', {}, 'Instagram'), h('div', {}, INSTAGRAM ? h('a', { href: INSTAGRAM }, HANDLE) : HANDLE)),
         EMAIL && h('li', {}, h('b', {}, 'Email'), h('div', {}, h('a', { href: `mailto:${EMAIL}` }, EMAIL))))),
-    h('div', { class: 'book' }, h('p', {}, 'Ready to book your next training?'), h('a', { href: ev.ticketUrl || TICKETS }, 'Get your training ticket ↗')),
+    h('div', { class: 'book' }, h('p', {}, 'Ready to book your next training?'), h('a', { href: ev.ticketUrl || TICKETS }, 'Get your training ticket', arrow())),
     qrCode(),
     footer());
 }
@@ -152,8 +156,65 @@ function support() {
     footer());
 }
 
+// Big background words: every row as wide as the page, from the left edge to the right edge.
+// Sizes come from the letters themselves (measured on a canvas), not from the font box,
+// so the rows line up with the edges whatever the city name is.
+const canvas = document.createElement('canvas').getContext('2d');
+function measure(text, size) {
+  canvas.font = `400 ${size}px Anton`;
+  const m = canvas.measureText(text);
+  return {
+    left: m.actualBoundingBoxLeft, width: m.actualBoundingBoxLeft + m.actualBoundingBoxRight,
+    cap: canvas.measureText('H').actualBoundingBoxAscent, ascent: m.fontBoundingBoxAscent, descent: m.fontBoundingBoxDescent,
+  };
+}
+// the text of one row and its size; short names are repeated (ROME ROME) instead of growing huge
+function row(word, width, max) {
+  const upper = word.toLocaleUpperCase('en');
+  for (let k = 1; ; k++) {
+    const text = Array(k).fill(upper).join(' ');
+    const size = (100 * width) / measure(text, 100).width;
+    if (size <= max || k === 4) return { text, size, m: measure(text, size) };
+  }
+}
+// one row with the top of its capitals at `top`
+function line({ text, size, m }, top) {
+  const span = h('span', {}, text);
+  Object.assign(span.style, {
+    position: 'absolute', margin: '0', letterSpacing: '0', whiteSpace: 'nowrap', textTransform: 'none',
+    fontSize: `${size}px`, lineHeight: `${m.ascent + m.descent}px`, // baseline sits `ascent` below the top
+    left: `${m.left}px`, top: `${top - (m.ascent - m.cap)}px`,
+  });
+  return span;
+}
+function patterns() {
+  if (!document.fonts.check('400 100px Anton') || !measure('H', 100).ascent) return; // keep the plain CSS layout
+  document.querySelectorAll('.pattern').forEach((p) => {
+    const W = p.clientWidth + 4, H = p.clientHeight; // + 4: the page draws the letters a hair narrower than the canvas
+    const words = [...p.children].map((s) => s.textContent);
+    if (p.parentElement.classList.contains('band')) {
+      // header band: city above "Training", both edge to edge; the city never bigger than "Training",
+      // and the pair centred in the band (tall pairs run off the top and bottom edge a little)
+      const last = row(words.at(-1), W, 260);
+      const rows = [...words.slice(0, -1).map((w) => row(w, W, last.size)), last];
+      const gap = 0.2 * Math.min(...rows.map((r) => r.m.cap));
+      let top = (H - rows.reduce((a, r) => a + r.m.cap, 0) - gap * (rows.length - 1)) / 2;
+      p.replaceChildren(...rows.map((r) => { const s = line(r, top); top += r.m.cap + gap; return s; }));
+    } else {
+      // full page: as many rows as fit, the first touching the top edge and the last the bottom edge
+      const r = row(words[0], W, 260);
+      const cap = r.m.cap;
+      let n = Math.max(1, Math.round((H + 0.2 * cap) / (1.2 * cap)));
+      if (n > 1 && (H - n * cap) / (n - 1) < 0.1 * cap) n--; // rows never closer than a tenth of their height
+      const gap = n > 1 ? (H - n * cap) / (n - 1) : 0;
+      p.replaceChildren(...Array.from({ length: n }, (_, i) => line(r, n > 1 ? i * (cap + gap) : (H - cap) / 2)));
+    }
+  });
+}
+
 // shrink a line until it fits its width (long city names)
 function fit() {
+  patterns();
   document.querySelectorAll('[data-fit]').forEach((el) => {
     const max = el.parentElement.clientWidth; // the width of the title block
     let size = parseFloat(getComputedStyle(el).fontSize);
