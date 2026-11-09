@@ -457,7 +457,7 @@
           ]
         }
       ],
-      "scheduleDraft": true
+      "scheduleDraft": false
     },
     {
       "start": "2026-12-12",
