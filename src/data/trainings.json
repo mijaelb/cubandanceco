@@ -11,7 +11,7 @@
   ],
   "scheduleNote": "We usually start on Saturday around midday and finish on Sunday around 5 pm. The full timetable is published a week before each training.",
   "reminders": [
-    "Guaguancò Workshop, Party and Show on Saturday night @Bischoffsheimlaan 38B, 1000 Brussel. Workshop + Party: €20 - Party only: €10. You can purchase your ticket online (Weezevent) or at the entrance of the Party.",
+    "Free Rumba Abierta at 18.30 at the Training Location. ",
     "Arrive 10 minutes early",
     "Keep to the lines set by the teacher and Direction",
     "Eat before class and bring water",
@@ -466,12 +466,12 @@
       "country": "Switzerland",
       "countryCode": "CH",
       "note": "",
-      "badge": "",
-      "time": "Saturday 12 pm – Sunday 5 pm",
+      "badge": "Rumba Abierta & Party on Saturday",
+      "time": "Saturday 12 pm – Sunday 5:30 pm",
       "venue": "Salsadancers School",
       "address": "Dalmaziquai 69, 3005 Bern, Switzerland",
-      "mapUrl": "",
-      "ticketUrl": "",
+      "mapUrl": "https://maps.app.goo.gl/xjGXgUrQd9QWN8sLA",
+      "ticketUrl": "https://my.weezevent.com/iccd-training-2026-2027?_gl=1*njk9h*_gcl_au*MTMzOTgxMzE4LjE3OTQzODQ5MDU.*_ga*NjEzMTMxNzMuMTc4NjUyNzUzMQ..*_ga_39H9VBFX7G*czE3OTU1MTg3NTIkbzcwJGcxJHQxNzk1NTE4NzYyJGo1MCRsMCRoMTMyMzYyMTQzNg..",
       "schedule": [
         {
           "day": "Saturday",
